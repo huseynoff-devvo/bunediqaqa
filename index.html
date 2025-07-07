@@ -1,166 +1,217 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="az">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BSOD Quiz</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Bütün Postlar + Bəyən Dəstəyi</title>
   <style>
-    html, body {
-      margin: 0; padding: 0;
-      background-color: black;
-      color: #fff;
-      font-family: "roboto";
-      height: 100%;
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+    body {
+      background: #181818;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 5px;
+    }
+    .post {
+      background: #1e1e1e;
+      border-radius: 10px;
+      margin-top: 15px;
+      padding: 15px;
+    }
+    .post-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-      touch-action: manipulation;
-      -webkit-touch-callout: none;
+      margin-bottom: 10px;
     }
-    #screen {
-      width: 100%;
-      max-width: 400px;
-      padding: 20px;
-      box-sizing: border-box;
-      text-align: left;
-    }
-    .big-face {
-      font-size: 48px;
-      line-height: 1;
-      margin-bottom: 20px;
-      font-weight: normal;
-      display: none;
-    }
-    #message {
-      line-height: 1.3;
-    }
-    .progress {
-      margin-top: 20px;
-      font-size: 14px;
-    }
-    .altmess {
-      display: none;
-    }
-    /* Spinner Styles */
-    .spinner {
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top: 4px solid #fff;
-      border-radius: 50%;
+    .profile-pic {
       width: 40px;
       height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px auto;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .username-box {
+      display: flex;
+      flex-direction: column;
     }
-    /* Disable image interaction */
-    img {
-      pointer-events: none;
-      user-select: none;
-      -webkit-user-drag: none;
-      -webkit-touch-callout: none;
+    .userid {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .nickname {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .post-text {
+      margin: 10px 0;
+    }
+    .post-image {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    .post-time {
+      font-size: 0.8rem;
+      color: #aaa;
+      text-align: right;
+      margin-top: 5px;
+    }
+    .like-button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  margin-top: 5px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.like-button:focus {
+  outline: none;
+}
+
+    .like-button.liked {
+      color: #ff4d4d;
+    }
+    .like-button .material-icons {
+      margin-right: 5px;
     }
   </style>
 </head>
-<body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
-  <div id="screen">
-    <div class="spinner" id="spinner"></div>
-    <div class="big-face" id="face">
-      <img src="https://res.cloudinary.com/dxymbsg0p/image/upload/v1751281560/nuk7xo0v4utgqyejvfkh.jpg" style="width: 54px;">
-    </div>
-    <div id="message"></div>
-    <div class="altmess" id="altmess">
-      <img src="https://res.cloudinary.com/dxymbsg0p/image/upload/v1751281526/sinezy_w5ft9l.png" style="width: 320px; position: relative; margin-top: 15px;">
-    </div>
-  </div>
+<body>
+  <div id="posts"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
+  <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyA537jiKVCh05A3780uhcSR0xJaS0ewv7s",
-      authDomain: "boomtap-sounds.firebaseapp.com",
-      databaseURL: "https://boomtap-sounds-default-rtdb.firebaseio.com",
-      projectId: "boomtap-sounds",
-      storageBucket: "boomtap-sounds.firebasestorage.app",
-      messagingSenderId: "331487770391",
-      appId: "1:331487770391:web:ba8238d479c1b4cdc86952"
+      apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
+      authDomain: "pasyakaaz.firebaseapp.com",
+      projectId: "pasyakaaz",
+      storageBucket: "pasyakaaz.appspot.com",
+      messagingSenderId: "289629756800",
+      appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const postsContainer = document.getElementById("posts");
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get("user") || "anonim";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    function renderPost(postId, data, isLikedByUser) {
+      const postEl = document.createElement("div");
+      postEl.className = "post";
 
-    const spinner = document.getElementById('spinner');
-    const face = document.getElementById('face');
-    const altmess = document.getElementById('altmess');
-    const messageDiv = document.getElementById("message");
+      const header = document.createElement("div");
+      header.className = "post-header";
 
-    const deviceId = getOrSetDeviceId();
+      const img = document.createElement("img");
+      img.className = "profile-pic";
+      img.src = data.profile || "https://via.placeholder.com/36?text=?";
 
-    checkIfUsed();
+      const userBox = document.createElement("div");
+      userBox.className = "username-box";
 
-    function getOrSetDeviceId() {
-      let id = localStorage.getItem('bsod_device_id');
-      if (!id) {
-        id = 'id_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('bsod_device_id', id);
+      const userId = document.createElement("div");
+      userId.className = "userid";
+      userId.textContent = data.user || "Anonim";
+
+      const nickname = document.createElement("div");
+      nickname.className = "nickname";
+      nickname.textContent = data.nickname || "";
+
+      userBox.appendChild(userId);
+      userBox.appendChild(nickname);
+
+      header.appendChild(img);
+      header.appendChild(userBox);
+      postEl.appendChild(header);
+
+      if (data.text) {
+        const text = document.createElement("div");
+        text.className = "post-text";
+        text.textContent = data.text;
+        postEl.appendChild(text);
       }
-      return id;
-    }
 
-    async function checkIfUsed() {
-      const dbRef = ref(db);
-      try {
-        const snapshot = await get(child(dbRef, `bsodUsers/${deviceId}`));
-        if (snapshot.exists()) {
-          showError();
-        } else {
-          await set(ref(db, `bsodUsers/${deviceId}`), { used: true });
-          showQuestion();
-        }
-      } catch (error) {
-        messageDiv.textContent = "Error loading. Please try again.";
-        spinner.style.display = 'none';
+      if (data.image) {
+        const image = document.createElement("img");
+        image.className = "post-image";
+        image.src = data.image.replace(/\\/g, '').trim();
+        postEl.appendChild(image);
       }
+
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "like-button";
+      likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${data.likes || 0}</span>`;
+
+      if (isLikedByUser) {
+        likeBtn.classList.add("liked");
+      }
+
+      likeBtn.addEventListener("click", () => {
+        const likeRef = db.ref(`likes/${postId}/${currentUser}`);
+        likeRef.once("value").then(snap => {
+          if (snap.exists()) {
+            likeRef.remove();
+            db.ref(`posts/${postId}`).once("value").then(postSnap => {
+              const parsed = JSON.parse(postSnap.val());
+              parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
+              db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
+              likeBtn.classList.remove("liked");
+              likeBtn.querySelector(".like-count").textContent = parsed.likes;
+            });
+          } else {
+            likeRef.set(true);
+            db.ref(`posts/${postId}`).once("value").then(postSnap => {
+              const parsed = JSON.parse(postSnap.val());
+              parsed.likes = (parsed.likes || 0) + 1;
+              db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
+              likeBtn.classList.add("liked");
+              likeBtn.querySelector(".like-count").textContent = parsed.likes;
+            });
+          }
+        });
+      });
+
+      postEl.appendChild(likeBtn);
+
+      const time = document.createElement("div");
+      time.className = "post-time";
+      time.textContent = data.time || "";
+      postEl.appendChild(time);
+
+      return postEl;
     }
 
-    function showQuestion() {
-      spinner.style.display = 'none';
-      face.style.display = 'block';
-      altmess.style.display = 'block';
-      messageDiv.innerHTML = `
-        Your PC ran into a problem and needs to restart.<br>
-        We're just collecting some error info, and then we'll restart for you.<br>
-        <div class="progress">85% complete</div><br>
-        A 4-digit palindrome code is required.<br>
-        - Outer digits ≥ 2 and sum even.<br>
-        - Middle digits differ by at most 1 and are ≤ 8.<br>
-        - Total digits sum between 18 and 22.<br>
-        - Codes do not start with 1.<br>
-        Find all possible codes.<br>
-        Crack the code to unlock.
-      `;
+    function loadAllPosts() {
+      db.ref("likes").once("value").then(likesSnap => {
+        const likesData = likesSnap.val() || {};
+
+        db.ref("posts").once("value").then(postsSnap => {
+          postsContainer.innerHTML = "";
+          postsSnap.forEach(child => {
+            try {
+              const postId = child.key;
+              const postRaw = child.val();
+              const data = typeof postRaw === 'string' ? JSON.parse(postRaw) : postRaw;
+              const isLiked = likesData[postId] && likesData[postId][currentUser];
+              const postEl = renderPost(postId, data, isLiked);
+              postsContainer.appendChild(postEl);
+            } catch (e) {
+              console.warn("Xəta post formatinda:", child.key);
+            }
+          });
+        });
+      });
     }
 
-    function showError() {
-      spinner.style.display = 'none';
-      face.style.display = 'block';
-      altmess.style.display = 'block';
-      messageDiv.innerHTML = `
-        Your PC ran into a problem and needs to restart.<br>
-        We're just collecting some error info, and then we'll restart for you.<br>
-        <div class="progress">85% complete</div><br>
-        error #1001 - you have already looked at this question once AJKDFAHDAJ
-      `;
-    }
+    loadAllPosts();
   </script>
 </body>
 </html>
-
