@@ -69,6 +69,7 @@
       outline: none;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      transition: color 0.3s;
     }
     .like-button:focus {
       outline: none;
@@ -102,7 +103,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentUser = urlParams.get("user") || "anonim";
 
-    const likeCache = {};
+    let likeCache = {};
 
     function renderPost(postId, data, isLikedByUser) {
       const postEl = document.createElement("div");
@@ -158,21 +159,36 @@
 
       likeBtn.addEventListener("click", () => {
         const likeRef = db.ref(`likes/${postId}/${currentUser}`);
+        const postRef = db.ref(`posts/${postId}`);
+
         likeRef.once("value").then(snap => {
           if (snap.exists()) {
+            // UNLIKE
             likeRef.remove();
-            db.ref(`posts/${postId}`).once("value").then(postSnap => {
-              const parsed = JSON.parse(postSnap.val());
+            postRef.once("value").then(postSnap => {
+              let parsed = JSON.parse(postSnap.val());
               parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
-              db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
+              postRef.set(JSON.stringify(parsed));
             });
+
+            // Immediate UI update
+            likeBtn.classList.remove("liked");
+            const countSpan = likeBtn.querySelector(".like-count");
+            countSpan.textContent = Math.max(parseInt(countSpan.textContent) - 1, 0);
+
           } else {
+            // LIKE
             likeRef.set(true);
-            db.ref(`posts/${postId}`).once("value").then(postSnap => {
-              const parsed = JSON.parse(postSnap.val());
+            postRef.once("value").then(postSnap => {
+              let parsed = JSON.parse(postSnap.val());
               parsed.likes = (parsed.likes || 0) + 1;
-              db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
+              postRef.set(JSON.stringify(parsed));
             });
+
+            // Immediate UI update
+            likeBtn.classList.add("liked");
+            const countSpan = likeBtn.querySelector(".like-count");
+            countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
           }
         });
       });
@@ -187,9 +203,9 @@
       return postEl;
     }
 
-    function updatePost(postId, postData) {
+    function updatePost(postId, data) {
       const isLiked = likeCache[postId] && likeCache[postId][currentUser];
-      const postEl = renderPost(postId, postData, isLiked);
+      const postEl = renderPost(postId, data, isLiked);
       const existing = document.getElementById("post_" + postId);
       if (existing) {
         postsContainer.replaceChild(postEl, existing);
@@ -200,7 +216,16 @@
 
     function loadLivePosts() {
       db.ref("likes").on("value", (likesSnap) => {
-        Object.assign(likeCache, likesSnap.val() || {});
+        likeCache = likesSnap.val() || {};
+        // Re-render all posts to update like status
+        db.ref("posts").once("value").then(postsSnap => {
+          postsContainer.innerHTML = "";
+          postsSnap.forEach(snap => {
+            const postId = snap.key;
+            const data = JSON.parse(snap.val());
+            updatePost(postId, data);
+          });
+        });
       });
 
       const postsRef = db.ref("posts");
