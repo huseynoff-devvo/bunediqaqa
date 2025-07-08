@@ -67,6 +67,7 @@
       padding: 5px;
       margin-top: 5px;
       user-select: none;
+      transition: color 0.3s;
     }
     .like-button.liked {
       color: #ff4d4d;
@@ -99,7 +100,7 @@
     const onlyMyPosts = urlParams.get("myPosts") === "true";
     const likedPostsOnly = urlParams.get("liked") === "true";
 
-    const likeCache = {};
+    let likeCache = {};
 
     function renderPost(postId, data, isLikedByUser) {
       const postEl = document.createElement("div");
@@ -155,20 +156,32 @@
       likeBtn.addEventListener("click", () => {
         const likeRef = db.ref(`likes/${postId}/${currentUser}`);
         likeRef.once("value").then(snap => {
+          const postRef = db.ref(`posts/${postId}`);
+
           if (snap.exists()) {
+            // Unlike
             likeRef.remove();
-            db.ref(`posts/${postId}`).once("value").then(postSnap => {
+            postRef.once("value").then(postSnap => {
               const parsed = typeof postSnap.val() === 'string' ? JSON.parse(postSnap.val()) : postSnap.val();
               parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
-              db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
+              postRef.set(JSON.stringify(parsed));
             });
+
+            likeBtn.classList.remove("liked");
+            const countSpan = likeBtn.querySelector(".like-count");
+            countSpan.textContent = Math.max((parseInt(countSpan.textContent) || 1) - 1, 0);
           } else {
+            // Like
             likeRef.set(true);
-            db.ref(`posts/${postId}`).once("value").then(postSnap => {
+            postRef.once("value").then(postSnap => {
               const parsed = typeof postSnap.val() === 'string' ? JSON.parse(postSnap.val()) : postSnap.val();
               parsed.likes = (parsed.likes || 0) + 1;
-              db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
+              postRef.set(JSON.stringify(parsed));
             });
+
+            likeBtn.classList.add("liked");
+            const countSpan = likeBtn.querySelector(".like-count");
+            countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
           }
         });
       });
@@ -199,7 +212,18 @@
 
     function loadLivePosts() {
       db.ref("likes").on("value", snap => {
-        Object.assign(likeCache, snap.val() || {});
+        likeCache = snap.val() || {};
+        // Rerender filtered view if in likedPostsOnly mode
+        if (likedPostsOnly || onlyMyPosts) {
+          postsContainer.innerHTML = "";
+          db.ref("posts").once("value").then(allPostsSnap => {
+            allPostsSnap.forEach(childSnap => {
+              const postId = childSnap.key;
+              const data = typeof childSnap.val() === "string" ? JSON.parse(childSnap.val()) : childSnap.val();
+              updatePost(postId, data);
+            });
+          });
+        }
       });
 
       const postsRef = db.ref("posts");
