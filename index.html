@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bütün Postlar + Bəyən Dəstəyi</title>
+  <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
   <style>
     @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
     body {
@@ -58,22 +58,21 @@
       margin-top: 5px;
     }
     .like-button {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 5px;
-  margin-top: 5px;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-.like-button:focus {
-  outline: none;
-}
-
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      margin-top: 5px;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .like-button:focus {
+      outline: none;
+    }
     .like-button.liked {
       color: #ff4d4d;
     }
@@ -103,9 +102,12 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentUser = urlParams.get("user") || "anonim";
 
+    const likeCache = {};
+
     function renderPost(postId, data, isLikedByUser) {
       const postEl = document.createElement("div");
       postEl.className = "post";
+      postEl.id = "post_" + postId;
 
       const header = document.createElement("div");
       header.className = "post-header";
@@ -163,8 +165,6 @@
               const parsed = JSON.parse(postSnap.val());
               parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
               db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
-              likeBtn.classList.remove("liked");
-              likeBtn.querySelector(".like-count").textContent = parsed.likes;
             });
           } else {
             likeRef.set(true);
@@ -172,8 +172,6 @@
               const parsed = JSON.parse(postSnap.val());
               parsed.likes = (parsed.likes || 0) + 1;
               db.ref(`posts/${postId}`).set(JSON.stringify(parsed));
-              likeBtn.classList.add("liked");
-              likeBtn.querySelector(".like-count").textContent = parsed.likes;
             });
           }
         });
@@ -189,29 +187,52 @@
       return postEl;
     }
 
-    function loadAllPosts() {
-      db.ref("likes").once("value").then(likesSnap => {
-        const likesData = likesSnap.val() || {};
+    function updatePost(postId, postData) {
+      const isLiked = likeCache[postId] && likeCache[postId][currentUser];
+      const postEl = renderPost(postId, postData, isLiked);
+      const existing = document.getElementById("post_" + postId);
+      if (existing) {
+        postsContainer.replaceChild(postEl, existing);
+      } else {
+        postsContainer.insertBefore(postEl, postsContainer.firstChild);
+      }
+    }
 
-        db.ref("posts").once("value").then(postsSnap => {
-          postsContainer.innerHTML = "";
-          postsSnap.forEach(child => {
-            try {
-              const postId = child.key;
-              const postRaw = child.val();
-              const data = typeof postRaw === 'string' ? JSON.parse(postRaw) : postRaw;
-              const isLiked = likesData[postId] && likesData[postId][currentUser];
-              const postEl = renderPost(postId, data, isLiked);
-              postsContainer.appendChild(postEl);
-            } catch (e) {
-              console.warn("Xəta post formatinda:", child.key);
-            }
-          });
-        });
+    function loadLivePosts() {
+      db.ref("likes").on("value", (likesSnap) => {
+        Object.assign(likeCache, likesSnap.val() || {});
+      });
+
+      const postsRef = db.ref("posts");
+
+      postsRef.on("child_added", (snap) => {
+        try {
+          const postId = snap.key;
+          const data = JSON.parse(snap.val());
+          updatePost(postId, data);
+        } catch (e) {
+          console.warn("Post əlavə olunarkən xəta:", snap.key);
+        }
+      });
+
+      postsRef.on("child_changed", (snap) => {
+        try {
+          const postId = snap.key;
+          const data = JSON.parse(snap.val());
+          updatePost(postId, data);
+        } catch (e) {
+          console.warn("Post dəyişilərkən xəta:", snap.key);
+        }
+      });
+
+      postsRef.on("child_removed", (snap) => {
+        const postId = snap.key;
+        const el = document.getElementById("post_" + postId);
+        if (el) el.remove();
       });
     }
 
-    loadAllPosts();
+    loadLivePosts();
   </script>
 </body>
 </html>
