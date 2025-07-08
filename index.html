@@ -79,6 +79,10 @@
     }
     .like-button .material-icons {
       margin-right: 5px;
+      vertical-align: middle;
+    }
+    .like-count {
+      margin-left: 5px;
     }
   </style>
 </head>
@@ -149,13 +153,18 @@
         postEl.appendChild(image);
       }
 
+      // Like button
       const likeBtn = document.createElement("button");
       likeBtn.className = "like-button";
-      likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${data.likes || 0}</span>`;
-
       if (isLikedByUser) {
         likeBtn.classList.add("liked");
       }
+
+      const likeCount = data.likes || 0;
+      likeBtn.innerHTML = `
+        <span class="material-icons">favorite</span>
+        <span class="like-count">${likeCount}</span>
+      `;
 
       likeBtn.addEventListener("click", () => {
         const likeRef = db.ref(`likes/${postId}/${currentUser}`);
@@ -171,11 +180,6 @@
               postRef.set(JSON.stringify(parsed));
             });
 
-            // Immediate UI update
-            likeBtn.classList.remove("liked");
-            const countSpan = likeBtn.querySelector(".like-count");
-            countSpan.textContent = Math.max(parseInt(countSpan.textContent) - 1, 0);
-
           } else {
             // LIKE
             likeRef.set(true);
@@ -184,11 +188,6 @@
               parsed.likes = (parsed.likes || 0) + 1;
               postRef.set(JSON.stringify(parsed));
             });
-
-            // Immediate UI update
-            likeBtn.classList.add("liked");
-            const countSpan = likeBtn.querySelector(".like-count");
-            countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
           }
         });
       });
@@ -217,7 +216,6 @@
     function loadLivePosts() {
       db.ref("likes").on("value", (likesSnap) => {
         likeCache = likesSnap.val() || {};
-        // Re-render all posts to update like status
         db.ref("posts").once("value").then(postsSnap => {
           postsContainer.innerHTML = "";
           postsSnap.forEach(snap => {
