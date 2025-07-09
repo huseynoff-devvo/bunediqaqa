@@ -103,7 +103,6 @@
       top: 0; left: 0;
       width: 100%;
       height: 100%;
-      /* background-color: rgba(0,0,0,0.7); */
       z-index: 999;
       justify-content: center;
       align-items: center;
@@ -188,7 +187,8 @@
     const db = getDatabase(app);
 
     const urlParams = new URLSearchParams(window.location.search);
-    const currentUserNick = urlParams.get("user"); // Məsələn, "@huseynoff"
+    const currentUserNick = urlParams.get("user"); // ?user=@huseynoff
+    const overrideProfile = urlParams.get("profile"); // ?profile=https://...
 
     const container = document.getElementById("messagesContainer");
     const loading = document.getElementById("loading");
@@ -226,6 +226,11 @@
           try {
             const msg = JSON.parse(rawJson);
             const isOwn = msg.nickname === currentUserNick;
+
+            // Profil override varsa tətbiq et
+            if (msg.nickname === currentUserNick && overrideProfile) {
+              msg.profile_pct = overrideProfile;
+            }
 
             const div = document.createElement("div");
             div.className = `message ${isOwn ? "own-message" : "other-message"}`;
