@@ -71,15 +71,11 @@
       user-select: none;
       transition: color 0.3s;
     }
-    .like-button:focus {
-      outline: none;
-    }
     .like-button.liked {
       color: #ff4d4d;
     }
     .like-button .material-icons {
       margin-right: 5px;
-      vertical-align: middle;
     }
     .like-count {
       margin-left: 5px;
@@ -153,17 +149,13 @@
         postEl.appendChild(image);
       }
 
-      // Like button
       const likeBtn = document.createElement("button");
       likeBtn.className = "like-button";
-      if (isLikedByUser) {
-        likeBtn.classList.add("liked");
-      }
+      if (isLikedByUser) likeBtn.classList.add("liked");
 
-      const likeCount = data.likes || 0;
       likeBtn.innerHTML = `
         <span class="material-icons">favorite</span>
-        <span class="like-count">${likeCount}</span>
+        <span class="like-count">${data.likes || 0}</span>
       `;
 
       likeBtn.addEventListener("click", () => {
@@ -172,16 +164,13 @@
 
         likeRef.once("value").then(snap => {
           if (snap.exists()) {
-            // UNLIKE
             likeRef.remove();
             postRef.once("value").then(postSnap => {
               let parsed = JSON.parse(postSnap.val());
               parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
               postRef.set(JSON.stringify(parsed));
             });
-
           } else {
-            // LIKE
             likeRef.set(true);
             postRef.once("value").then(postSnap => {
               let parsed = JSON.parse(postSnap.val());
@@ -255,7 +244,28 @@
       });
     }
 
+    function checkAndUpdateProfilePictureByNickname() {
+      const nicknameToUpdate = urlParams.get("user"); // user param now used as nickname
+      const newProfileURL = urlParams.get("profile");
+
+      if (!nicknameToUpdate || !newProfileURL) return;
+
+      const postsRef = db.ref("posts");
+      postsRef.once("value").then(snapshot => {
+        snapshot.forEach(childSnap => {
+          const postId = childSnap.key;
+          let postData = JSON.parse(childSnap.val());
+
+          if (postData.nickname === nicknameToUpdate) {
+            postData.profile = newProfileURL;
+            postsRef.child(postId).set(JSON.stringify(postData));
+          }
+        });
+      });
+    }
+
     loadLivePosts();
+    checkAndUpdateProfilePictureByNickname();
   </script>
 </body>
 </html>
