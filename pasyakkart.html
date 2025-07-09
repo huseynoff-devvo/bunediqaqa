@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Qalın Kart Fırlatma (Drag ilə)</title>
+  <style>
+    body {
+      margin: 0;
+      background: #181818;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1400px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+
+    .card-wrapper {
+      width: 320px;
+      height: 200px;
+      transform-style: preserve-3d;
+      transition: transform 0.2s ease-out;
+      position: relative;
+      cursor: grab;
+      /* Qalınlıq və kölgə */
+      border-radius: 18px;
+      box-shadow:
+        0 20px 40px rgba(0,0,0,0.6),
+        inset 0 0 15px rgba(255,255,255,0.1);
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+      /* Başlanğıc scale */
+      scale: 1;
+    }
+
+    .card-wrapper:active {
+      cursor: grabbing;
+    }
+
+    .card {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 18px;
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.7);
+      background-size: cover;
+      background-position: center;
+      border: 2px solid rgba(255,255,255,0.2);
+      /* Kartın daha həcmi üçün gradient overlay */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.15),
+        rgba(0,0,0,0.6)
+      );
+      mix-blend-mode: overlay;
+      opacity: 0.4;
+      z-index: 1;
+    }
+
+    .front {
+      background-image: url('https://res.cloudinary.com/dhski1gkx/image/upload/v1752053085/pasyakkart-on_jlgnzd.png');
+      z-index: 2;
+    }
+
+    .back {
+      background-image: url('https://res.cloudinary.com/dhski1gkx/image/upload/v1752053085/pasyakkart-arxa_gxgrlj.png');
+      transform: rotateY(180deg);
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="card-wrapper" id="card">
+    <div class="card front"></div>
+    <div class="card back"></div>
+  </div>
+
+  <script>
+    const card = document.getElementById('card');
+
+    let isDragging = false;
+    let startX, startY;
+    let currentX = 0, currentY = 0;
+    let scale = 1; // başlanğıc zoom
+    const maxScale = 1.5;
+    const minScale = 1;
+
+    function rotateCard(dx, dy) {
+      currentY += dx * 0.3;
+      currentX -= dy * 0.3;
+
+      // Limit rotation x-ə -45 ilə 45 dərəcə arası
+      currentX = Math.min(45, Math.max(-45, currentX));
+
+      updateTransform();
+    }
+
+    // Transform-u yeniləyən funksiya
+    function updateTransform() {
+      card.style.transform = `scale(${scale}) rotateX(${currentX}deg) rotateY(${currentY}deg)`;
+    }
+
+    // Mouse dəstəyi
+    card.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      card.style.transition = 'none';
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        card.style.transition = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+        updateTransform();
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      rotateCard(dx, dy);
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    // Touch (mobil) dəstəyi
+    card.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      card.style.transition = 'none';
+    });
+
+    card.addEventListener('touchend', () => {
+      if (isDragging) {
+        isDragging = false;
+        card.style.transition = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+        updateTransform();
+      }
+    });
+
+    card.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      rotateCard(dx, dy);
+      startX = touch.clientX;
+      startY = touch.clientY;
+    });
+
+    // Double tap detection üçün
+    let lastTap = 0;
+    card.addEventListener('touchend', (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 300 && tapLength > 0) {
+        // Double tap aşkarlandı
+        if (scale === minScale) {
+          scale = maxScale;
+        } else {
+          scale = minScale;
+        }
+        card.style.transition = 'transform 0.3s ease';
+        updateTransform();
+      }
+      lastTap = currentTime;
+    });
+
+    // Masaüstü üçün double click zoom əlavə etmək istəyərsənsə, aşağıdakı kodu əlavə edə bilərsən:
+    card.addEventListener('dblclick', () => {
+      if (scale === minScale) {
+        scale = maxScale;
+      } else {
+        scale = minScale;
+      }
+      card.style.transition = 'transform 0.3s ease';
+      updateTransform();
+    });
+  </script>
+</body>
+</html>
