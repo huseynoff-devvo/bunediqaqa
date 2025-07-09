@@ -6,6 +6,7 @@
   <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
   <style>
     @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
     body {
       background: #181818;
       color: white;
@@ -13,17 +14,48 @@
       margin: 0;
       padding: 5px;
     }
+
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #181818;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .spinner {
+      border: 3px solid #333;
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .post {
       background: #1e1e1e;
       border-radius: 10px;
       margin-top: 15px;
       padding: 15px;
     }
+
     .post-header {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
     }
+
     .profile-pic {
       width: 40px;
       height: 40px;
@@ -31,32 +63,39 @@
       object-fit: cover;
       margin-right: 10px;
     }
+
     .username-box {
       display: flex;
       flex-direction: column;
     }
+
     .userid {
       font-weight: bold;
       font-size: 1rem;
     }
+
     .nickname {
       font-size: 0.8rem;
       color: #aaa;
     }
+
     .post-text {
       margin: 10px 0;
     }
+
     .post-image {
       width: 100%;
       max-width: 100%;
       border-radius: 8px;
     }
+
     .post-time {
       font-size: 0.8rem;
       color: #aaa;
       text-align: right;
       margin-top: 5px;
     }
+
     .like-button {
       background: none;
       border: none;
@@ -70,22 +109,31 @@
       user-select: none;
       transition: color 0.3s;
     }
+
     .like-button:focus {
       outline: none;
     }
+
     .like-button.liked {
       color: #ff4d4d;
     }
+
     .like-button .material-icons {
       margin-right: 5px;
     }
+
     .like-count {
       margin-left: 5px;
     }
   </style>
 </head>
 <body>
-  <div id="posts"></div>
+  <div id="loader">
+    <div class="spinner"></div>
+    <p style="color:white; margin-top: 15px;"></p>
+  </div>
+
+  <div id="posts" style="display:none;"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -113,7 +161,6 @@
     function renderPost(postId, data, isLikedByUser) {
       if (showOnlyMyPosts && data.nickname !== currentUser) return null;
 
-      // Əgər profil yenilənməsi lazımdırsa
       if (newProfileURL && data.nickname === currentUser && data.profile !== newProfileURL) {
         data.profile = newProfileURL;
         db.ref(`posts/${postId}`).set(JSON.stringify(data));
@@ -224,7 +271,6 @@
       db.ref("likes").on("value", (likesSnap) => {
         likeCache = likesSnap.val() || {};
         db.ref("posts").once("value").then(postsSnap => {
-          postsContainer.innerHTML = "";
           postsSnap.forEach(snap => {
             const postId = snap.key;
             const data = JSON.parse(snap.val());
@@ -262,7 +308,14 @@
       });
     }
 
+    // Arxa planda postları yüklə
     loadLivePosts();
+
+    // 3 saniyəlik loader sonra görünüş dəyişsin
+    setTimeout(() => {
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("posts").style.display = "block";
+    }, 3000);
   </script>
 </body>
 </html>
