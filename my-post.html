@@ -104,15 +104,19 @@
     const postsContainer = document.getElementById("posts");
 
     const urlParams = new URLSearchParams(window.location.search);
-    const currentUser = urlParams.get("user") ? urlParams.get("user").trim() : "anonim";
+    const currentUser = urlParams.get("user")?.trim() || "anonim";
     const showOnlyMyPosts = urlParams.get("myPosts") === "true";
+    const newProfileURL = urlParams.get("profile")?.trim() || null;
 
     let likeCache = {};
 
     function renderPost(postId, data, isLikedByUser) {
-      // Filtrləmə nickname-ə əsaslanır
-      if (showOnlyMyPosts && data.nickname !== currentUser) {
-        return null; 
+      if (showOnlyMyPosts && data.nickname !== currentUser) return null;
+
+      // Əgər profil yenilənməsi lazımdırsa
+      if (newProfileURL && data.nickname === currentUser && data.profile !== newProfileURL) {
+        data.profile = newProfileURL;
+        db.ref(`posts/${postId}`).set(JSON.stringify(data));
       }
 
       const postEl = document.createElement("div");
@@ -139,7 +143,6 @@
 
       userBox.appendChild(userId);
       userBox.appendChild(nickname);
-
       header.appendChild(img);
       header.appendChild(userBox);
       postEl.appendChild(header);
@@ -158,15 +161,13 @@
         postEl.appendChild(image);
       }
 
-      // Like düyməsi
       const likeBtn = document.createElement("button");
       likeBtn.className = "like-button";
       if (isLikedByUser) likeBtn.classList.add("liked");
 
-      const likeCount = data.likes || 0;
       likeBtn.innerHTML = `
         <span class="material-icons">favorite</span>
-        <span class="like-count">${likeCount}</span>
+        <span class="like-count">${data.likes || 0}</span>
       `;
 
       likeBtn.addEventListener("click", () => {
@@ -175,7 +176,6 @@
 
         likeRef.once("value").then(snap => {
           if (snap.exists()) {
-            // UNLIKE
             likeRef.remove();
             postRef.once("value").then(postSnap => {
               let parsed = JSON.parse(postSnap.val());
@@ -183,7 +183,6 @@
               postRef.set(JSON.stringify(parsed));
             });
           } else {
-            // LIKE
             likeRef.set(true);
             postRef.once("value").then(postSnap => {
               let parsed = JSON.parse(postSnap.val());
@@ -207,8 +206,13 @@
     function updatePost(postId, data) {
       const isLiked = likeCache[postId] && likeCache[postId][currentUser];
       const postEl = renderPost(postId, data, isLiked);
-      if (!postEl) return;
       const existing = document.getElementById("post_" + postId);
+
+      if (!postEl) {
+        if (existing) existing.remove();
+        return;
+      }
+
       if (existing) {
         postsContainer.replaceChild(postEl, existing);
       } else {
@@ -232,8 +236,8 @@
       const postsRef = db.ref("posts");
 
       postsRef.on("child_added", (snap) => {
+        const postId = snap.key;
         try {
-          const postId = snap.key;
           const data = JSON.parse(snap.val());
           updatePost(postId, data);
         } catch (e) {
@@ -242,8 +246,8 @@
       });
 
       postsRef.on("child_changed", (snap) => {
+        const postId = snap.key;
         try {
-          const postId = snap.key;
           const data = JSON.parse(snap.val());
           updatePost(postId, data);
         } catch (e) {
