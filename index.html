@@ -5,150 +5,220 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
   <style>
-    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-    body {
-      background: #181818;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 5px;
-    }
-    #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #181818;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .spinner {
-      border: 3px solid #333;
-      border-top: 3px solid white;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .post {
-      background: #1e1e1e;
-      border-radius: 10px;
-      margin-top: 15px;
-      padding: 15px;
-    }
-    .post-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .profile-pic {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-right: 10px;
-    }
-    .username-box {
-      display: flex;
-      flex-direction: column;
-    }
-    .userid {
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .nickname {
-      font-size: 0.8rem;
-      color: #aaa;
-    }
-    .post-text {
-      margin: 10px 0;
-    }
-    .post-image {
-      width: 100%;
-      max-width: 100%;
-      border-radius: 8px;
-    }
-    .post-time {
-      font-size: 0.8rem;
-      color: #aaa;
-      text-align: right;
-      margin-top: 5px;
-    }
-    .like-button {
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      padding: 5px;
-      margin-top: 5px;
-      outline: none;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      transition: color 0.3s;
-    }
-    .like-button.liked {
-      color: #ff4d4d;
-    }
-    .like-button .material-icons {
-      margin-right: 5px;
-    }
-    .like-count {
-      margin-left: 5px;
-    }
-    .delete-button {
-      background: none;
-      border: none;
-      color: red;
-      cursor: pointer;
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      font-size: 20px;
-    }
-    .confirm-dialog {
-      position: fixed;
-      text-align: center;
-      font-size: 13px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #282828;
-      color: white;
-      padding: 20px;
-      border-radius: 8px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      z-index: 10000;
-      box-shadow: 0 0 10px #000;
-    }
-    .confirm-dialog button {
-      margin-top: 10px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .confirm-dialog .yes {
-      background: red;
-      color: white;
-    }
-    .confirm-dialog .no {
-      background: #444;
-      color: white;
-      margin-left: 10px;
-    }
-  </style>
+  @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+  * {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: #181818;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 5px;
+  }
+
+  #loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #181818;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .spinner {
+    border: 3px solid #333;
+    border-top: 3px solid white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .post {
+    background: #1e1e1e;
+    border-radius: 10px;
+    margin-top: 15px;
+    padding: 15px;
+  }
+
+  .post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+  }
+
+  .username-box {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .userid {
+    font-weight: bold;
+    font-size: 1rem;
+  }
+
+  .nickname {
+    font-size: 0.8rem;
+    color: #aaa;
+  }
+
+  .post-text {
+    margin: 10px 0;
+  }
+
+  .post-image {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 8px;
+  }
+
+  .post-time {
+    font-size: 0.8rem;
+    color: #aaa;
+    text-align: right;
+    margin-top: 5px;
+  }
+
+  .like-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    margin-top: 5px;
+    user-select: none;
+    transition: color 0.3s;
+  }
+
+  .like-button.liked {
+    color: #ff4d4d;
+  }
+
+  .like-button .material-icons {
+    margin-right: 5px;
+  }
+
+  .like-count {
+    margin-left: 5px;
+  }
+
+  .delete-button {
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    user-select: none;
+  }
+
+  .confirm-dialog {
+    position: fixed;
+    text-align: center;
+    font-size: 13px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #282828;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10000;
+    box-shadow: 0 0 10px #000;
+  }
+
+  .confirm-dialog button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .confirm-dialog .yes {
+    background: red;
+    color: white;
+  }
+
+  .confirm-dialog .no {
+    background: #444;
+    color: white;
+    margin-left: 10px;
+  }
+
+  .liked-users-summary {
+    font-size: 13px;
+    margin-top: 5px;
+    color: #ccc;
+    user-select: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .liked-users-summary span {
+    user-select: text;
+    color: #ccc;
+    font-weight: normal;
+    margin-right: 3px;
+  }
+
+  .liked-users-summary span.liked-users-more {
+    color: #ccc;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+  }
+
+  .liked-users-list {
+    font-size: 13px;
+    margin-top: 5px;
+    color: #ddd;
+    background: #282828;
+    border-radius: 5px;
+    padding: 5px 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+    user-select: text;
+  }
+
+  .liked-users-list div {
+    margin: 2px 0;
+    user-select: text;
+  }
+</style>
+
 </head>
 <body>
   <div id="loader">
@@ -279,10 +349,54 @@
 
       postEl.appendChild(likeBtn);
 
-      const time = document.createElement("div");
-      time.className = "post-time";
-      time.textContent = data.time || "";
-      postEl.appendChild(time);
+      // Yeni hissə: Like edənlərin qısa və tam siyahısı
+      const likedUsersSummary = document.createElement("div");
+      likedUsersSummary.className = "liked-users-summary";
+
+      const likedUsersList = document.createElement("div");
+      likedUsersList.className = "liked-users-list";
+
+      function updateLikedUsers() {
+        const users = Object.keys(likeCache[postId] || {});
+        if (users.length === 0) {
+          likedUsersSummary.textContent = "";
+          likedUsersList.style.display = "none";
+        } else if (users.length <= 2) {
+          // 2 və az user varsa, hamısını @ ilə göstəririk, siyahı gizli
+          likedUsersSummary.innerHTML = users.map(u => `<span>@${u}</span>`).join(", ");
+          likedUsersList.style.display = "none";
+        } else {
+          // 3 və daha çox user varsa, ilk 2-si, sonra ...
+          const firstTwo = users.slice(0,2).map(u => `<span>@${u}</span>`).join(", ");
+          const moreCount = users.length - 2;
+          likedUsersSummary.innerHTML = `${firstTwo}, <span class="liked-users-more">... (kliklə)</span>`;
+          likedUsersList.style.display = "none";
+
+          // tam siyahı alt-alta, @ ilə
+          likedUsersList.innerHTML = "";
+          users.slice(2).forEach(u => {
+            const div = document.createElement("div");
+            div.textContent = "@" + u;
+            likedUsersList.appendChild(div);
+          });
+
+          // ... klik event
+          likedUsersSummary.querySelector(".liked-users-more").onclick = () => {
+            if(likedUsersList.style.display === "none" || likedUsersList.style.display === "") {
+              likedUsersList.style.display = "block";
+              likedUsersSummary.querySelector(".liked-users-more").textContent = "(bağla)";
+            } else {
+              likedUsersList.style.display = "none";
+              likedUsersSummary.querySelector(".liked-users-more").textContent = "... (kliklə)";
+            }
+          };
+        }
+      }
+
+      updateLikedUsers();
+
+      postEl.appendChild(likedUsersSummary);
+      postEl.appendChild(likedUsersList);
 
       return postEl;
     }
@@ -308,7 +422,7 @@
       if (existing) {
         postsContainer.replaceChild(postEl, existing);
       } else {
-        postsContainer.appendChild(postEl); // sıraya uyğun
+        postsContainer.appendChild(postEl);
       }
     }
 
