@@ -363,11 +363,11 @@
           likedUsersList.style.display = "none";
         } else if (users.length <= 2) {
           // 2 və az user varsa, hamısını @ ilə göstəririk, siyahı gizli
-          likedUsersSummary.innerHTML = users.map(u => `<span>@${u}</span>`).join(", ");
+          likedUsersSummary.innerHTML = users.map(u => `<span>${u}</span>`).join(", ");
           likedUsersList.style.display = "none";
         } else {
           // 3 və daha çox user varsa, ilk 2-si, sonra ...
-          const firstTwo = users.slice(0,2).map(u => `<span>@${u}</span>`).join(", ");
+          const firstTwo = users.slice(0,2).map(u => `<span>${u}</span>`).join(", ");
           const moreCount = users.length - 2;
           likedUsersSummary.innerHTML = `${firstTwo}, <span class="liked-users-more">... (kliklə)</span>`;
           likedUsersList.style.display = "none";
@@ -376,7 +376,7 @@
           likedUsersList.innerHTML = "";
           users.slice(2).forEach(u => {
             const div = document.createElement("div");
-            div.textContent = "@" + u;
+            div.textContent = "" + u;
             likedUsersList.appendChild(div);
           });
 
