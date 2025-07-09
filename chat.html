@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <title>Mesajlar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body {
+      background-color: #181818;
+      color: white;
+      font-family: sans-serif;
+      padding: 10px;
+      margin: 0;
+    }
+
+    #title {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .message {
+      background-color: #2c2c2c;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .profile {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .username {
+      font-weight: bold;
+      font-size: 1em;
+    }
+
+    .nickname {
+      color: #aaa;
+      font-size: 0.9em;
+    }
+
+    .content {
+      margin-top: 5px;
+      font-size: 1em;
+    }
+
+    .content img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 5px;
+    }
+
+    .time {
+      font-size: 0.8em;
+      color: #bbb;
+      margin-top: 8px;
+    }
+
+    .delete-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      color: red;
+      font-size: 24px;
+    }
+
+    .delete-icon:hover {
+      color: #ff4c4c;
+    }
+
+    /* Orta popup */
+    #confirmOverlay {
+        text-align: center;
+        font-size: 13pxs;
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #confirmBox {
+      background-color: #292929;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px black;
+    }
+
+    #confirmBox p {
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    #confirmBox button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 0 10px;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    #confirmBox button:hover {
+      background-color: #c00000;
+    }
+
+    /* Loading animasiya */
+    #loading {
+       width: 30px;
+  height: 30px;
+  border: 3px solid #444;
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  position: fixed;
+  top: 50%;
+  left: 45%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading"></div>
+  <div id="messagesContainer"></div>
+
+  <!-- Orta popup -->
+  <div id="confirmOverlay">
+    <div id="confirmBox">
+      <p>Mesaj silinsin?</p>
+      <button id="yesBtn">Bəli</button>
+      <button id="noBtn">Xeyr</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMUZ-RMaQBZdaF39mpLNq79BCutrANkXA",
+      authDomain: "pasyak-mess.firebaseapp.com",
+      databaseURL: "https://pasyak-mess-default-rtdb.firebaseio.com",
+      projectId: "pasyak-mess",
+      storageBucket: "pasyak-mess.firebasestorage.app",
+      messagingSenderId: "243117691435",
+      appId: "1:243117691435:web:aade1765ddec56ad6bd06e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterUser = urlParams.get("user");
+    const profileOverride = urlParams.get("profile");
+
+    const container = document.getElementById("messagesContainer");
+    const loading = document.getElementById("loading");
+    const title = document.getElementById("title");
+
+    const confirmOverlay = document.getElementById("confirmOverlay");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+
+    let pendingDeleteKey = null;
+
+    noBtn.onclick = () => {
+      confirmOverlay.style.display = "none";
+      pendingDeleteKey = null;
+    };
+
+    yesBtn.onclick = () => {
+      if (pendingDeleteKey) {
+        remove(ref(db, `message/${pendingDeleteKey}`));
+      }
+      confirmOverlay.style.display = "none";
+      pendingDeleteKey = null;
+    };
+
+    const messageRef = ref(db, "message");
+
+    // 3 saniyə loading göstər
+    setTimeout(() => {
+      onValue(messageRef, (snapshot) => {
+        loading.style.display = "none";
+        container.innerHTML = "";
+
+        if (!snapshot.exists()) {
+          return; // boş ekran göstər, heç nə yazılmır
+        }
+
+        const data = snapshot.val();
+        let messageCount = 0;
+
+        Object.entries(data).forEach(([key, rawJson]) => {
+          try {
+            const msg = JSON.parse(rawJson);
+            if (filterUser && msg.nickname !== filterUser) return;
+
+            messageCount++;
+
+            const div = document.createElement("div");
+            div.className = "message";
+
+            const profileUrl = (profileOverride && msg.nickname === filterUser)
+              ? profileOverride
+              : msg.profile_pct;
+
+            div.innerHTML = `
+              <span class="material-icons delete-icon" title="Sil">delete</span>
+              <div class="header">
+                <img src="${profileUrl}" class="profile" />
+                <div class="user-info">
+                  <span class="username">${msg.user}</span>
+                  <span class="nickname">${msg.nickname}</span>
+                </div>
+              </div>
+              <div class="content">
+                ${msg.message ? msg.message : `<img src="${msg.image}" alt="Mesaj şəkli">`}
+              </div>
+              <div class="time">${msg.time}</div>
+            `;
+
+            div.querySelector(".delete-icon").addEventListener("click", () => {
+              pendingDeleteKey = key;
+              confirmOverlay.style.display = "flex";
+            });
+
+            container.appendChild(div);
+          } catch (e) {
+            console.error("Parse xətası:", e);
+          }
+        });
+
+        if (messageCount > 0) {
+          title.style.display = "block";
+        }
+      });
+    }, 3000);
+  </script>
+</body>
+</html>
