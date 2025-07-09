@@ -381,15 +381,15 @@
           likedUsersSummary.textContent = "";
           likedUsersList.style.display = "none";
         } else if (users.length <= 2) {
-          likedUsersSummary.innerHTML = users.map(u => `@${u}`).join(", ");
+          likedUsersSummary.innerHTML = users.map(u => `${u}`).join(", ");
           likedUsersList.style.display = "none";
         } else {
-          const firstTwo = users.slice(0, 2).map(u => `@${u}`).join(", ");
+          const firstTwo = users.slice(0, 2).map(u => `${u}`).join(", ");
           likedUsersSummary.innerHTML = `${firstTwo}, <span style="color:#ccc; cursor:pointer;">... (kliklə)</span>`;
           likedUsersList.innerHTML = "";
           users.slice(2).forEach(u => {
             const d = document.createElement("div");
-            d.textContent = "@" + u;
+            d.textContent = "" + u;
             likedUsersList.appendChild(d);
           });
           likedUsersSummary.querySelector("span").onclick = () => {
