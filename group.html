@@ -52,7 +52,6 @@
       word-break: break-word;
     }
 
-    /* ✅ LOADING ANİMASİYA */
     #loading {
       position: fixed;
       top: 50%;
@@ -75,12 +74,12 @@
 </head>
 <body>
 
-  <div id="loading"></div> <!-- 🔄 Animasiya elementi -->
-  <div id="groupList" style="display:none;"></div> <!-- Başlanğıcda gizlidir -->
+  <div id="loading"></div>
+  <div id="groupList" style="display:none;"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
@@ -111,7 +110,8 @@
 
     const userGroupsRef = ref(db);
 
-    get(userGroupsRef).then(snapshot => {
+    // ✅ CANLI DINLƏYİCİ — məlumat dəyişəndə yenidən render edilir
+    onValue(userGroupsRef, (snapshot) => {
       loading.style.display = "none";
       groupList.style.display = "flex";
 
@@ -131,18 +131,14 @@
         }
       }
 
+      groupList.innerHTML = "";
+
+      const groupsData = data["groups"] || {};
+
       if (userGroupsIds.length === 0) {
         groupList.innerHTML = "İstifadəçinin aid olduğu qrup yoxdur.";
         return;
       }
-
-      const groupsData = data["groups"];
-      if (!groupsData) {
-        groupList.innerHTML = "'groups' məlumatları tapılmadı.";
-        return;
-      }
-
-      groupList.innerHTML = "";
 
       userGroupsIds.forEach(gid => {
         let groupStr = groupsData[gid];
@@ -173,12 +169,14 @@
       if (groupList.children.length === 0) {
         groupList.innerHTML = "İstifadəçinin aid olduğu qruplar tapılmadı.";
       }
-    }).catch(error => {
-      console.error(error);
+
+    }, (error) => {
+      console.error("Firebase oxuma xətası:", error);
       loading.style.display = "none";
       groupList.style.display = "block";
       groupList.innerHTML = "Məlumatları yükləmək mümkün olmadı.";
     });
+
   </script>
 </body>
 </html>
