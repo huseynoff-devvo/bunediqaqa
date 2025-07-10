@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>İstifadəçinin Qrupları</title>
   <style>
-     * {
-    outline: none !important;
-    box-shadow: none !important;
-    -webkit-tap-highlight-color: transparent;
-  }
+    * {
+      outline: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
     body {
       background-color: #181818;
       color: white;
@@ -51,10 +51,32 @@
       font-weight: bold;
       word-break: break-word;
     }
+
+    /* ✅ LOADING ANİMASİYA */
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 3px solid #333;
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      z-index: 999;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <div id="groupList">Yüklənir...</div>
+
+  <div id="loading"></div> <!-- 🔄 Animasiya elementi -->
+  <div id="groupList" style="display:none;"></div> <!-- Başlanğıcda gizlidir -->
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -78,37 +100,32 @@
     const currentUser = urlParams.get("user");
 
     const groupList = document.getElementById("groupList");
+    const loading = document.getElementById("loading");
 
     if (!currentUser) {
+      loading.style.display = "none";
+      groupList.style.display = "block";
       groupList.innerHTML = "URL-də ?user= parametrini əlavə edin.";
       throw new Error("İstifadəçi (user) parametri yoxdur!");
     }
 
-    // 1. İstifadəçi qruplarını root səviyyədən oxuyuruq
-    // DİQQƏT: açarında boşluq var, ona görə qabaqcadan boşluqları trimlə yoxla
     const userGroupsRef = ref(db);
 
     get(userGroupsRef).then(snapshot => {
+      loading.style.display = "none";
+      groupList.style.display = "flex";
+
       if (!snapshot.exists()) {
         groupList.innerHTML = "Data mövcud deyil.";
         return;
       }
 
       const data = snapshot.val();
-
-      // İstifadəçinin aid olduğu qrupları tapırıq:
-      // data içində açarlar: " 255110", "groups", ...
-      // Biz bunları loop edirik, istifadəçi adı ilə (məsələn @huseynoff) dəyəri + olan açarları götürürük
-
       const userGroupsIds = [];
 
       for (const key in data) {
-        if (key.trim() === "") continue; // boşluq açarı ignore
-
-        if (key === "groups") continue; // bu qrup məlumatlarıdır, pass et
-
-        const groupUsers = data[key]; // məsələn { "@huseynoff": "+" }
-
+        if (key.trim() === "" || key === "groups") continue;
+        const groupUsers = data[key];
         if (groupUsers && typeof groupUsers === "object" && currentUser in groupUsers) {
           userGroupsIds.push(key.trim());
         }
@@ -119,7 +136,6 @@
         return;
       }
 
-      // 2. İndi groups node-dan məlumatları oxuyuruq
       const groupsData = data["groups"];
       if (!groupsData) {
         groupList.innerHTML = "'groups' məlumatları tapılmadı.";
@@ -130,10 +146,8 @@
 
       userGroupsIds.forEach(gid => {
         let groupStr = groupsData[gid];
-
         if (!groupStr) return;
 
-        // groups içində məlumat JSON string kimi saxlanıb, parse edirik
         let groupObj = null;
         try {
           groupObj = JSON.parse(groupStr);
@@ -145,16 +159,13 @@
         if (groupObj && groupObj.profile_group && groupObj.name) {
           const card = document.createElement("div");
           card.className = "group-card";
-
           card.onclick = () => {
             window.location.href = `?user=${encodeURIComponent(currentUser)}&group_id=${encodeURIComponent(gid)}`;
           };
-
           card.innerHTML = `
             <img src="${groupObj.profile_group.trim()}" alt="Qrup şəkli" />
-            <div class="group-name">${groupObj.name}</div>
+            <div class="group-name">${groupObj.name} <span style="opacity:0.6; font-size:0.85em; margin-left:8px;">#${gid}</span></div>
           `;
-
           groupList.appendChild(card);
         }
       });
@@ -164,9 +175,10 @@
       }
     }).catch(error => {
       console.error(error);
+      loading.style.display = "none";
+      groupList.style.display = "block";
       groupList.innerHTML = "Məlumatları yükləmək mümkün olmadı.";
     });
-
   </script>
 </body>
 </html>
