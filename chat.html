@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Qrup Mesajları</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <style>
+    /* ...stil hissəsi dəyişməzdir, kodu qısa saxladım ... */
     * {
       -webkit-tap-highlight-color: transparent;
     }
@@ -177,7 +178,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentUserNick = urlParams.get("user");
     const overrideProfile = urlParams.get("profile");
-    const group = urlParams.get("group");
+    const groupId = urlParams.get("group_id");  // <-- buranı dəyişdik
 
     const container = document.getElementById("messagesContainer");
     const loading = document.getElementById("loading");
@@ -193,20 +194,20 @@
     };
 
     yesBtn.onclick = () => {
-      if (pendingDeleteKey && group) {
-        remove(ref(db, `${group}/${pendingDeleteKey}`));
+      if (pendingDeleteKey && groupId) {
+        remove(ref(db, `${groupId}/${pendingDeleteKey}`));
       }
       confirmOverlay.style.display = "none";
       pendingDeleteKey = null;
     };
 
-    if (!currentUserNick || !group) {
+    if (!currentUserNick || !groupId) {
       container.innerHTML = "<p style='color:red'>İstifadəçi və ya qrup tapılmadı.</p>";
       loading.style.display = "none";
-      throw new Error("user və group parametrləri vacibdir");
+      throw new Error("user və group_id parametrləri vacibdir");
     }
 
-    const messageRef = ref(db, group);
+    const messageRef = ref(db, groupId);
 
     setTimeout(() => {
       onValue(messageRef, (snapshot) => {
