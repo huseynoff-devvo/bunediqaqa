@@ -2,20 +2,19 @@
 <html lang="az">
 <head>
   <meta charset="UTF-8">
-  <title>Mesajlar</title>
+  <title>Qrup Mesajları</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-
-     * {
-    -webkit-tap-highlight-color: transparent;
-  }
-  *:focus,
-  *:active,
-  *:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-  }
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    *:focus,
+    *:active,
+    *:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
     body {
       background-color: #181818;
       color: white;
@@ -23,13 +22,11 @@
       padding: 10px;
       margin: 0;
     }
-
     #messagesContainer {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-
     .message {
       max-width: 80%;
       padding: 15px;
@@ -38,62 +35,51 @@
       display: flex;
       flex-direction: column;
     }
-
     .own-message {
       align-self: flex-end;
       background-color: #003366;
     }
-
     .other-message {
       align-self: flex-start;
       background-color: #2c2c2c;
     }
-
     .header {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 8px;
     }
-
     .profile {
       width: 50px;
       height: 50px;
       border-radius: 50%;
       object-fit: cover;
     }
-
     .user-info {
       display: flex;
       flex-direction: column;
     }
-
     .username {
       font-weight: bold;
       font-size: 1em;
     }
-
     .nickname {
       color: #aaa;
       font-size: 0.9em;
     }
-
     .content {
       font-size: 1em;
     }
-
     .content img {
       max-width: 100%;
       border-radius: 10px;
       margin-top: 5px;
     }
-
     .time {
       font-size: 0.8em;
       color: #bbb;
       margin-top: 8px;
     }
-
     .delete-icon {
       position: absolute;
       bottom: 10px; 
@@ -102,11 +88,9 @@
       color: red;
       font-size: 24px;
     }
-
     .delete-icon:hover {
       color: #ff4c4c;
     }
-
     #confirmOverlay {
       display: none;
       position: fixed;
@@ -117,7 +101,6 @@
       justify-content: center;
       align-items: center;
     }
-
     #confirmBox {
       background-color: #292929;
       padding: 20px;
@@ -125,12 +108,10 @@
       text-align: center;
       box-shadow: 0 0 10px black;
     }
-
     #confirmBox p {
       margin-bottom: 20px;
       font-size: 1.1em;
     }
-
     #confirmBox button {
       background-color: red;
       color: white;
@@ -141,11 +122,9 @@
       font-size: 1em;
       cursor: pointer;
     }
-
     #confirmBox button:hover {
       background-color: #c00000;
     }
-
     #loading {
       width: 30px;
       height: 30px;
@@ -159,7 +138,6 @@
       transform: translate(-50%, -50%);
       z-index: 1000;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -197,8 +175,9 @@
     const db = getDatabase(app);
 
     const urlParams = new URLSearchParams(window.location.search);
-    const currentUserNick = urlParams.get("user"); // ?user=@huseynoff
-    const overrideProfile = urlParams.get("profile"); // ?profile=https://...
+    const currentUserNick = urlParams.get("user");
+    const overrideProfile = urlParams.get("profile");
+    const group = urlParams.get("group");
 
     const container = document.getElementById("messagesContainer");
     const loading = document.getElementById("loading");
@@ -214,14 +193,20 @@
     };
 
     yesBtn.onclick = () => {
-      if (pendingDeleteKey) {
-        remove(ref(db, `message/${pendingDeleteKey}`));
+      if (pendingDeleteKey && group) {
+        remove(ref(db, `${group}/${pendingDeleteKey}`));
       }
       confirmOverlay.style.display = "none";
       pendingDeleteKey = null;
     };
 
-    const messageRef = ref(db, "message");
+    if (!currentUserNick || !group) {
+      container.innerHTML = "<p style='color:red'>İstifadəçi və ya qrup tapılmadı.</p>";
+      loading.style.display = "none";
+      throw new Error("user və group parametrləri vacibdir");
+    }
+
+    const messageRef = ref(db, group);
 
     setTimeout(() => {
       onValue(messageRef, (snapshot) => {
@@ -237,8 +222,8 @@
             const msg = JSON.parse(rawJson);
             const isOwn = msg.nickname === currentUserNick;
 
-            // Profil override varsa tətbiq et
-            if (msg.nickname === currentUserNick && overrideProfile) {
+            // Öz profil şəklini override et
+            if (isOwn && overrideProfile) {
               msg.profile_pct = overrideProfile;
             }
 
@@ -248,14 +233,14 @@
             div.innerHTML = `
               ${isOwn ? '<span class="material-icons delete-icon" title="Sil">delete</span>' : ''}
               <div class="header">
-                <img src="${msg.profile_pct}" class="profile" />
+                <img src="${msg.profile_pct.trim()}" class="profile" />
                 <div class="user-info">
                   <span class="username">${msg.user}</span>
                   <span class="nickname">${msg.nickname}</span>
                 </div>
               </div>
               <div class="content">
-                ${msg.message ? msg.message : `<img src="${msg.image}" alt="Mesaj şəkli">`}
+                ${msg.message ? msg.message : `<img src="${msg.image.trim()}" alt="Mesaj şəkli">`}
               </div>
               <div class="time">${msg.time}</div>
             `;
@@ -269,11 +254,11 @@
 
             container.appendChild(div);
           } catch (e) {
-            console.error("Parse xətası:", e);
+            console.error("Mesaj parse xətası:", e);
           }
         });
       });
-    }, 3000);
+    }, 2000);
   </script>
 </body>
 </html>
