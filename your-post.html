@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
+  <title>Bütün Postlar (Canlı)</title>
   <style>
   @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-  /* GLOBAL RESET FOR FOCUS AND TAP HIGHLIGHT */
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -65,7 +64,6 @@
     display: flex;
     align-items: center;
     margin-bottom: 10px;
-    position: relative;
   }
 
   .profile-pic {
@@ -108,32 +106,6 @@
     margin-top: 5px;
   }
 
-  .like-button {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 5px;
-    margin-top: 5px;
-    user-select: none;
-    transition: color 0.3s;
-  }
-
-  .like-button.liked {
-    color: #ff4d4d;
-  }
-
-  .like-button .material-icons {
-    margin-right: 5px;
-  }
-
-  .like-count {
-    margin-left: 5px;
-  }
-
-  /* Bəyənənlərin siyahısı üçün */
   .liked-users-summary {
     font-size: 13px;
     margin-top: 5px;
@@ -153,15 +125,12 @@
     max-height: 150px;
     overflow-y: auto;
     display: none;
-    box-shadow: none;
   }
-</style>
-
+  </style>
 </head>
 <body>
   <div id="loader">
     <div class="spinner"></div>
-    <p style="color:white; margin-top: 15px;"></p>
   </div>
 
   <div id="posts" style="display:none;"></div>
@@ -189,7 +158,7 @@
 
     let likeCache = {};
 
-    function renderPost(postId, data, isLikedByUser) {
+    function renderPost(postId, data) {
       if (showOnlyMyPosts && data.nickname !== currentUser) return null;
 
       if (newProfileURL && data.nickname === currentUser && data.profile !== newProfileURL) {
@@ -223,7 +192,6 @@
       userBox.appendChild(nickname);
       header.appendChild(img);
       header.appendChild(userBox);
-
       postEl.appendChild(header);
 
       if (data.text) {
@@ -240,62 +208,12 @@
         postEl.appendChild(image);
       }
 
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "like-button";
-      if (isLikedByUser) likeBtn.classList.add("liked");
-
-      likeBtn.innerHTML = `
-        <span class="material-icons">favorite</span>
-        <span class="like-count">${data.likes || 0}</span>
-      `;
-
-      likeBtn.addEventListener("click", () => {
-        const likeRef = db.ref(`likes/${postId}/${currentUser}`);
-        const postRef = db.ref(`posts/${postId}`);
-
-        likeRef.once("value").then(snap => {
-          if (snap.exists()) {
-            likeRef.remove();
-            postRef.once("value").then(postSnap => {
-              let parsed = JSON.parse(postSnap.val());
-              parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
-              postRef.set(JSON.stringify(parsed));
-            });
-          } else {
-            likeRef.set(true);
-            postRef.once("value").then(postSnap => {
-              let parsed = JSON.parse(postSnap.val());
-              parsed.likes = (parsed.likes || 0) + 1;
-              postRef.set(JSON.stringify(parsed));
-            });
-          }
-        });
-      });
-
-      postEl.appendChild(likeBtn);
-
-      // *** Yeni əlavə: like edənlərin qısa və tam siyahısı ***
-
+      // Liked users
       const likedUsersSummary = document.createElement("div");
       likedUsersSummary.className = "liked-users-summary";
-      likedUsersSummary.style.fontSize = "13px";
-      likedUsersSummary.style.marginTop = "5px";
-      likedUsersSummary.style.color = "#ccc";
-      likedUsersSummary.style.cursor = "pointer";
-      likedUsersSummary.style.userSelect = "none";
-      likedUsersSummary.style.whiteSpace = "nowrap";
 
       const likedUsersList = document.createElement("div");
       likedUsersList.className = "liked-users-list";
-      likedUsersList.style.fontSize = "13px";
-      likedUsersList.style.marginTop = "5px";
-      likedUsersList.style.color = "#ddd";
-      likedUsersList.style.background = "transparent";
-      likedUsersList.style.borderRadius = "5px";
-      likedUsersList.style.padding = "5px 10px";
-      likedUsersList.style.maxHeight = "150px";
-      likedUsersList.style.overflowY = "auto";
-      likedUsersList.style.display = "none";
 
       function updateLikedUsers() {
         const usersObj = likeCache[postId] || {};
@@ -328,7 +246,6 @@
       }
 
       updateLikedUsers();
-
       postEl.appendChild(likedUsersSummary);
       postEl.appendChild(likedUsersList);
 
@@ -341,8 +258,7 @@
     }
 
     function updatePost(postId, data) {
-      const isLiked = likeCache[postId] && likeCache[postId][currentUser];
-      const postEl = renderPost(postId, data, isLiked);
+      const postEl = renderPost(postId, data);
       const existing = document.getElementById("post_" + postId);
 
       if (!postEl) {
