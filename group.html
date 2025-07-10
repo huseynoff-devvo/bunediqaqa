@@ -1,55 +1,64 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8">
-  <title>Qruplarım</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>İstifadəçinin Qrupları</title>
   <style>
-    * {
-      -webkit-tap-highlight-color: transparent;
-    }
-    *:focus,
-    *:active,
-    *:focus-visible {
-      outline: none !important;
-      box-shadow: none !important;
-    }
+     * {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
     body {
       background-color: #181818;
       color: white;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      margin: 0; padding: 20px;
     }
-    .group {
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    #groupList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+    }
+    .group-card {
       background-color: #282828;
       border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 10px;
+      width: 100%;
+      padding: 15px;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      cursor: pointer;
-      transition: background-color 0.2s;
+      gap: 15px;
+      transition: background-color 0.3s ease;
     }
-    .group:hover {
-      background-color: #333;
+    .group-card:hover {
+      background-color: #383838;
     }
-    .group img {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      margin-right: 12px;
+    .group-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
     }
     .group-name {
       font-size: 18px;
+      font-weight: bold;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
-  <div id="groups"></div>
+  <div id="groupList">Yüklənir...</div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
@@ -65,54 +74,99 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const params = new URLSearchParams(window.location.search);
-    const currentUser = params.get("user");
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get("user");
 
-    const groupContainer = document.getElementById("groups");
+    const groupList = document.getElementById("groupList");
 
     if (!currentUser) {
-      groupContainer.innerHTML = "<p>User tapılmadı.</p>";
-      throw new Error("User parametri URL-də yoxdur.");
+      groupList.innerHTML = "URL-də ?user= parametrini əlavə edin.";
+      throw new Error("İstifadəçi (user) parametri yoxdur!");
     }
 
-    // Canlı olaraq qrupları dinlə
-    onValue(ref(db), (snapshot) => {
-      const data = snapshot.val();
-      groupContainer.innerHTML = ""; // Əvvəlkiləri təmizlə
+    // 1. İstifadəçi qruplarını root səviyyədən oxuyuruq
+    // DİQQƏT: açarında boşluq var, ona görə qabaqcadan boşluqları trimlə yoxla
+    const userGroupsRef = ref(db);
 
-      if (!data || !data.groups) {
-        groupContainer.innerHTML = "<p>Heç bir qrup tapılmadı.</p>";
+    get(userGroupsRef).then(snapshot => {
+      if (!snapshot.exists()) {
+        groupList.innerHTML = "Data mövcud deyil.";
         return;
       }
 
-      for (let groupKey in data.groups) {
-        const groupRaw = data.groups[groupKey];
-        let groupInfo;
+      const data = snapshot.val();
 
-        try {
-          groupInfo = JSON.parse(groupRaw);
-        } catch (e) {
-          console.warn("Qrup məlumatı düzgün formatda deyil:", e);
-          continue;
-        }
+      // İstifadəçinin aid olduğu qrupları tapırıq:
+      // data içində açarlar: " 255110", "groups", ...
+      // Biz bunları loop edirik, istifadəçi adı ilə (məsələn @huseynoff) dəyəri + olan açarları götürürük
 
-        const groupMembers = data[groupKey];
-        if (groupMembers && groupMembers[currentUser]) {
-          const div = document.createElement("div");
-          div.className = "group";
-          div.onclick = () => {
-            window.location.href = `?user=${encodeURIComponent(currentUser)}&group=${groupKey}`;
-          };
+      const userGroupsIds = [];
 
-          div.innerHTML = `
-            <img src="${groupInfo.profile_group}" alt="${groupInfo.name}">
-            <div class="group-name">${groupInfo.name}</div>
-          `;
+      for (const key in data) {
+        if (key.trim() === "") continue; // boşluq açarı ignore
 
-          groupContainer.appendChild(div);
+        if (key === "groups") continue; // bu qrup məlumatlarıdır, pass et
+
+        const groupUsers = data[key]; // məsələn { "@huseynoff": "+" }
+
+        if (groupUsers && typeof groupUsers === "object" && currentUser in groupUsers) {
+          userGroupsIds.push(key.trim());
         }
       }
+
+      if (userGroupsIds.length === 0) {
+        groupList.innerHTML = "İstifadəçinin aid olduğu qrup yoxdur.";
+        return;
+      }
+
+      // 2. İndi groups node-dan məlumatları oxuyuruq
+      const groupsData = data["groups"];
+      if (!groupsData) {
+        groupList.innerHTML = "'groups' məlumatları tapılmadı.";
+        return;
+      }
+
+      groupList.innerHTML = "";
+
+      userGroupsIds.forEach(gid => {
+        let groupStr = groupsData[gid];
+
+        if (!groupStr) return;
+
+        // groups içində məlumat JSON string kimi saxlanıb, parse edirik
+        let groupObj = null;
+        try {
+          groupObj = JSON.parse(groupStr);
+        } catch (e) {
+          console.error("JSON parse xətası:", e);
+          return;
+        }
+
+        if (groupObj && groupObj.profile_group && groupObj.name) {
+          const card = document.createElement("div");
+          card.className = "group-card";
+
+          card.onclick = () => {
+            window.location.href = `?user=${encodeURIComponent(currentUser)}&group_id=${encodeURIComponent(gid)}`;
+          };
+
+          card.innerHTML = `
+            <img src="${groupObj.profile_group.trim()}" alt="Qrup şəkli" />
+            <div class="group-name">${groupObj.name}</div>
+          `;
+
+          groupList.appendChild(card);
+        }
+      });
+
+      if (groupList.children.length === 0) {
+        groupList.innerHTML = "İstifadəçinin aid olduğu qruplar tapılmadı.";
+      }
+    }).catch(error => {
+      console.error(error);
+      groupList.innerHTML = "Məlumatları yükləmək mümkün olmadı.";
     });
+
   </script>
 </body>
 </html>
