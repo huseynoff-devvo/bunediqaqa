@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qrup Üzvləri</title>
+  <style>
+    body {
+      background-color: #181818;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 20px;
+    }
+
+    .user-card {
+      background-color: #282828;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .name {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .nickname {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    #userList {
+      display: none;
+    }
+
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #444;
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      transform: translate(-50%, -50%);
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading"></div>
+  <div id="userList"></div>
+
+  <script type="module">
+    import { initializeApp as initApp1 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { initializeApp as initApp2 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    // 1. Qrup məlumatları üçün Firebase
+    const firebaseConfigGroups = {
+      apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
+      authDomain: "pasyak-group.firebaseapp.com",
+      databaseURL: "https://pasyak-group-default-rtdb.firebaseio.com",
+      projectId: "pasyak-group",
+      storageBucket: "pasyak-group.firebasestorage.app",
+      messagingSenderId: "609320402321",
+      appId: "1:609320402321:web:0d3322a262fc807f772e30",
+      measurementId: "G-93PCBFG9QK"
+    };
+
+    // 2. İstifadəçi məlumatları üçün Firebase
+    const firebaseConfigUsers = {
+      apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+      authDomain: "pasyak-user.firebaseapp.com",
+      databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+      projectId: "pasyak-user",
+      storageBucket: "pasyak-user.firebasestorage.app",
+      messagingSenderId: "898141218588",
+      appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+    };
+
+    // Ayrı-ayrı app-lar kimi initialize edirik
+    const appGroups = initApp1(firebaseConfigGroups, "groupsApp");
+    const appUsers = initApp2(firebaseConfigUsers, "usersApp");
+
+    const dbGroups = getDatabase(appGroups);
+    const dbUsers = getDatabase(appUsers);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const groupId = urlParams.get("group_id");
+    const userList = document.getElementById("userList");
+    const loading = document.getElementById("loading");
+
+    if (!groupId) {
+      loading.style.display = "none";
+      document.body.innerHTML = "<p style='color:red'>URL-də group_id parametri tapılmadı.</p>";
+      throw new Error("group_id yoxdur");
+    }
+
+    async function loadGroupUsers() {
+      try {
+        const groupRef = ref(dbGroups, groupId);
+        const groupSnap = await get(groupRef);
+
+        if (!groupSnap.exists()) {
+          loading.style.display = "none";
+          userList.innerHTML = "<p style='color:red'>Qrup tapılmadı.</p>";
+          userList.style.display = "block";
+          return;
+        }
+
+        const groupData = groupSnap.val(); // Məsələn: { "@huseynoff": "+", "@swoid": "+", ... }
+
+        const usernames = Object.keys(groupData).map(u => u.replace("@", "").trim());
+
+        // Bütün istifadəçiləri oxuyuruq
+        const usersRef = ref(dbUsers, "Users");
+        const usersSnap = await get(usersRef);
+        const allUsers = usersSnap.val();
+
+        userList.innerHTML = "";
+        userList.style.display = "block";
+        loading.style.display = "none";
+
+        usernames.forEach(username => {
+          const rawData = allUsers?.[username];
+          if (!rawData) return;
+
+          try {
+            const [name, nick, photo] = JSON.parse(rawData);
+
+            const card = document.createElement("div");
+            card.className = "user-card";
+            card.innerHTML = `
+              <img src="${photo.trim()}" alt="Profil şəkli">
+              <div class="user-info">
+                <div class="name">${name}</div>
+                <div class="nickname">@${nick}</div>
+              </div>
+            `;
+            userList.appendChild(card);
+          } catch (e) {
+            console.error("İstifadəçi məlumatı xətalıdır:", username);
+          }
+        });
+
+        if (userList.children.length === 0) {
+          userList.innerHTML = "<p>Qrupda iştirakçı yoxdur.</p>";
+        }
+
+      } catch (err) {
+        console.error(err);
+        loading.style.display = "none";
+        userList.innerHTML = "<p style='color:red'>Xəta baş verdi.</p>";
+        userList.style.display = "block";
+      }
+    }
+
+    loadGroupUsers();
+  </script>
+</body>
+</html>
