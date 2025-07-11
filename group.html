@@ -116,7 +116,7 @@
       groupList.style.display = "flex";
 
       if (!snapshot.exists()) {
-        groupList.innerHTML = "Data mövcud deyil.";
+        groupList.innerHTML = "qrup yoxdur/.";
         return;
       }
 
@@ -136,7 +136,7 @@
       const groupsData = data["groups"] || {};
 
       if (userGroupsIds.length === 0) {
-        groupList.innerHTML = "İstifadəçinin aid olduğu qrup yoxdur.";
+        groupList.innerHTML = "qrup yoxdur/.";
         return;
       }
 
@@ -167,7 +167,7 @@
       });
 
       if (groupList.children.length === 0) {
-        groupList.innerHTML = "İstifadəçinin aid olduğu qruplar tapılmadı.";
+        groupList.innerHTML = "qrup yoxdur/.";
       }
 
     }, (error) => {
