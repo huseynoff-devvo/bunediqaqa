@@ -202,9 +202,9 @@
     };
 
     if (!currentUserNick || !groupId) {
-      container.innerHTML = "<p style='color:red'>İstifadəçi və ya qrup tapılmadı.</p>";
+      container.innerHTML = "<p style='color:red'></p>";
       loading.style.display = "none";
-      throw new Error("user və group_id parametrləri vacibdir");
+      throw new Error("");
     }
 
     const messageRef = ref(db, groupId);
