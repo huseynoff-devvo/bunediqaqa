@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İzlədiklərin</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+     * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  *:focus,
+  *:active,
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+    body {
+      background-color: #181818;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .user {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      background: #242424;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .user:hover {
+      background: #303030;
+    }
+
+    .user img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 15px;
+    }
+
+    .username {
+      font-weight: bold;
+    }
+
+    #loadingSpinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 40px;
+    }
+
+    .spinner {
+      border: 3px solid #333;
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loadingSpinner"><div class="spinner"></div></div>
+  <div id="userList" style="display: none;"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get('user');
+
+    const followConfig = {
+      apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
+  authDomain: "pasyak-following.firebaseapp.com",
+  databaseURL: "https://pasyak-following-default-rtdb.firebaseio.com",
+  projectId: "pasyak-following",
+  storageBucket: "pasyak-following.firebasestorage.app",
+  messagingSenderId: "538884111637",
+  appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
+    };
+
+    const userConfig = {
+      apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+      authDomain: "pasyak-user.firebaseapp.com",
+      databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+      projectId: "pasyak-user",
+      storageBucket: "pasyak-user.firebasestorage.app",
+      messagingSenderId: "898141218588",
+      appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+    };
+
+    const followApp = firebase.initializeApp(followConfig, "followApp");
+    const userApp = firebase.initializeApp(userConfig, "userApp");
+
+    const followDb = followApp.database();
+    const userDb = userApp.database();
+
+    function renderUser(name, nick, img) {
+      const userDiv = document.createElement('div');
+      userDiv.className = 'user';
+      userDiv.onclick = () => {
+        window.location.href = `?user=${currentUser}&other=${nick}`;
+      };
+      userDiv.innerHTML = `
+        <img src="${img.trim()}" alt="${nick}">
+        <div>
+          <div class="username">${name}</div>
+          <div>@${nick}</div>
+        </div>
+      `;
+      document.getElementById('userList').appendChild(userDiv);
+    }
+
+    function showLoading(state) {
+      document.getElementById('loadingSpinner').style.display = state ? 'flex' : 'none';
+    }
+
+    function showUserList(state) {
+      document.getElementById('userList').style.display = state ? 'block' : 'none';
+    }
+
+    function clearUserList() {
+      document.getElementById('userList').innerHTML = '';
+    }
+
+    function loadFollowingsRealtime() {
+      if (!currentUser) return;
+
+      showLoading(true);
+      followDb.ref(currentUser).on('value', snap => {
+        clearUserList();
+        const data = snap.val();
+        if (!data) {
+          showLoading(false);
+          showUserList(true);
+          return;
+        }
+
+        const usernames = Object.keys(data).filter(username => {
+          const value = (data[username] + '').replaceAll('"', '');
+          return value === '+';
+        });
+
+        if (usernames.length === 0) {
+          showLoading(false);
+          showUserList(true);
+          return;
+        }
+
+        let loaded = 0;
+        usernames.forEach(username => {
+          const cleanUsername = username.replace('@', '');
+          userDb.ref("Users/" + cleanUsername).once('value', userSnap => {
+            try {
+              const val = userSnap.val();
+              if (val) {
+                const [name, nick, img] = JSON.parse(val);
+                renderUser(name, nick, img);
+              }
+            } catch (e) {
+              console.error("Profil oxunmadı:", cleanUsername);
+            } finally {
+              loaded++;
+              if (loaded === usernames.length) {
+                showLoading(false);
+                showUserList(true);
+              }
+            }
+          });
+        });
+      });
+    }
+
+    loadFollowingsRealtime();
+  </script>
+</body>
+</html>
