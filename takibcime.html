@@ -8,14 +8,14 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
      * {
-    -webkit-tap-highlight-color: transparent;
-  }
-  *:focus,
-  *:active,
-  *:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-  }
+      -webkit-tap-highlight-color: transparent;
+    }
+    *:focus,
+    *:active,
+    *:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
     body {
       background-color: #181818;
       color: white;
@@ -109,7 +109,7 @@
       const userDiv = document.createElement('div');
       userDiv.className = 'user';
       userDiv.onclick = () => {
-        window.location.href = `?user=${currentUser}&other=${nick}`;
+        window.location.href = `?other=${nick}`;
       };
       userDiv.innerHTML = `
         <img src="${img.trim()}" alt="${nick}">
