@@ -215,7 +215,7 @@
     };
 
     if (!currentUserNick || !groupId) {
-      container.innerHTML = "<p style='color:red'>İstifadəçi və ya qrup ID təyin edilməyib.</p>";
+      container.innerHTML = "<p style='color:red'></p>";
       loading.style.display = "none";
       throw new Error("User və ya group_id URL parametrləri tapılmadı.");
     }
