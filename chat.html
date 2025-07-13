@@ -6,13 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <style>
-    /* ...stil hissəsi dəyişməzdir, kodu qısa saxladım ... */
+    /* ... stil eynidir, qısaldıram ... */
     * {
       -webkit-tap-highlight-color: transparent;
     }
-    *:focus,
-    *:active,
-    *:focus-visible {
+    *:focus, *:active, *:focus-visible {
       outline: none !important;
       box-shadow: none !important;
     }
@@ -22,19 +20,28 @@
       font-family: sans-serif;
       padding: 10px;
       margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
     #messagesContainer {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow-y: auto;
+      flex-grow: 1;
+      padding-right: 10px;
+      scroll-behavior: smooth;
     }
     .message {
+      min-width: 65%;
       max-width: 80%;
       padding: 15px;
       border-radius: 12px;
       position: relative;
       display: flex;
       flex-direction: column;
+      word-wrap: break-word;
     }
     .own-message {
       align-self: flex-end;
@@ -80,6 +87,8 @@
       font-size: 0.8em;
       color: #bbb;
       margin-top: 8px;
+      margin-right: 20px;
+      align-self: flex-end;
     }
     .delete-icon {
       position: absolute;
@@ -88,6 +97,7 @@
       cursor: pointer;
       color: red;
       font-size: 24px;
+      user-select: none;
     }
     .delete-icon:hover {
       color: #ff4c4c;
@@ -101,6 +111,7 @@
       z-index: 999;
       justify-content: center;
       align-items: center;
+      background: rgba(0,0,0,0.7);
     }
     #confirmBox {
       background-color: #292929;
@@ -108,6 +119,8 @@
       border-radius: 10px;
       text-align: center;
       box-shadow: 0 0 10px black;
+      max-width: 300px;
+      width: 80%;
     }
     #confirmBox p {
       margin-bottom: 20px;
@@ -178,7 +191,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentUserNick = urlParams.get("user");
     const overrideProfile = urlParams.get("profile");
-    const groupId = urlParams.get("group_id");  // <-- buranı dəyişdik
+    const groupId = urlParams.get("group_id");
 
     const container = document.getElementById("messagesContainer");
     const loading = document.getElementById("loading");
@@ -202,12 +215,47 @@
     };
 
     if (!currentUserNick || !groupId) {
-      container.innerHTML = "<p style='color:red'></p>";
+      container.innerHTML = "<p style='color:red'>İstifadəçi və ya qrup ID təyin edilməyib.</p>";
       loading.style.display = "none";
-      throw new Error("");
+      throw new Error("User və ya group_id URL parametrləri tapılmadı.");
     }
 
     const messageRef = ref(db, groupId);
+
+    function scrollToBottom() {
+      container.scrollTop = container.scrollHeight - container.clientHeight;
+    }
+
+    function scrollToBottomAfterImages() {
+      const images = container.querySelectorAll('.content img');
+      if (images.length === 0) {
+        scrollToBottom();
+        return;
+      }
+
+      let loadedCount = 0;
+      images.forEach(img => {
+        if (img.complete) {
+          loadedCount++;
+          if (loadedCount === images.length) {
+            scrollToBottom();
+          }
+        } else {
+          img.addEventListener('load', () => {
+            loadedCount++;
+            if (loadedCount === images.length) {
+              scrollToBottom();
+            }
+          });
+          img.addEventListener('error', () => {
+            loadedCount++;
+            if (loadedCount === images.length) {
+              scrollToBottom();
+            }
+          });
+        }
+      });
+    }
 
     setTimeout(() => {
       onValue(messageRef, (snapshot) => {
@@ -223,7 +271,6 @@
             const msg = JSON.parse(rawJson);
             const isOwn = msg.nickname === currentUserNick;
 
-            // Öz profil şəklini override et
             if (isOwn && overrideProfile) {
               msg.profile_pct = overrideProfile;
             }
@@ -258,6 +305,8 @@
             console.error("Mesaj parse xətası:", e);
           }
         });
+
+        scrollToBottomAfterImages();
       });
     }, 2000);
   </script>
