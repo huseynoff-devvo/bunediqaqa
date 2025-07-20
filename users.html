@@ -18,14 +18,18 @@
     }
 
     body {
-      background-color: #181818;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
+  background-color: #181818;
+  color: white;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
     input[type="text"] {
-      width: 100%;
+      width: 90%;
       padding: 10px;
       border-radius: 8px;
       border: none;
@@ -40,6 +44,7 @@
       background: #242424;
       padding: 10px;
       border-radius: 10px;
+      width: 90%;
       transition: background 0.3s ease;
       cursor: pointer;
     }
@@ -84,7 +89,7 @@
 <body>
   <input type="text" id="searchInput" placeholder="İstifadəçi axtar..." />
   <div id="loadingSpinner"><div class="spinner"></div></div>
-  <div id="userList" style="display: none;"></div>
+  <div id="userList" style="display: none; width: 85%;"></div>
 
   <script>
     const userConfig = {
