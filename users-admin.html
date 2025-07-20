@@ -8,12 +8,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-     * {
+    * {
       -webkit-tap-highlight-color: transparent;
     }
-    *:focus,
-    *:active,
-    *:focus-visible {
+    *:focus, *:active, *:focus-visible {
       outline: none !important;
       box-shadow: none !important;
     }
@@ -28,9 +26,8 @@
       align-items: center;
       padding: 20px;
     }
-
     input[type="text"] {
-      width: 85%;
+      width: 90%;
       max-width: 400px;
       padding: 12px 15px;
       border-radius: 10px;
@@ -39,30 +36,28 @@
       background: #1f1f1f;
       color: white;
       margin-bottom: 20px;
-      transition: 0.3s;
     }
     input[type="text"]::placeholder {
       color: #999;
     }
-
+    
     .user {
       display: flex;
       align-items: center;
       background: #1e1e1e;
       border-radius: 12px;
       padding: 10px;
+      margin-left: -2px;
+      /* margin-right: 10px; */
       margin-bottom: 15px;
       width: 95%;
       max-width: 500px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
       cursor: pointer;
-      transition: background 0.3s;
     }
-
     .user:hover {
       background: #2a2a2a;
     }
-
     .user img {
       width: 50px;
       height: 50px;
@@ -70,45 +65,36 @@
       margin-right: 15px;
       object-fit: cover;
     }
-
     .username {
       font-weight: 600;
       font-size: 15px;
     }
-       .nickname {
-  font-size: 12px;
-  color: #ccc;
-}
-
-
+    .nickname {
+      font-size: 12px;
+      color: #ccc;
+    }
     .actions {
       margin-left: auto;
       display: flex;
       gap: 12px;
     }
-
     .material-icons {
       cursor: pointer;
       font-size: 24px;
       transition: transform 0.2s;
     }
-
     .material-icons:hover {
       transform: scale(1.2);
     }
-
     .material-icons.blocked {
       color: red;
     }
-
     .material-icons.unblocked {
       color: orange;
     }
-
     #loadingSpinner {
       margin-top: 40px;
     }
-
     .spinner {
       width: 30px;
       height: 30px;
@@ -117,12 +103,11 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-
     .toast, .confirm-box {
+        width: 75%;
       position: fixed;
       top: 50%;
       left: 50%;
@@ -133,25 +118,21 @@
       z-index: 9999;
       text-align: center;
     }
-
     .toast {
       animation: fadeInOut 2.5s forwards;
     }
-
     @keyframes fadeInOut {
       0% { opacity: 0; transform: translate(-50%, -60%); }
       20% { opacity: 1; transform: translate(-50%, -50%); }
       80% { opacity: 1; transform: translate(-50%, -50%); }
       100% { opacity: 0; transform: translate(-50%, -40%); }
     }
-
     .confirm-buttons {
       margin-top: 15px;
       display: flex;
       justify-content: center;
       gap: 15px;
     }
-
     .confirm-buttons button {
       padding: 8px 20px;
       font-size: 14px;
@@ -159,12 +140,10 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
     .btn-yes {
       background: #e53935;
       color: white;
     }
-
     .btn-no {
       background: #555;
       color: white;
@@ -322,21 +301,13 @@
         await db.banned.ref("banned/" + nick).set("+");
         showToast(`${nick} bloklandı`);
       }
-      await loadBanned();
-      displayFilteredUsers(document.getElementById("searchInput").value);
-    }
-
-    async function loadBanned() {
-      const snapshot = await db.banned.ref("banned").once("value");
-      bannedList = snapshot.val() || {};
     }
 
     function listenToRealtimeUsers() {
       showLoading(true);
-      db.users.ref("Users").on("value", async snapshot => {
+      db.users.ref("Users").on("value", snapshot => {
         const data = snapshot.val();
         allUsers = [];
-
         for (let key in data) {
           try {
             const [name, nick, img] = JSON.parse(data[key]);
@@ -345,10 +316,15 @@
             console.error("İstifadəçi oxunmadı:", key);
           }
         }
-
-        await loadBanned();
         showLoading(false);
         showUserList(true);
+        displayFilteredUsers(document.getElementById("searchInput").value);
+      });
+    }
+
+    function listenToRealtimeBanned() {
+      db.banned.ref("banned").on("value", snapshot => {
+        bannedList = snapshot.val() || {};
         displayFilteredUsers(document.getElementById("searchInput").value);
       });
     }
@@ -359,6 +335,7 @@
     });
 
     listenToRealtimeUsers();
+    listenToRealtimeBanned();
   </script>
 </body>
 </html>
