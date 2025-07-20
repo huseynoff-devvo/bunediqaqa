@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İstifadəçi Siyahısı</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+     * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    *:focus,
+    *:active,
+    *:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    input[type="text"] {
+      width: 85%;
+      max-width: 400px;
+      padding: 12px 15px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      background: #1f1f1f;
+      color: white;
+      margin-bottom: 20px;
+      transition: 0.3s;
+    }
+    input[type="text"]::placeholder {
+      color: #999;
+    }
+
+    .user {
+      display: flex;
+      align-items: center;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 15px;
+      width: 95%;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .user:hover {
+      background: #2a2a2a;
+    }
+
+    .user img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 15px;
+      object-fit: cover;
+    }
+
+    .username {
+      font-weight: 600;
+      font-size: 15px;
+    }
+       .nickname {
+  font-size: 12px;
+  color: #ccc;
+}
+
+
+    .actions {
+      margin-left: auto;
+      display: flex;
+      gap: 12px;
+    }
+
+    .material-icons {
+      cursor: pointer;
+      font-size: 24px;
+      transition: transform 0.2s;
+    }
+
+    .material-icons:hover {
+      transform: scale(1.2);
+    }
+
+    .material-icons.blocked {
+      color: red;
+    }
+
+    .material-icons.unblocked {
+      color: orange;
+    }
+
+    #loadingSpinner {
+      margin-top: 40px;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 4px solid #333;
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .toast, .confirm-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #292929;
+      padding: 15px 25px;
+      border-radius: 10px;
+      z-index: 9999;
+      text-align: center;
+    }
+
+    .toast {
+      animation: fadeInOut 2.5s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, -60%); }
+      20% { opacity: 1; transform: translate(-50%, -50%); }
+      80% { opacity: 1; transform: translate(-50%, -50%); }
+      100% { opacity: 0; transform: translate(-50%, -40%); }
+    }
+
+    .confirm-buttons {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .confirm-buttons button {
+      padding: 8px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-yes {
+      background: #e53935;
+      color: white;
+    }
+
+    .btn-no {
+      background: #555;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <input type="text" id="searchInput" placeholder="İstifadəçi axtar..." />
+  <div id="loadingSpinner"><div class="spinner"></div></div>
+  <div id="userList" style="display: none;"></div>
+
+  <script>
+    const firebaseConfigs = {
+      users: {
+        apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+        databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com"
+      },
+      ids: {
+        apiKey: "AIzaSyD0uiBSdiQC2bPQssIgQf4kvQmMHDUsO5c",
+        databaseURL: "https://pasyak-id-default-rtdb.firebaseio.com"
+      },
+      passwords: {
+        apiKey: "AIzaSyC8nJ6jro4wDfJXnleItvDinFVCuI0OAvs",
+        databaseURL: "https://pasyak-pass-default-rtdb.firebaseio.com"
+      },
+      banned: {
+        apiKey: "AIzaSyD_wWa67YMLQI_F0Jidp09Ds_rNB1XB4Cs",
+        databaseURL: "https://pasyak-grou-default-rtdb.firebaseio.com"
+      }
+    };
+
+    const apps = {
+      users: firebase.initializeApp(firebaseConfigs.users, "users"),
+      ids: firebase.initializeApp(firebaseConfigs.ids, "ids"),
+      passwords: firebase.initializeApp(firebaseConfigs.passwords, "passwords"),
+      banned: firebase.initializeApp(firebaseConfigs.banned, "banned")
+    };
+
+    const db = {
+      users: apps.users.database(),
+      ids: apps.ids.database(),
+      passwords: apps.passwords.database(),
+      banned: apps.banned.database()
+    };
+
+    let allUsers = [];
+    let bannedList = {};
+
+    function showToast(msg) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerText = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+
+    function showConfirm(msg, onYes) {
+      const box = document.createElement("div");
+      box.className = "confirm-box";
+      box.innerHTML = `<div>${msg}</div>
+        <div class="confirm-buttons">
+          <button class="btn-yes">Bəli</button>
+          <button class="btn-no">Xeyr</button>
+        </div>`;
+      document.body.appendChild(box);
+      box.querySelector(".btn-yes").onclick = () => {
+        onYes();
+        box.remove();
+      };
+      box.querySelector(".btn-no").onclick = () => box.remove();
+    }
+
+    function renderUser(name, nick, img, id) {
+      const userDiv = document.createElement('div');
+      userDiv.className = 'user';
+      const isBanned = bannedList[nick];
+
+      userDiv.onclick = () => {
+        window.location.href = `?other=${nick}`;
+      };
+
+      userDiv.innerHTML = `
+        <img src="${img.trim()}" alt="${nick}">
+        <div>
+          <div class="username">${name}</div>
+          <div class="nickname">@${nick}</div>
+        </div>
+        <div class="actions" onclick="event.stopPropagation()">
+          <span class="material-icons ${isBanned ? 'blocked' : 'unblocked'}" onclick="toggleBlock(event, '${nick}')">${isBanned ? 'block' : 'lock_open'}</span>
+          <span class="material-icons" onclick="confirmDeleteUser(event, '${nick}', '${id}')">delete</span>
+        </div>
+      `;
+      document.getElementById('userList').appendChild(userDiv);
+    }
+
+    function showLoading(state) {
+      document.getElementById('loadingSpinner').style.display = state ? 'flex' : 'none';
+    }
+
+    function showUserList(state) {
+      document.getElementById('userList').style.display = state ? 'block' : 'none';
+    }
+
+    function clearUserList() {
+      document.getElementById('userList').innerHTML = '';
+    }
+
+    function displayFilteredUsers(keyword) {
+      const filtered = allUsers.filter(user =>
+        user.nick.toLowerCase().includes(keyword.toLowerCase())
+      );
+      clearUserList();
+      filtered.forEach(user => {
+        renderUser(user.name, user.nick, user.img, user.id);
+      });
+    }
+
+    async function getIdByNick(nick) {
+      const snapshot = await db.ids.ref("id_info").once("value");
+      const data = snapshot.val();
+      for (let id in data) {
+        const [savedNick] = JSON.parse(data[id]);
+        if (savedNick === nick) return id;
+      }
+      return null;
+    }
+
+    function confirmDeleteUser(e, nick, id) {
+      e.stopPropagation();
+      showConfirm(`${nick} istifadəçisi silinsin?`, () => deleteUser(nick, id));
+    }
+
+    async function deleteUser(nick, id) {
+      const userId = id || await getIdByNick(nick);
+      if (!userId) return showToast("ID tapılmadı.");
+
+      const ops = [
+        db.users.ref("Users/" + nick).remove(),
+        db.ids.ref("id_info/" + userId).remove(),
+        db.passwords.ref("passwords/" + nick).remove(),
+        db.banned.ref("banned/" + nick).remove()
+      ];
+
+      await Promise.all(ops);
+      showToast(`${nick} silindi`);
+    }
+
+    async function toggleBlock(e, nick) {
+      e.stopPropagation();
+      const isBanned = bannedList[nick];
+      if (isBanned) {
+        await db.banned.ref("banned/" + nick).remove();
+        showToast(`${nick} blokdan çıxarıldı`);
+      } else {
+        await db.banned.ref("banned/" + nick).set("+");
+        showToast(`${nick} bloklandı`);
+      }
+      await loadBanned();
+      displayFilteredUsers(document.getElementById("searchInput").value);
+    }
+
+    async function loadBanned() {
+      const snapshot = await db.banned.ref("banned").once("value");
+      bannedList = snapshot.val() || {};
+    }
+
+    function listenToRealtimeUsers() {
+      showLoading(true);
+      db.users.ref("Users").on("value", async snapshot => {
+        const data = snapshot.val();
+        allUsers = [];
+
+        for (let key in data) {
+          try {
+            const [name, nick, img] = JSON.parse(data[key]);
+            allUsers.push({ name, nick, img });
+          } catch (e) {
+            console.error("İstifadəçi oxunmadı:", key);
+          }
+        }
+
+        await loadBanned();
+        showLoading(false);
+        showUserList(true);
+        displayFilteredUsers(document.getElementById("searchInput").value);
+      });
+    }
+
+    document.getElementById("searchInput").addEventListener("input", e => {
+      const value = e.target.value;
+      displayFilteredUsers(value);
+    });
+
+    listenToRealtimeUsers();
+  </script>
+</body>
+</html>
