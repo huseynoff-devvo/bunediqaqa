@@ -7,8 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <style>
     html {
-    color-scheme: light;
-  }
+      color-scheme: light;
+    }
     html, body {
       margin: 0;
       padding: 0;
@@ -159,12 +159,12 @@
 
     const app = initializeApp({
       apiKey: "AIzaSyBERAe8FhHLfhVukrC35eb-Vp7cuXqww0E",
-  authDomain: "pasyak-pixels.firebaseapp.com",
-  databaseURL: "https://pasyak-pixels-default-rtdb.firebaseio.com",
-  projectId: "pasyak-pixels",
-  storageBucket: "pasyak-pixels.firebasestorage.app",
-  messagingSenderId: "974471457881",
-  appId: "1:974471457881:web:ef3380c071516000fad548"
+      authDomain: "pasyak-pixels.firebaseapp.com",
+      databaseURL: "https://pasyak-pixels-default-rtdb.firebaseio.com",
+      projectId: "pasyak-pixels",
+      storageBucket: "pasyak-pixels.firebasestorage.app",
+      messagingSenderId: "974471457881",
+      appId: "1:974471457881:web:ef3380c071516000fad548"
     });
     const db = getDatabase(app);
 
@@ -214,7 +214,6 @@
     updateSelectedColor();
 
     function draw() {
-      // Ekranı tam ağ ilə sil
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -292,29 +291,38 @@
       panX = cx - wx * scale;
       panY = cy - wy * scale;
     }
+
     canvas.addEventListener("wheel", e => {
       e.preventDefault();
       zoomAt(e.deltaY < 0 ? 1.1 : 0.9, e.clientX, e.clientY);
     }, { passive: false });
+
     zoomInBtn.onclick = () => zoomAt(1.2);
     zoomOutBtn.onclick = () => zoomAt(0.8);
 
-    // Touch zoom və pan
+    // Touch zoom və pan konflikti düzəldilmiş hissə:
     let lastTouchDist = null;
+    let isTouchDragging = false;
+    let touchStartX = 0, touchStartY = 0;
+    let lastTouchPanX = panX, lastTouchPanY = panY;
+
     canvas.addEventListener("touchstart", e => {
       if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         lastTouchDist = Math.hypot(dx, dy);
       } else if (e.touches.length === 1) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        lastPanX = panX;
-        lastPanY = panY;
+        isTouchDragging = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        lastTouchPanX = panX;
+        lastTouchPanY = panY;
       }
-    });
+    }, { passive: false });
+
     canvas.addEventListener("touchmove", e => {
-      if (e.touches.length === 2 && lastTouchDist) {
+      if (e.touches.length === 2 && lastTouchDist !== null) {
+        // Zoom
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.hypot(dx, dy);
@@ -323,22 +331,26 @@
         const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         zoomAt(factor, cx, cy);
         lastTouchDist = dist;
-      } else if (e.touches.length === 1) {
-        panX = lastPanX + (e.touches[0].clientX - startX);
-        panY = lastPanY + (e.touches[0].clientY - startY);
+        isTouchDragging = false; // İki barmaq zoom zamanı sürüşmə olmamalıdır
+      } else if (e.touches.length === 1 && isTouchDragging) {
+        // Pan
+        panX = lastTouchPanX + (e.touches[0].clientX - touchStartX);
+        panY = lastTouchPanY + (e.touches[0].clientY - touchStartY);
       }
       e.preventDefault();
     }, { passive: false });
+
     canvas.addEventListener("touchend", e => {
       if (e.changedTouches.length === 1 && !lastTouchDist) {
         const [x, y] = getCanvasCoords(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
         if (previewPixel && previewPixel.x === x && previewPixel.y === y) placePixel(x, y);
         else previewPixel = { x, y, color: currentColor };
       }
-      lastTouchDist = null;
+      if (e.touches.length < 2) lastTouchDist = null;
+      if (e.touches.length === 0) isTouchDragging = false;
     });
 
-    // Firebase data
+    // Firebase data yüklənməsi
     onValue(ref(db, 'pixels'), snapshot => {
       const data = snapshot.val();
       if (data) {
@@ -358,6 +370,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
+
   </script>
 </body>
 </html>
