@@ -110,7 +110,6 @@
 
     const userGroupsRef = ref(db);
 
-    // ✅ CANLI DINLƏYİCİ — məlumat dəyişəndə yenidən render edilir
     onValue(userGroupsRef, (snapshot) => {
       loading.style.display = "none";
       groupList.style.display = "flex";
@@ -126,13 +125,16 @@
       for (const key in data) {
         if (key.trim() === "" || key === "groups") continue;
         const groupUsers = data[key];
-        if (groupUsers && typeof groupUsers === "object" && currentUser in groupUsers) {
-          userGroupsIds.push(key.trim());
+
+        if (groupUsers && typeof groupUsers === "object") {
+          const value = groupUsers[currentUser];
+          if (value !== undefined && value !== "-") {
+            userGroupsIds.push(key.trim());
+          }
         }
       }
 
       groupList.innerHTML = "";
-
       const groupsData = data["groups"] || {};
 
       if (userGroupsIds.length === 0) {
