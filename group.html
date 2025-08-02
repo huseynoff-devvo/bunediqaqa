@@ -128,7 +128,8 @@
 
         if (groupUsers && typeof groupUsers === "object") {
           const value = groupUsers[currentUser];
-          if (value !== undefined && value !== "-") {
+          // 11 olduqda göstərmə
+          if (value !== undefined && value !== 11 ) {
             userGroupsIds.push(key.trim());
           }
         }
