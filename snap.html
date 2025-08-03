@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pasyak Reels - Videolar səsli/sessiz toggle</title>
+  <style>
+    * {
+      outline: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+    }
+    html, body {
+      height: 100%; background: #121212FF; overflow: hidden;
+      font-family: Arial, sans-serif; color: white;
+    }
+    #loader {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #121212FF;
+      display: flex; justify-content: center; align-items: center;
+      z-index: 10000;
+    }
+    .spinner {
+      border: 4px solid #333;
+      border-top: 4px solid white;
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #app {
+      height: 100vh; width: 100vw; position: relative; overflow: hidden;
+      background: #121212FF; scroll-behavior: smooth; touch-action: none;
+    }
+    .reel {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #121212FF;
+      display: flex; flex-direction: column;
+      opacity: 0;
+      transform: translateY(100%);
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      pointer-events: none;
+    }
+    .reel.active {
+      opacity: 1; transform: translateY(0);
+      z-index: 2; pointer-events: auto;
+    }
+    video {
+      width: 100%; height: 100%; object-fit: contain;
+      background: #121212FF; user-select:none; cursor: pointer;
+    }
+    .overlay {
+      position: absolute; bottom: 0; left: 0; width: 100%;
+      padding: 16px;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 30%, transparent 100%);
+      z-index: 3; color: white;
+    }
+    .profile-info {
+      display: flex; align-items: center; margin-bottom: 10px;
+    }
+    .profile-pic {
+      width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #fff; margin-right: 10px;
+    }
+    .user-details {
+      display: flex; flex-direction: column;
+    }
+    .userid {
+      font-weight: bold; font-size: 1.1rem; color: white;
+    }
+    .nickname {
+      font-size: 0.9rem; color: #aaa;
+    }
+    .text { margin: 6px 0; font-size: 1rem; }
+    .time { font-size: 0.75rem; color: #777; }
+    .like-section {
+      margin-top: 10px; display: flex; align-items: center;
+      cursor: pointer; user-select: none; width: fit-content;
+    }
+    .like-icon {
+      font-size: 28px; margin-right: 8px;
+      color: white; transition: color 0.3s;
+    }
+    .like-icon.liked {
+      color: #ff4d4d;
+    }
+    #sound-indicator {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.6);
+      padding: 15px; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center;
+      z-index: 9999; pointer-events: none;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    #sound-indicator.show {
+      opacity: 1;
+    }
+    #sound-indicator .material-icons {
+      font-size: 32px; color: white;
+    }
+    #snaps-title {
+            position: fixed;
+            top: 25px;
+            left: 20px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 1px;
+            /* text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); */
+            /* background: rgba(0,0,0,0.4); */
+            padding: 5px 12px;
+            border-radius: 12px;
+            /* backdrop-filter: blur(5px); */
+        }
+        #snaps-a {
+            position: fixed;
+            top: 25px;
+            left: 85px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 1px;
+            /* text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); */
+            /* background: rgba(0,0,0,0.4); */
+            padding: 5px 12px;
+            border-radius: 12px;
+            /* backdrop-filter: blur(5px); */
+        }
+        #snaps-p {
+            position: fixed;
+            top: 5px;
+            right: 5px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 1px;
+            /* text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); */
+            /* background: rgba(0,0,0,0.4); */
+            padding: 5px 12px;
+            border-radius: 12px;
+            /* backdrop-filter: blur(5px); */
+        }
+  </style>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=keyboard_arrow_down" />
+</head>
+<body>
+  <div id="loader">
+    <div class="spinner"></div>
+  </div>
+  <div id="app"></div>
+  <div id="snaps-title">Snaps</div>
+  <span id="snaps-a" class="material-symbols-outlined">keyboard_arrow_down</span>
+  <div id="snaps-p">^_^</div>
+  <div id="sound-indicator"><span class="material-icons">volume_up</span></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    (function () {
+      const firebaseConfig = {
+        apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
+        authDomain: "pasyak-reels.firebaseapp.com",
+        projectId: "pasyak-reels",
+        storageBucket: "pasyak-reels.firebasestorage.app",
+        messagingSenderId: "635054499590",
+        appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
+        measurementId: "G-FW0KJDLF4B"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+
+      const app = document.getElementById('app');
+      const loader = document.getElementById('loader');
+      const soundIndicator = document.getElementById('sound-indicator');
+      const soundIcon = soundIndicator.querySelector('span');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentUser = urlParams.get("user") || "anonim";
+      const customProfilePic = urlParams.get("profile");
+
+      let reels = [];
+      let likeCache = {};
+      let activeIndex = 0;
+      let isAnimating = false;
+      let allVideosSoundOn = true;
+      const fallbackVideo = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
+      let indicatorTimeout = null;
+      let touchStartY = null;
+
+      function showSoundIndicator(muted) {
+        clearTimeout(indicatorTimeout);
+        soundIcon.textContent = muted ? 'volume_off' : 'volume_up';
+        soundIndicator.classList.add('show');
+        indicatorTimeout = setTimeout(() => {
+          soundIndicator.classList.remove('show');
+        }, 1000);
+      }
+
+      function playActiveVideo(index) {
+        if (reels[index] && reels[index].video) {
+          reels[index].video.muted = !allVideosSoundOn;
+          reels[index].video.play().catch(e => {
+            console.error("Video avtomatik başlamadı, səbəb: ", e);
+            if (e.name === 'NotAllowedError') {
+              reels[index].video.muted = true;
+              reels[index].video.play().then(() => showSoundIndicator(true));
+            }
+          });
+        }
+      }
+
+      function pauseInactiveVideos(activeIndex) {
+        reels.forEach((r, i) => {
+          if (i !== activeIndex && r.video && !r.video.paused) {
+            r.video.pause();
+            r.video.currentTime = 0;
+            r.video.muted = true;
+          }
+        });
+      }
+
+      function handleLikeClick(postId) {
+        const likeRef = db.ref(`likes/${postId}/${currentUser}`);
+        const postRef = db.ref(`reels/${postId}`);
+        const reelObj = reels.find(r => r.postId === postId);
+
+        if (!reelObj) return;
+
+        likeRef.once('value').then(snap => {
+          if (snap.exists()) {
+            likeRef.remove();
+            postRef.child('likes').transaction(c => Math.max((c || 1) - 1, 0));
+            reelObj.likeIcon.classList.remove('liked');
+            const newCount = parseInt(reelObj.likeCount.textContent) - 1;
+            reelObj.likeCount.textContent = newCount >= 0 ? newCount.toString() : '0';
+          } else {
+            likeRef.set(true);
+            postRef.child('likes').transaction(c => (c || 0) + 1);
+            reelObj.likeIcon.classList.add('liked');
+            const newCount = parseInt(reelObj.likeCount.textContent) + 1;
+            reelObj.likeCount.textContent = newCount.toString();
+          }
+        });
+      }
+
+      function createReel(post, liked) {
+        const reel = document.createElement('div');
+        reel.className = 'reel';
+
+        const video = document.createElement('video');
+        video.src = post.video && post.video.trim() ? post.video.trim() : fallbackVideo;
+        video.loop = true;
+        video.playsInline = true;
+        video.muted = !allVideosSoundOn;
+        video.preload = 'auto';
+
+        video.onerror = () => {
+          console.warn(`Video yüklənmədi: ${video.src}. Fallback tətbiq olunur.`);
+          video.src = fallbackVideo;
+          video.load();
+        };
+
+        video.addEventListener('click', () => {
+          allVideosSoundOn = !allVideosSoundOn;
+          reels.forEach(r => {
+            r.video.muted = !allVideosSoundOn;
+          });
+          showSoundIndicator(!allVideosSoundOn);
+        });
+
+        reel.appendChild(video);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay';
+
+        const profileInfo = document.createElement('div');
+        profileInfo.className = 'profile-info';
+
+        const profilePic = document.createElement('img');
+        profilePic.className = 'profile-pic';
+        profilePic.src = customProfilePic && customProfilePic.trim() ? customProfilePic.trim() : (post.profile || 'https://via.placeholder.com/48');
+
+        const userDetails = document.createElement('div');
+        userDetails.className = 'user-details';
+        const userid = document.createElement('div');
+        userid.className = 'userid';
+        userid.textContent = post.user;
+        const nickname = document.createElement('div');
+        nickname.className = 'nickname';
+        nickname.textContent = post.nickname;
+
+        userDetails.appendChild(userid);
+        userDetails.appendChild(nickname);
+        profileInfo.appendChild(profilePic);
+        profileInfo.appendChild(userDetails);
+
+        const text = document.createElement('div');
+        text.className = 'text';
+        text.textContent = post.text || '';
+
+        const time = document.createElement('div');
+        time.className = 'time';
+        time.textContent = post.time || '';
+
+        const likeSection = document.createElement('div');
+        likeSection.className = 'like-section';
+        const likeIcon = document.createElement('span');
+        likeIcon.className = 'material-icons like-icon';
+        likeIcon.textContent = 'favorite';
+        if (liked) likeIcon.classList.add('liked');
+
+        const likeCount = document.createElement('span');
+        likeCount.className = 'like-count';
+        likeCount.textContent = post.likes || 0;
+
+        likeSection.appendChild(likeIcon);
+        likeSection.appendChild(likeCount);
+
+        likeSection.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleLikeClick(post.id);
+        });
+
+        overlay.appendChild(profileInfo);
+        overlay.appendChild(text);
+        overlay.appendChild(time);
+        overlay.appendChild(likeSection);
+
+        reel.appendChild(overlay);
+
+        return { element: reel, video, likeIcon, likeCount, postId: post.id };
+      }
+
+      function setActiveReel(newIndex) {
+        if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= reels.length) return;
+        
+        isAnimating = true;
+
+        const currentReel = reels[activeIndex];
+        const nextReel = reels[newIndex];
+
+        // Anlaşılmazlıq olmaması üçün bütün videoları dayandırırıq
+        pauseInactiveVideos(newIndex);
+        
+        // Köhnə videonun stilini dəyişirik
+        currentReel.element.style.transform = (newIndex > activeIndex) ? 'translateY(-100%)' : 'translateY(100%)';
+        currentReel.element.style.opacity = '0';
+        currentReel.element.style.zIndex = '1';
+        currentReel.element.classList.remove('active');
+
+        // Yeni videonun stilini dəyişirik
+        nextReel.element.style.transform = 'translateY(0)';
+        nextReel.element.style.opacity = '1';
+        nextReel.element.style.zIndex = '2';
+        nextReel.element.classList.add('active');
+
+        activeIndex = newIndex;
+
+        // Tranzisiya bitəndən sonra animasiyanı söndürürük və yeni videonu başladırıq
+        setTimeout(() => {
+          isAnimating = false;
+          playActiveVideo(activeIndex);
+        }, 500); // CSS-dəki transition müddətinə uyğun olaraq 500ms
+      }
+
+      function handleScroll(direction) {
+        if (isAnimating) return;
+        
+        if (direction === 'down' && activeIndex < reels.length - 1) {
+          setActiveReel(activeIndex + 1);
+        } else if (direction === 'up' && activeIndex > 0) {
+          setActiveReel(activeIndex - 1);
+        }
+      }
+      
+      let wheelTimeout = null;
+      window.addEventListener('wheel', e => {
+        if (!isAnimating) {
+          clearTimeout(wheelTimeout);
+          wheelTimeout = setTimeout(() => {
+            if (e.deltaY > 0) {
+              handleScroll('down');
+            } else if (e.deltaY < 0) {
+              handleScroll('up');
+            }
+          }, 80);
+        }
+      });
+
+      app.addEventListener('touchstart', e => {
+        if (!isAnimating && e.touches.length === 1) {
+          touchStartY = e.touches[0].clientY;
+        }
+      });
+
+      app.addEventListener('touchmove', e => {
+        if (!isAnimating && touchStartY !== null) {
+          const yDiff = touchStartY - e.touches[0].clientY;
+          if (Math.abs(yDiff) > 50) { // Sürüşdürmə həssaslığı artırıldı
+            if (yDiff > 0) {
+              handleScroll('down');
+            } else {
+              handleScroll('up');
+            }
+            touchStartY = null;
+          }
+        }
+      });
+      
+      async function loadReels() {
+        const likesSnap = await db.ref('likes').once('value');
+        likeCache = likesSnap.val() || {};
+
+        const reelsRef = db.ref('reels');
+        const reelsSnap = await reelsRef.once('value');
+        const reelsData = reelsSnap.val() || {};
+
+        if (Object.keys(reelsData).length === 0) {
+          loader.style.display = 'none';
+          return;
+        }
+
+        const shuffledReels = Object.entries(reelsData)
+          .map(([key, value]) => ({ id: key, ...value }))
+          .sort(() => Math.random() - 0.5);
+
+        for (const post of shuffledReels) {
+          const liked = likeCache[post.id] && likeCache[post.id][currentUser];
+          const reelObj = createReel(post, liked);
+          reels.push(reelObj);
+          app.appendChild(reelObj.element);
+        }
+
+        if (reels.length > 0) {
+          reels[0].element.classList.add('active');
+          reels[0].element.style.transform = 'translateY(0)';
+          reels[0].element.style.opacity = '1';
+          
+          await new Promise(res => {
+            if (reels[0].video.readyState >= 4) {
+              res();
+            } else {
+              reels[0].video.addEventListener('canplaythrough', res, { once: true });
+            }
+          });
+
+          playActiveVideo(0);
+        }
+
+        loader.style.display = 'none';
+      }
+
+      loadReels();
+    })();
+  </script>
+</body>
+</html>
