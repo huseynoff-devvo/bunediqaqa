@@ -1,102 +1,148 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Qrup Üzvləri</title>
-  <style>
-    body {
-      background-color: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 20px;
-    }
-    .user-card {
-      background-color: #282828;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .user-card img {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      object-fit: cover;
-    }
-    .user-info {
-      display: flex;
-      flex-direction: column;
-    }
-    .name {
-      font-size: 14px;
-      font-weight: bold;
-    }
-    .nickname {
-      font-size: 13px;
-      opacity: 0.7;
-    }
-    #userList {
-      display: none;
-    }
-    #loading {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      width: 30px;
-      height: 30px;
-      border: 3px solid #444;
-      border-top: 3px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      transform: translate(-50%, -50%);
-    }
-    @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qrup Üzvləri</title>
+    <style>
+        body {
+            background-color: #181818;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .user-card {
+            background-color: #282828;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-card img.profile-pic {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .name {
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .nickname {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .status-badge {
+            width: 18px;
+            height: 18px;
+            margin-left: 5px;
+        }
+
+        #userList {
+            display: none;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #444;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <div id="loading"></div>
-  <div id="userList"></div>
+<div id="loading"></div>
+<div id="userList"></div>
 
-  <script type="module">
-    import { initializeApp as initApp1 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { initializeApp as initApp2 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<script type="module">
+    import {initializeApp as initApp} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {getDatabase, ref, onValue, get} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     // Qruplar üçün Firebase
     const firebaseConfigGroups = {
-      apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
-      authDomain: "pasyak-group.firebaseapp.com",
-      databaseURL: "https://pasyak-group-default-rtdb.firebaseio.com",
-      projectId: "pasyak-group",
-      storageBucket: "pasyak-group.firebasestorage.app",
-      messagingSenderId: "609320402321",
-      appId: "1:609320402321:web:0d3322a262fc807f772e30",
-      measurementId: "G-93PCBFG9QK"
+        apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
+        authDomain: "pasyak-group.firebaseapp.com",
+        databaseURL: "https://pasyak-group-default-rtdb.firebaseio.com",
+        projectId: "pasyak-group",
+        storageBucket: "pasyak-group.firebasestorage.app",
+        messagingSenderId: "609320402321",
+        appId: "1:609320402321:web:0d3322a262fc807f772e30",
+        measurementId: "G-93PCBFG9QK"
     };
 
     // İstifadəçilər üçün Firebase
     const firebaseConfigUsers = {
-      apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
-      authDomain: "pasyak-user.firebaseapp.com",
-      databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
-      projectId: "pasyak-user",
-      storageBucket: "pasyak-user.firebasestorage.app",
-      messagingSenderId: "898141218588",
-      appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+        apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+        authDomain: "pasyak-user.firebaseapp.com",
+        databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+        projectId: "pasyak-user",
+        storageBucket: "pasyak-user.firebasestorage.app",
+        messagingSenderId: "898141218588",
+        appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
     };
 
-    const appGroups = initApp1(firebaseConfigGroups, "groupsApp");
-    const appUsers = initApp2(firebaseConfigUsers, "usersApp");
+    // `premium` və `tick` üçün əlavə Firebase konfiqurasiyaları
+    const tickFirebaseConfig = {
+        apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
+        authDomain: "pasyak-tick.firebaseapp.com",
+        databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
+        projectId: "pasyak-tick",
+        storageBucket: "pasyak-tick.firebasestorage.app",
+        messagingSenderId: "379214418412",
+        appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
+        measurementId: "G-DW00VF06NR"
+    };
+    const premiumFirebaseConfig = {
+        apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
+        authDomain: "pasyak-premium.firebaseapp.com",
+        databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
+        projectId: "pasyak-premium",
+        storageBucket: "pasyak-premium.firebasestorage.app",
+        messagingSenderId: "662922654975",
+        appId: "1:662922654975:web:54b78968d4cccba65f88ca",
+        measurementId: "G-QDTFGFYXKK"
+    };
+
+    const appGroups = initApp(firebaseConfigGroups, "groupsApp");
+    const appUsers = initApp(firebaseConfigUsers, "usersApp");
+    const tickApp = initApp(tickFirebaseConfig, "tickApp");
+    const premiumApp = initApp(premiumFirebaseConfig, "premiumApp");
 
     const dbGroups = getDatabase(appGroups);
     const dbUsers = getDatabase(appUsers);
+    const dbTick = getDatabase(tickApp);
+    const dbPremium = getDatabase(premiumApp);
 
     const urlParams = new URLSearchParams(window.location.search);
     const groupId = urlParams.get("group_id");
@@ -105,65 +151,95 @@
     const loading = document.getElementById("loading");
 
     if (!groupId) {
-      loading.style.display = "none";
-      document.body.innerHTML = "<p style='color:red'>URL-də group_id parametri tapılmadı.</p>";
-      throw new Error("group_id yoxdur");
+        loading.style.display = "none";
+        document.body.innerHTML = "<p style='color:red'>URL-də group_id parametri tapılmadı.</p>";
+        throw new Error("group_id yoxdur");
     }
 
     const groupRef = ref(dbGroups, groupId);
     const usersRef = ref(dbUsers, "Users");
+    const tickRef = ref(dbTick, "tick");
+    const premiumRef = ref(dbPremium, "premium");
 
-    // Realtime dinləmə funksiyası
-    onValue(groupRef, async (groupSnap) => {
-      if (!groupSnap.exists()) {
-        loading.style.display = "none";
-        userList.innerHTML = "<p style='color:red'>Qrup tapılmadı.</p>";
-        userList.style.display = "block";
-        return;
-      }
+    async function getStatusBadges() {
+        const tickSnapshot = await get(tickRef);
+        const premiumSnapshot = await get(premiumRef);
+        const tickUsers = tickSnapshot.val() || {};
+        const premiumUsers = premiumSnapshot.val() || {};
+        return {tickUsers, premiumUsers};
+    }
 
-      const groupData = groupSnap.val(); // məsələn: { "@huseynoff": "+", ... }
-      const usernames = Object.keys(groupData).map(u => u.replace("@", "").trim());
+    function getStatusBadgeUrl(nickname, tickUsers, premiumUsers) {
+        const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
+        const isTick = tickUsers[cleanNickname] === "+";
+        const isPremium = premiumUsers[cleanNickname] === "+";
 
-      const usersSnap = await get(usersRef);
-      const allUsers = usersSnap.val();
-
-      userList.innerHTML = "";
-      userList.style.display = "block";
-      loading.style.display = "none";
-
-      usernames.forEach(username => {
-        const rawData = allUsers?.[username];
-        if (!rawData) return;
-
-        try {
-          const [name, nick, photo] = JSON.parse(rawData);
-
-          const card = document.createElement("div");
-          card.className = "user-card";
-          card.innerHTML = `
-            <img src="${photo.trim()}" alt="Profil şəkli">
-            <div class="user-info">
-              <div class="name">${name}</div>
-              <div class="nickname">@${nick}</div>
-            </div>
-          `;
-          userList.appendChild(card);
-        } catch (e) {
-          console.error("İstifadəçi məlumatı xətalıdır:", username);
+        if (isTick && isPremium) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+        } else if (isTick) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+        } else if (isPremium) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
         }
-      });
+        return null;
+    }
 
-      if (userList.children.length === 0) {
-        userList.innerHTML = "<p>Qrupda iştirakçı yoxdur.</p>";
-      }
+    onValue(groupRef, async (groupSnap) => {
+        if (!groupSnap.exists()) {
+            loading.style.display = "none";
+            userList.innerHTML = "<p style='color:red'>Qrup tapılmadı.</p>";
+            userList.style.display = "block";
+            return;
+        }
+
+        const groupData = groupSnap.val();
+        const usernames = Object.keys(groupData).map(u => u.replace("@", "").trim());
+
+        const [usersSnap, {tickUsers, premiumUsers}] = await Promise.all([get(usersRef), getStatusBadges()]);
+        const allUsers = usersSnap.val();
+
+        userList.innerHTML = "";
+        userList.style.display = "block";
+        loading.style.display = "none";
+
+        usernames.forEach(username => {
+            const rawData = allUsers?.[username];
+            if (!rawData) return;
+
+            try {
+                const [name, nick, photo] = JSON.parse(rawData);
+
+                const card = document.createElement("div");
+                card.className = "user-card";
+                
+                const badgeUrl = getStatusBadgeUrl(nick, tickUsers, premiumUsers);
+                const badgeHtml = badgeUrl ? `<img class="status-badge" src="${badgeUrl}" alt="Status" />` : '';
+
+                card.innerHTML = `
+                    <img class="profile-pic" src="${photo.trim()}" alt="Profil şəkli">
+                    <div class="user-info">
+                        <div class="name">
+                            ${name}
+                            ${badgeHtml}
+                        </div>
+                        <div class="nickname">@${nick}</div>
+                    </div>
+                `;
+                userList.appendChild(card);
+            } catch (e) {
+                console.error("İstifadəçi məlumatı xətalıdır:", username);
+            }
+        });
+
+        if (userList.children.length === 0) {
+            userList.innerHTML = "<p>Qrupda iştirakçı yoxdur.</p>";
+        }
     }, (error) => {
-      console.error("Realtime error:", error);
-      loading.style.display = "none";
-      userList.innerHTML = "<p style='color:red'>Xəta baş verdi.</p>";
-      userList.style.display = "block";
+        console.error("Realtime error:", error);
+        loading.style.display = "none";
+        userList.innerHTML = "<p style='color:red'>Xəta baş verdi.</p>";
+        userList.style.display = "block";
     });
-
-  </script>
+</script>
 </body>
 </html>
