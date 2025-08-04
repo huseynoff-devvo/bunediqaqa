@@ -14,7 +14,7 @@
     }
 
     body {
-      background: #121212;
+      background: #181818;
       color: white;
       font-family: Arial, sans-serif;
       margin: 0;
@@ -27,7 +27,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: #121212;
+      background: #181818;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -186,7 +186,7 @@
     }
 
     .liked-users-summary {
-      font-size: 13px;
+      font-size: 12px;
       margin-top: 5px;
       color: #ccc;
       user-select: none;
@@ -232,9 +232,7 @@
       color: gray;
       margin-top: 8px;
     }
-
   </style>
-
 </head>
 <body>
   <div id="loader">
@@ -520,6 +518,16 @@
         postsContainer.prepend(postEl); // Prepend to add new posts at the top
       }
     }
+
+    // --- New function to shuffle array ---
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    // --- End of new function ---
     
     function updateAllPosts() {
       // Re-render all posts to reflect status badge changes
@@ -530,20 +538,11 @@
           postDataArray.push({ id: snap.key, data: JSON.parse(snap.val()) });
         });
         
-        // Sort posts by time (if available) or key
-        postDataArray.sort((a, b) => {
-          const aTime = a.data.time ? new Date(a.data.time) : null;
-          const bTime = b.data.time ? new Date(b.data.time) : null;
-          
-          if (aTime && bTime) {
-            return bTime.getTime() - aTime.getTime();
-          } else {
-            return b.id.localeCompare(a.id); // Fallback to key if time is not available
-          }
-        });
+        // --- Change here: Use shuffleArray instead of sorting ---
+        const shuffledPosts = shuffleArray(postDataArray);
         
-        postDataArray.forEach(post => {
-           updatePost(post.id, post.data);
+        shuffledPosts.forEach(post => {
+            updatePost(post.id, post.data);
         });
       });
     }
@@ -607,6 +606,5 @@
       document.getElementById("posts").style.display = "block";
     }, 3000);
   </script>
-
 </body>
 </html>
