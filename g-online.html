@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qrup Üzvləri</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .group-container {
+            margin-bottom: 30px;
+        }
+        .group-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .user-card {
+            background-color: #282828;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .user-card img.profile-pic {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .name {
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .nickname {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .status-badge {
+            width: 18px;
+            height: 18px;
+            margin-left: 5px;
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            opacity: 0.8;
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+        }
+
+        .online-circle {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .online-circle.online {
+            background-color: #4CAF50; /* Green for online */
+        }
+
+        .online-circle.offline {
+            background-color: #F44336; /* Red for offline */
+        }
+
+        #userList {
+            display: none;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #444;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading"></div>
+<div id="userList"></div>
+
+<script type="module">
+    import {initializeApp as initApp} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {getDatabase, ref, onValue, get, set, onDisconnect} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    // Qruplar üçün Firebase
+    const firebaseConfigGroups = {
+        apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
+        authDomain: "pasyak-group.firebaseapp.com",
+        databaseURL: "https://pasyak-group-default-rtdb.firebaseio.com",
+        projectId: "pasyak-group",
+        storageBucket: "pasyak-group.firebasestorage.app",
+        messagingSenderId: "609320402321",
+        appId: "1:609320402321:web:0d3322a262fc807f772e30",
+        measurementId: "G-93PCBFG9QK"
+    };
+
+    // İstifadəçilər üçün Firebase
+    const firebaseConfigUsers = {
+        apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+        authDomain: "pasyak-user.firebaseapp.com",
+        databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+        projectId: "pasyak-user",
+        storageBucket: "pasyak-user.firebasestorage.app",
+        messagingSenderId: "898141218588",
+        appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+    };
+
+    // `premium` və `tick` üçün əlavə Firebase konfiqurasiyaları
+    const tickFirebaseConfig = {
+        apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
+        authDomain: "pasyak-tick.firebaseapp.com",
+        databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
+        projectId: "pasyak-tick",
+        storageBucket: "pasyak-tick.firebasestorage.app",
+        messagingSenderId: "379214418412",
+        appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
+        measurementId: "G-DW00VF06NR"
+    };
+    const premiumFirebaseConfig = {
+        apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
+        authDomain: "pasyak-premium.firebaseapp.com",
+        databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
+        projectId: "pasyak-premium",
+        storageBucket: "pasyak-premium.firebasestorage.app",
+        messagingSenderId: "662922654975",
+        appId: "1:662922654975:web:54b78968d4cccba65f88ca",
+        measurementId: "G-QDTFGFYXKK"
+    };
+
+    const appGroups = initApp(firebaseConfigGroups, "groupsApp");
+    const appUsers = initApp(firebaseConfigUsers, "usersApp");
+    const tickApp = initApp(tickFirebaseConfig, "tickApp");
+    const premiumApp = initApp(premiumFirebaseConfig, "premiumApp");
+
+    const dbGroups = getDatabase(appGroups);
+    const dbUsers = getDatabase(appUsers);
+    const dbTick = getDatabase(tickApp);
+    const dbPremium = getDatabase(premiumApp);
+    const dbOnline = getDatabase(appGroups); // Online status üçün eyni DB-dən istifadə edirik
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = urlParams.get("user");
+    const cleanCurrentUser = currentUser ? currentUser.replace('@', '').toLowerCase() : null;
+
+    const userList = document.getElementById("userList");
+    const loading = document.getElementById("loading");
+
+    if (!cleanCurrentUser) {
+        loading.style.display = "none";
+        document.body.innerHTML = "<p style='color:red'>URL-də 'user' parametri tapılmadı. Zəhmət olmasa URL-i '?user=@nick' kimi daxil edin.</p>";
+        throw new Error("user yoxdur");
+    }
+
+    async function getStatusBadges() {
+        const tickSnapshot = await get(tickRef);
+        const premiumSnapshot = await get(premiumRef);
+        const tickUsers = tickSnapshot.val() || {};
+        const premiumUsers = premiumSnapshot.val() || {};
+        return {tickUsers, premiumUsers};
+    }
+
+    function getStatusBadgeUrl(nickname, tickUsers, premiumUsers) {
+        const isTick = tickUsers[nickname.toLowerCase()] === "+";
+        const isPremium = premiumUsers[nickname.toLowerCase()] === "+";
+
+        if (isTick && isPremium) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+        } else if (isTick) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+        } else if (isPremium) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+        }
+        return null;
+    }
+
+    async function findUserGroups(nickname) {
+        const allGroupsRef = ref(dbGroups);
+        const snapshot = await get(allGroupsRef);
+        const allGroups = snapshot.val();
+        const userGroups = [];
+
+        if (allGroups) {
+            for (const groupId in allGroups) {
+                // Burada istifadəçinin qrupun üzvü olub-olmadığını yoxlayırıq
+                // qrup məlumatı obyekti `groupName` keyini ehtiva edir, ona görə də onu keçirik
+                if (groupId !== "groupName" && Object.keys(allGroups[groupId]).some(u => u.toLowerCase().replace('@', '') === nickname.toLowerCase())) {
+                    userGroups.push(groupId);
+                }
+            }
+        }
+        return userGroups;
+    }
+    
+    // Qrup adı məlumatlarını saxlamaq üçün bir obyekt
+    let groupNames = {};
+
+    async function main() {
+        loading.style.display = "block";
+        const allGroupsRef = ref(dbGroups);
+        const allGroupsSnap = await get(allGroupsRef);
+        const allGroupsData = allGroupsSnap.val();
+        
+        // Bütün qrup adlarını yığırıq
+        if(allGroupsData) {
+            for(const groupId in allGroupsData) {
+                if(allGroupsData[groupId].groupName) {
+                    groupNames[groupId] = allGroupsData[groupId].groupName;
+                }
+            }
+        }
+        
+        const userGroups = await findUserGroups(cleanCurrentUser);
+
+        if (userGroups.length === 0) {
+            loading.style.display = "none";
+            userList.innerHTML = "<p>Bu istifadəçi heç bir qrupa üzv deyil.</p>";
+            userList.style.display = "block";
+            return;
+        }
+
+        const onlineStatusRefs = userGroups.map(id => ref(dbOnline, `onlineStatus/${id}/${cleanCurrentUser}`));
+
+        onlineStatusRefs.forEach(onlineRef => {
+            set(onlineRef, true);
+            onDisconnect(onlineRef).set(false);
+        });
+
+        const allUsersRef = ref(dbUsers, "Users");
+        const allUsersSnap = await get(allUsersRef);
+        const allUsersData = allUsersSnap.val();
+        const {tickUsers, premiumUsers} = await getStatusBadges();
+
+        userList.innerHTML = "";
+
+        userGroups.forEach(groupId => {
+            const groupRef = ref(dbGroups, groupId);
+
+            onValue(groupRef, async (groupSnap) => {
+                const groupData = groupSnap.val();
+                
+                const groupTitle = groupNames[groupId] || `Qrup ${groupId}`;
+                const usernames = Object.keys(groupData).filter(u => u !== "groupName").map(u => u.replace("@", "").trim());
+
+                const onlineSnap = await get(ref(dbOnline, `onlineStatus/${groupId}`));
+                const onlineUsers = onlineSnap.val() || {};
+
+                let groupContainer = document.getElementById(`group-container-${groupId}`);
+                if (!groupContainer) {
+                    groupContainer = document.createElement("div");
+                    groupContainer.id = `group-container-${groupId}`;
+                    groupContainer.className = "group-container";
+                    userList.appendChild(groupContainer);
+                }
+
+                groupContainer.innerHTML = `<h3 class="group-title">${groupTitle}</h3>`;
+                
+                usernames.forEach(username => {
+                    const rawData = allUsersData?.[username];
+                    if (!rawData) return;
+
+                    try {
+                        const [name, nick, photo] = JSON.parse(rawData);
+                        const cleanedNick = nick.toLowerCase().replace('@', '');
+
+                        const cardId = `card-${groupId}-${cleanedNick}`;
+                        let card = document.getElementById(cardId);
+                        
+                        if (!card) {
+                            card = document.createElement("div");
+                            card.id = cardId;
+                            card.className = "user-card";
+                            groupContainer.appendChild(card);
+                        }
+
+                        const isOnline = onlineUsers[cleanedNick] === true;
+                        const onlineStatusClass = isOnline ? 'online' : 'offline';
+                        const onlineStatusText = isOnline ? 'online' : 'offline';
+                        
+                        const badgeUrl = getStatusBadgeUrl(cleanedNick, tickUsers, premiumUsers);
+                        const badgeHtml = badgeUrl ? `<img class="status-badge" src="${badgeUrl}" alt="Status" />` : '';
+
+                        card.innerHTML = `
+                            <img class="profile-pic" src="${photo.trim()}" alt="Profil şəkli">
+                            <div class="user-info">
+                                <div class="name">
+                                    ${name}
+                                    ${badgeHtml}
+                                </div>
+                                <div class="nickname">@${nick}</div>
+                            </div>
+                            <div class="online-status">
+                                <div class="online-circle ${onlineStatusClass}"></div>
+                                <span>${onlineStatusText}</span>
+                            </div>
+                        `;
+
+                    } catch (e) {
+                        console.error("İstifadəçi məlumatı xətalıdır:", username);
+                    }
+                });
+
+                loading.style.display = "none";
+                userList.style.display = "block";
+            });
+        });
+    }
+
+    main();
+
+</script>
+</body>
+</html>
