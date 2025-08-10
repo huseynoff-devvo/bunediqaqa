@@ -153,322 +153,322 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
-    // ---- Firebase əsas app (sənin konfiqurasiyalar) ----
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
-      authDomain: "pasyakaaz.firebaseapp.com",
-      projectId: "pasyakaaz",
-      storageBucket: "pasyakaaz.appspot.com",
-      messagingSenderId: "289629756800",
-      appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const postsContainer = document.getElementById("posts-grid");
+   // ---- Firebase əsas app (sənin konfiqurasiyalar) ----
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
+      authDomain: "pasyakaaz.firebaseapp.com",
+      projectId: "pasyakaaz",
+      storageBucket: "pasyakaaz.appspot.com",
+      messagingSenderId: "289629756800",
+      appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const postsContainer = document.getElementById("posts-grid");
 
-    // URL params
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentUser = (urlParams.get("user") || "anonim").trim();
-    const showOnlyMyPosts = urlParams.get("myPosts") === "true";
+    // URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = (urlParams.get("user") || "anonim").trim();
+    const showOnlyMyPosts = urlParams.get("myPosts") === "true";
 
-    let likeCache = {};
-    let deletePostId = null;
-    let postDataCache = {};
+    let likeCache = {};
+    let deletePostId = null;
+    let postDataCache = {};
 
-    // Tick & premium configs (sənin konfiqlar)
-    const tickFirebaseConfig = {
-      apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
-      authDomain: "pasyak-tick.firebaseapp.com",
-      databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
-      projectId: "pasyak-tick",
-      storageBucket: "pasyak-tick.firebasestorage.app",
-      messagingSenderId: "379214418412",
-      appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
-      measurementId: "G-DW00VF06NR"
-    };
-    const premiumFirebaseConfig = {
-      apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
-      authDomain: "pasyak-premium.firebaseapp.com",
-      databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
-      projectId: "pasyak-premium",
-      storageBucket: "pasyak-premium.firebasestorage.app",
-      messagingSenderId: "662922654975",
-      appId: "1:662922654975:web:54b78968d4cccba65f88ca",
-      measurementId: "G-QDTFGFYXKK"
-    };
+    // Tick & premium configs (sənin konfiqlar)
+    const tickFirebaseConfig = {
+      apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
+      authDomain: "pasyak-tick.firebaseapp.com",
+      databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
+      projectId: "pasyak-tick",
+      storageBucket: "pasyak-tick.firebasestorage.app",
+      messagingSenderId: "379214418412",
+      appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
+      measurementId: "G-DW00VF06NR"
+    };
+    const premiumFirebaseConfig = {
+      apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
+      authDomain: "pasyak-premium.firebaseapp.com",
+      databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
+      projectId: "pasyak-premium",
+      storageBucket: "pasyak-premium.firebasestorage.app",
+      messagingSenderId: "662922654975",
+      appId: "1:662922654975:web:54b78968d4cccba65f88ca",
+      measurementId: "G-QDTFGFYXKK"
+    };
 
-    const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
-    const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
-    const tickDb = tickApp.database();
-    const premiumDb = premiumApp.database();
+    const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
+    const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
+    const tickDb = tickApp.database();
+    const premiumDb = premiumApp.database();
 
-    let tickUsers = {};
-    let premiumUsers = {};
+    let tickUsers = {};
+    let premiumUsers = {};
 
-    function loadStatusData() {
-      tickDb.ref("tick").on("value", (snapshot) => {
-        tickUsers = snapshot.val() || {};
-        renderAllPosts();
-      });
-      premiumDb.ref("premium").on("value", (snapshot) => {
-        premiumUsers = snapshot.val() || {};
-        renderAllPosts();
-      });
-    }
+    function loadStatusData() {
+      tickDb.ref("tick").on("value", (snapshot) => {
+        tickUsers = snapshot.val() || {};
+        renderAllPosts();
+      });
+      premiumDb.ref("premium").on("value", (snapshot) => {
+        premiumUsers = snapshot.val() || {};
+        renderAllPosts();
+      });
+    }
 
-    function getStatusBadge(nickname = "") {
-      const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
-      const isTick = tickUsers[cleanNickname] === "+";
-      const isPremium = premiumUsers[cleanNickname] === "+";
-      if (isTick && isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
-      if (isTick) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
-      if (isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
-      return null;
-    }
+    function getStatusBadge(nickname = "") {
+      const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
+      const isTick = tickUsers[cleanNickname] === "+";
+      const isPremium = premiumUsers[cleanNickname] === "+";
+      if (isTick && isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+      if (isTick) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+      if (isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+      return null;
+    }
 
-    // render single post
-    function renderPost(postId, data, isLikedByUser) {
-      if (!data) return null;
-      try {
-        // show only my posts check (safety)
-        if (showOnlyMyPosts) {
-          const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-          const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
-          if (postNick !== cleanCurrent) return null;
-        }
-      } catch (e) { /* ignore */ }
+    // render single post
+    function renderPost(postId, data, isLikedByUser) {
+      if (!data) return null;
+      try {
+        // show only my posts check (safety)
+        if (showOnlyMyPosts) {
+          const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+          const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
+          if (postNick !== cleanCurrent) return null;
+        }
+      } catch (e) { /* ignore */ }
 
-      const postEl = document.createElement("div");
-      postEl.className = "post";
-      postEl.id = "post_" + postId;
+      const postEl = document.createElement("div");
+      postEl.className = "post";
+      postEl.id = "post_" + postId;
 
-      const header = document.createElement("div");
-      header.className = "post-header";
+      const header = document.createElement("div");
+      header.className = "post-header";
 
-      const img = document.createElement("img");
-      img.className = "profile-pic";
-      img.src = data.profile || "https://via.placeholder.com/36?text=?";
+      const img = document.createElement("img");
+      img.className = "profile-pic";
+      img.src = data.profile || "https://via.placeholder.com/36?text=?";
 
-      const userBox = document.createElement("div");
-      userBox.className = "username-box";
+      const userBox = document.createElement("div");
+      userBox.className = "username-box";
 
-      const userId = document.createElement("div");
-      userId.className = "userid";
-      userId.textContent = data.user || "Anonim";
+      const userId = document.createElement("div");
+      userId.className = "userid";
+      userId.textContent = data.user || "Anonim";
 
-      const statusBadgeUrl = getStatusBadge(data.nickname || "");
-      if (statusBadgeUrl) {
-        const statusBadgeImg = document.createElement("img");
-        statusBadgeImg.className = "status-badge";
-        statusBadgeImg.src = statusBadgeUrl;
-        userId.appendChild(statusBadgeImg);
-      }
+      const statusBadgeUrl = getStatusBadge(data.nickname || "");
+      if (statusBadgeUrl) {
+        const statusBadgeImg = document.createElement("img");
+        statusBadgeImg.className = "status-badge";
+        statusBadgeImg.src = statusBadgeUrl;
+        userId.appendChild(statusBadgeImg);
+      }
 
-      const nickname = document.createElement("div");
-      nickname.className = "nickname";
-      const displayNickname = (data.nickname || "").startsWith('@') ? data.nickname : `@${(data.nickname || "").replace(/^@/, '')}`;
-      nickname.textContent = displayNickname;
+      const nickname = document.createElement("div");
+      nickname.className = "nickname";
+      const displayNickname = (data.nickname || "").startsWith('@') ? data.nickname : `@${(data.nickname || "").replace(/^@/, '')}`;
+      nickname.textContent = displayNickname;
 
-      userBox.appendChild(userId);
-      userBox.appendChild(nickname);
-      header.appendChild(img);
-      header.appendChild(userBox);
+      userBox.appendChild(userId);
+      userBox.appendChild(nickname);
+      header.appendChild(img);
+      header.appendChild(userBox);
 
-      // delete button only for owner
-      const cleanNickname = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
-      const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-      if (cleanNickname && cleanNickname === cleanCurrentUser) {
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete-button material-icons";
-        deleteBtn.textContent = "delete";
-        deleteBtn.title = "Postu sil";
-        deleteBtn.addEventListener("click", () => {
-          deletePostId = postId;
-          document.getElementById("confirmDialog").style.display = "block";
-        });
-        header.appendChild(deleteBtn);
-      }
+      // delete button only for owner
+      const cleanNickname = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
+      const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+      if (cleanNickname && cleanNickname === cleanCurrentUser) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-button material-icons";
+        deleteBtn.textContent = "delete";
+        deleteBtn.title = "Postu sil";
+        deleteBtn.addEventListener("click", () => {
+          deletePostId = postId;
+          document.getElementById("confirmDialog").style.display = "block";
+        });
+        header.appendChild(deleteBtn);
+      }
 
-      postEl.appendChild(header);
+      postEl.appendChild(header);
 
-      if (data.image) {
-        const image = document.createElement("img");
-        image.className = "post-image";
-        image.src = (data.image || "").replace(/\\/g, '').trim();
-        // when image loads, trigger refresh so columns recalc nicely
-        image.addEventListener('load', () => refreshMasonry());
-        postEl.appendChild(image);
-      }
+      if (data.image) {
+        const image = document.createElement("img");
+        image.className = "post-image";
+        image.src = (data.image || "").replace(/\\/g, '').trim();
+        // when image loads, trigger refresh so columns recalc nicely
+        image.addEventListener('load', () => refreshMasonry());
+        postEl.appendChild(image);
+      }
 
-      if (data.text) {
-        const text = document.createElement("div");
-        text.className = "post-text";
-        text.textContent = data.text;
-        postEl.appendChild(text);
-      }
+      if (data.text) {
+        const text = document.createElement("div");
+        text.className = "post-text";
+        text.textContent = data.text;
+        postEl.appendChild(text);
+      }
 
-      const postFooter = document.createElement("div");
-      postFooter.className = "post-footer";
+      const postFooter = document.createElement("div");
+      postFooter.className = "post-footer";
 
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "like-button";
-      if (isLikedByUser) likeBtn.classList.add("liked");
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "like-button";
+      if (isLikedByUser) likeBtn.classList.add("liked");
 
-      likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${data.likes || 0}</span>`;
+      likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${data.likes || 0}</span>`;
 
-      likeBtn.addEventListener("click", () => {
-        const likeRef = db.ref(`likes/${postId}/${currentUser}`);
-        const postRef = db.ref(`posts/${postId}`);
+      likeBtn.addEventListener("click", () => {
+        const likeRef = db.ref(`likes/${postId}/${currentUser}`);
+        const postRef = db.ref(`posts/${postId}`);
 
-        likeRef.once("value").then(snap => {
-          if (snap.exists()) {
-            likeRef.remove();
-            postRef.once("value").then(postSnap => {
-              try {
-                const val = postSnap.val();
-                const parsed = (typeof val === "string") ? JSON.parse(val) : val || {};
-                parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
-                postRef.set(JSON.stringify(parsed));
-              } catch (e) { console.warn(e); }
-            });
-          } else {
-            likeRef.set(true);
-            postRef.once("value").then(postSnap => {
-              try {
-                const val = postSnap.val();
-                const parsed = (typeof val === "string") ? JSON.parse(val) : val || {};
-                parsed.likes = (parsed.likes || 0) + 1;
-                postRef.set(JSON.stringify(parsed));
-              } catch (e) { console.warn(e); }
-            });
-          }
-        });
-      });
+        likeRef.once("value").then(snap => {
+          if (snap.exists()) {
+            likeRef.remove();
+            postRef.once("value").then(postSnap => {
+              try {
+                const val = postSnap.val();
+                const parsed = (typeof val === "string") ? JSON.parse(val) : val || {};
+                parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
+                postRef.set(JSON.stringify(parsed));
+              } catch (e) { console.warn(e); }
+            });
+          } else {
+            likeRef.set(true);
+            postRef.once("value").then(postSnap => {
+              try {
+                const val = postSnap.val();
+                const parsed = (typeof val === "string") ? JSON.parse(val) : val || {};
+                parsed.likes = (parsed.likes || 0) + 1;
+                postRef.set(JSON.stringify(parsed));
+              } catch (e) { console.warn(e); }
+            });
+          }
+        });
+      });
 
-      postFooter.appendChild(likeBtn);
-      
-      // Delete button, if owner of post, moved to header
-      if (cleanNickname && cleanNickname === cleanCurrentUser) {
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete-button material-icons";
-        deleteBtn.textContent = "delete";
-        deleteBtn.title = "Postu sil";
-        deleteBtn.addEventListener("click", () => {
-          deletePostId = postId;
-          document.getElementById("confirmDialog").style.display = "block";
-        });
-        postFooter.appendChild(deleteBtn);
-      }
-      
-      postEl.appendChild(postFooter);
+      postFooter.appendChild(likeBtn);
+      
+      // Delete button, if owner of post, moved to header
+      if (cleanNickname && cleanNickname === cleanCurrentUser) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-button material-icons";
+        deleteBtn.textContent = "delete";
+        deleteBtn.title = "Postu sil";
+        deleteBtn.addEventListener("click", () => {
+          deletePostId = postId;
+          document.getElementById("confirmDialog").style.display = "block";
+        });
+        postFooter.appendChild(deleteBtn);
+      }
+      
+      postEl.appendChild(postFooter);
 
-      return postEl;
-    }
+      return postEl;
+    }
 
-    // Confirm dialog actions
-    document.getElementById("confirmYes").addEventListener("click", () => {
-      if (deletePostId) {
-        db.ref("posts/" + deletePostId).remove();
-        db.ref("likes/" + deletePostId).remove();
-        document.getElementById("confirmDialog").style.display = "none";
-        deletePostId = null;
-      }
-    });
-    document.getElementById("confirmNo").addEventListener("click", () => {
-      document.getElementById("confirmDialog").style.display = "none";
-      deletePostId = null;
-    });
+    // Confirm dialog actions
+    document.getElementById("confirmYes").addEventListener("click", () => {
+      if (deletePostId) {
+        db.ref("posts/" + deletePostId).remove();
+        db.ref("likes/" + deletePostId).remove();
+        document.getElementById("confirmDialog").style.display = "none";
+        deletePostId = null;
+      }
+    });
+    document.getElementById("confirmNo").addEventListener("click", () => {
+      document.getElementById("confirmDialog").style.display = "none";
+      deletePostId = null;
+    });
 
-    function renderAllPosts() {
-      postsContainer.innerHTML = "";
-      let postIds = Object.keys(postDataCache || {});
-      // filter by user if needed
-      if (showOnlyMyPosts) {
-        const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-        postIds = postIds.filter(id => {
-          const p = postDataCache[id] || {};
-          const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-          return nick === cleanCurrent;
-        });
-      }
+    function renderAllPosts() {
+      postsContainer.innerHTML = "";
+      let postIds = Object.keys(postDataCache || {});
+      // filter by user if needed
+      if (showOnlyMyPosts) {
+        const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+        postIds = postIds.filter(id => {
+          const p = postDataCache[id] || {};
+          const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
+          return nick === cleanCurrent;
+        });
+      }
 
-      // sort by time (descending) if possible
-      postIds.sort((a,b) => {
-        const aT = postDataCache[a] && postDataCache[a].time ? new Date(postDataCache[a].time) : null;
-        const bT = postDataCache[b] && postDataCache[b].time ? new Date(postDataCache[b].time) : null;
-        if (aT && bT) return bT.getTime() - aT.getTime();
-        return b.localeCompare(a);
-      });
+      // sort by time (descending) if possible
+      postIds.sort((a,b) => {
+        const aT = postDataCache[a] && postDataCache[a].time ? new Date(postDataCache[a].time) : null;
+        const bT = postDataCache[b] && postDataCache[b].time ? new Date(postDataCache[b].time) : null;
+        if (aT && bT) return bT.getTime() - aT.getTime();
+        return b.localeCompare(a);
+      });
 
-      postIds.forEach(postId => {
-        const data = postDataCache[postId];
-        const isLiked = likeCache[postId] && likeCache[postId][currentUser];
-        const postEl = renderPost(postId, data, isLiked);
-        if (postEl) postsContainer.appendChild(postEl);
-      });
+      postIds.forEach(postId => {
+        const data = postDataCache[postId];
+        const isLiked = likeCache[postId] && likeCache[postId][currentUser];
+        const postEl = renderPost(postId, data, isLiked);
+        if (postEl) postsContainer.appendChild(postEl);
+      });
 
-      // small refresh to reflow masonry
-      refreshMasonry();
-    }
+      // small refresh to reflow masonry
+      refreshMasonry();
+    }
 
-    // Live listeners
-    function loadLivePosts() {
-      db.ref("likes").on("value", (likesSnap) => {
-        likeCache = likesSnap.val() || {};
-        renderAllPosts();
-      });
+    // Live listeners
+    function loadLivePosts() {
+      db.ref("likes").on("value", (likesSnap) => {
+        likeCache = likesSnap.val() || {};
+        renderAllPosts();
+      });
 
-      const postsRef = db.ref("posts");
-      postsRef.on("child_added", (snap) => {
-        try {
-          const postId = snap.key;
-          const raw = snap.val();
-          const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
-          postDataCache[postId] = data;
-          renderAllPosts();
-        } catch (e) {
-          console.warn("Post əlavə olunarkən xəta:", snap.key, e);
-        }
-      });
-      postsRef.on("child_changed", (snap) => {
-        try {
-          const postId = snap.key;
-          const raw = snap.val();
-          const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
-          postDataCache[postId] = data;
-          renderAllPosts();
-        } catch (e) {
-          console.warn("Post dəyişilərkən xəta:", snap.key, e);
-        }
-      });
-      postsRef.on("child_removed", (snap) => {
-        const postId = snap.key;
-        delete postDataCache[postId];
-        const el = document.getElementById("post_" + postId);
-        if (el) el.remove();
-        refreshMasonry();
-      });
-    }
+      const postsRef = db.ref("posts");
+      postsRef.on("child_added", (snap) => {
+        try {
+          const postId = snap.key;
+          const raw = snap.val();
+          const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
+          postDataCache[postId] = data;
+          renderAllPosts();
+        } catch (e) {
+          console.warn("Post əlavə olunarkən xəta:", snap.key, e);
+        }
+      });
+      postsRef.on("child_changed", (snap) => {
+        try {
+          const postId = snap.key;
+          const raw = snap.val();
+          const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
+          postDataCache[postId] = data;
+          renderAllPosts();
+        } catch (e) {
+          console.warn("Post dəyişilərkən xəta:", snap.key, e);
+        }
+      });
+      postsRef.on("child_removed", (snap) => {
+        const postId = snap.key;
+        delete postDataCache[postId];
+        const el = document.getElementById("post_" + postId);
+        if (el) el.remove();
+        refreshMasonry();
+      });
+    }
 
-    // tiny trick to force reflow so column layout updates nicely
-    function refreshMasonry() {
-      // toggle a harmless style to force reflow
-      postsContainer.style.visibility = 'hidden';
-      // short timeout to allow browser to repaint
-      setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
-    }
+    // tiny trick to force reflow so column layout updates nicely
+    function refreshMasonry() {
+      // toggle a harmless style to force reflow
+      postsContainer.style.visibility = 'hidden';
+      // short timeout to allow browser to repaint
+      setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
+    }
 
-    // init
-    loadStatusData();
-    loadLivePosts();
+    // init
+    loadStatusData();
+    loadLivePosts();
 
-    // hide loader and show posts grid
-    setTimeout(() => {
-      const loader = document.getElementById("loader");
-      if (loader) loader.style.display = "none";
-      postsContainer.style.display = "block"; // important: show as block (not grid)
-      refreshMasonry();
-    }, 1200);
+    // hide loader and show posts grid
+    setTimeout(() => {
+      const loader = document.getElementById("loader");
+      if (loader) loader.style.display = "none";
+      postsContainer.style.display = "block"; // important: show as block (not grid)
+      refreshMasonry();
+    }, 1200);
   </script>
 </body>
 </html>
