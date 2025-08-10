@@ -1,605 +1,563 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
-  <style>
-    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-    * {
-      outline: none !important;
-      box-shadow: none !important;
-      -webkit-tap-highlight-color: transparent;
-    }
+        * {
+            outline: none !important;
+            box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    body {
-      background: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 5px;
-    }
+        body {
+            background: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 5px;
+        }
 
-    #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #121212;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-in-out;
+        }
 
-    .spinner {
-      border: 3px solid #333;
-      border-top: 3px solid white;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-    }
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-    .post {
-      background: #1e1e1e;
-      border-radius: 10px;
-      margin-top: 15px;
-      padding: 15px;
-    }
+        .post {
+            background: #1e1e1e;
+            border-radius: 10px;
+            margin-top: 5px;
+            padding: 15px;
+        }
 
-    .post-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
-    .profile-pic {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-right: 10px;
-    }
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
 
-    .username-box {
-      display: flex;
-      flex-direction: column;
-    }
+        .username-box {
+            display: flex;
+            flex-direction: column;
+        }
 
-    .userid {
-      font-weight: bold;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-    }
-    
-    .status-badge {
-      width: 18px;
-      height: 18px;
-      margin-left: 5px;
-    }
+        .userid {
+            font-weight: bold;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-badge {
+            width: 18px;
+            height: 18px;
+            margin-left: 5px;
+        }
 
-    .nickname {
-      font-size: 0.8rem;
-      color: #aaa;
-    }
+        .nickname {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
 
-    .post-text {
-      margin: 10px 0;
-    }
+        .post-text {
+            margin: 10px 0;
+        }
 
-    .post-image {
-      width: 100%;
-      max-width: 100%;
-      border-radius: 8px;
-    }
+        .post-image {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 8px;
+        }
 
-    .post-time {
-      font-size: 0.8rem;
-      color: #aaa;
-      text-align: right;
-      margin-top: 5px;
-    }
+        .post-time {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: right;
+            margin-top: 5px;
+        }
 
-    .like-button {
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      padding: 5px;
-      margin-top: 5px;
-      user-select: none;
-      transition: color 0.3s;
-    }
+        .like-button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            margin-top: 5px;
+            user-select: none;
+            transition: color 0.3s;
+        }
 
-    .like-button.liked {
-      color: #ff4d4d;
-    }
+        .like-button.liked {
+            color: #ff4d4d;
+        }
 
-    .like-button .material-icons {
-      margin-right: 5px;
-    }
+        .like-button .material-icons {
+            margin-right: 5px;
+        }
 
-    .like-count {
-      margin-left: 5px;
-    }
+        .like-count {
+            margin-left: 5px;
+        }
 
-    .delete-button {
-      background: none;
-      border: none;
-      color: red;
-      cursor: pointer;
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      font-size: 20px;
-      user-select: none;
-    }
+        .delete-button {
+            background: none;
+            border: none;
+            color: red;
+            cursor: pointer;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            user-select: none;
+        }
 
-    .confirm-dialog {
-      position: fixed;
-      text-align: center;
-      font-size: 13px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #282828;
-      color: white;
-      padding: 20px;
-      border-radius: 8px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      z-index: 10000;
-      box-shadow: 0 0 10px #000;
-    }
+        .confirm-dialog {
+            position: fixed;
+            text-align: center;
+            font-size: 13px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #282828;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10000;
+            box-shadow: 0 0 10px #000;
+        }
 
-    .confirm-dialog button {
-      margin-top: 10px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      user-select: none;
-    }
+        .confirm-dialog button {
+            margin-top: 10px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            user-select: none;
+        }
 
-    .confirm-dialog .yes {
-      background: red;
-      color: white;
-    }
+        .confirm-dialog .yes {
+            background: red;
+            color: white;
+        }
 
-    .confirm-dialog .no {
-      background: #444;
-      color: white;
-      margin-left: 10px;
-    }
+        .confirm-dialog .no {
+            background: #444;
+            color: white;
+            margin-left: 10px;
+        }
 
-    .liked-users-summary {
-      font-size: 12px;
-      margin-top: 5px;
-      color: #ccc;
-      user-select: none;
-      cursor: pointer;
-      white-space: nowrap;
-    }
+        .liked-users-summary {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #ccc;
+            user-select: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
 
-    .liked-users-summary span {
-      user-select: text;
-      color: #ccc;
-      font-weight: normal;
-      margin-right: 3px;
-    }
+        .liked-users-summary span {
+            user-select: text;
+            color: #ccc;
+            font-weight: normal;
+            margin-right: 3px;
+        }
 
-    .liked-users-summary span.liked-users-more {
-      color: #ccc;
-      cursor: pointer;
-      user-select: none;
-      text-decoration: none;
-    }
+        .liked-users-summary span.liked-users-more {
+            color: #ccc;
+            cursor: pointer;
+            user-select: none;
+            text-decoration: none;
+        }
 
-    .liked-users-list {
-      font-size: 13px;
-      margin-top: 5px;
-      color: #ddd;
-      background: #282828;
-      border-radius: 5px;
-      padding: 5px 10px;
-      max-height: 150px;
-      overflow-y: auto;
-      display: none;
-      user-select: text;
-    }
+        .liked-users-list {
+            font-size: 13px;
+            margin-top: 5px;
+            color: #ddd;
+            background: #282828;
+            border-radius: 5px;
+            padding: 5px 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            user-select: text;
+        }
 
-    .liked-users-list div {
-      margin: 2px 0;
-      user-select: text;
-    }
+        .liked-users-list div {
+            margin: 2px 0;
+            user-select: text;
+        }
 
-    .post-time {
-      text-align: right;
-      font-size: 12px;
-      color: gray;
-      margin-top: 8px;
-    }
-  </style>
+        .post-time {
+            text-align: right;
+            font-size: 12px;
+            color: gray;
+            margin-top: 8px;
+        }
+    </style>
 </head>
 <body>
-  <div id="loader">
-    <div class="spinner"></div>
-    <p style="color:white; margin-top: 15px;"></p>
-  </div>
-
-  <div id="posts" style="display:none;"></div>
-
-  <div class="confirm-dialog" id="confirmDialog">
-    <div>Bu postu silmək istəyirsiniz?</div>
-    <div style="margin-top: 10px;">
-      <button class="yes" id="confirmYes">Bəli</button>
-      <button class="no" id="confirmNo">Xeyr</button>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="color:white; margin-top: 15px;"></p>
     </div>
-  </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <div id="posts" style="display:none;"></div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
-      authDomain: "pasyakaaz.firebaseapp.com",
-      projectId: "pasyakaaz",
-      storageBucket: "pasyakaaz.appspot.com",
-      messagingSenderId: "289629756800",
-      appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const postsContainer = document.getElementById("posts");
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentUser = urlParams.get("user") || "anonim";
+    <div class="confirm-dialog" id="confirmDialog">
+        <div>Bu postu silmək istəyirsiniz?</div>
+        <div style="margin-top: 10px;">
+            <button class="yes" id="confirmYes">Bəli</button>
+            <button class="no" id="confirmNo">Xeyr</button>
+        </div>
+    </div>
 
-    let likeCache = {};
-    let deletePostId = null;
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-    // Separate Firebase configs for tick and premium
-    const tickFirebaseConfig = {
-      apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
-      authDomain: "pasyak-tick.firebaseapp.com",
-      databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
-      projectId: "pasyak-tick",
-      storageBucket: "pasyak-tick.firebasestorage.app",
-      messagingSenderId: "379214418412",
-      appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
-      measurementId: "G-DW00VF06NR"
-    };
-    const premiumFirebaseConfig = {
-      apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
-      authDomain: "pasyak-premium.firebaseapp.com",
-      databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
-      projectId: "pasyak-premium",
-      storageBucket: "pasyak-premium.firebasestorage.app",
-      messagingSenderId: "662922654975",
-      appId: "1:662922654975:web:54b78968d4cccba65f88ca",
-      measurementId: "G-QDTFGFYXKK"
-    };
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
+            authDomain: "pasyakaaz.firebaseapp.com",
+            projectId: "pasyakaaz",
+            storageBucket: "pasyakaaz.appspot.com",
+            messagingSenderId: "289629756800",
+            appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const postsContainer = document.getElementById("posts");
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUser = urlParams.get("user") || "anonim";
 
-    const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
-    const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
-    const tickDb = tickApp.database();
-    const premiumDb = premiumApp.database();
+        let likeCache = {};
+        let postCache = {};
+        let deletePostId = null;
+        let isFirstLoad = true;
 
-    let tickUsers = {};
-    let premiumUsers = {};
+        const tickFirebaseConfig = {
+            apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
+            authDomain: "pasyak-tick.firebaseapp.com",
+            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
+            projectId: "pasyak-tick",
+            storageBucket: "pasyak-tick.firebasestorage.app",
+            messagingSenderId: "379214418412",
+            appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
+            measurementId: "G-DW00VF06NR"
+        };
+        const premiumFirebaseConfig = {
+            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
+            authDomain: "pasyak-premium.firebaseapp.com",
+            databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
+            projectId: "pasyak-premium",
+            storageBucket: "pasyak-premium.firebasestorage.app",
+            messagingSenderId: "662922654975",
+            appId: "1:662922654975:web:54b78968d4cccba65f88ca",
+            measurementId: "G-QDTFGFYXKK"
+        };
 
-    function loadStatusData() {
-      tickDb.ref("tick").on("value", (snapshot) => {
-        tickUsers = snapshot.val() || {};
-        updateAllPosts();
-      });
+        const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
+        const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
+        const tickDb = tickApp.database();
+        const premiumDb = premiumApp.database();
 
-      premiumDb.ref("premium").on("value", (snapshot) => {
-        premiumUsers = snapshot.val() || {};
-        updateAllPosts();
-      });
-    }
-    
-    function getStatusBadge(nickname) {
-      const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
-      
-      const isTick = tickUsers[cleanNickname] === "+";
-      const isPremium = premiumUsers[cleanNickname] === "+";
-      
-      if (isTick && isPremium) {
-        return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
-      } else if (isTick) {
-        return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
-      } else if (isPremium) {
-        return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
-      }
-      return null;
-    }
-    
-    function renderPost(postId, data, isLikedByUser) {
-      const postEl = document.createElement("div");
-      postEl.className = "post";
-      postEl.id = "post_" + postId;
+        let tickUsers = {};
+        let premiumUsers = {};
+        let dataLoaded = { posts: false, likes: false, tick: false, premium: false };
 
-      const header = document.createElement("div");
-      header.className = "post-header";
-
-      const img = document.createElement("img");
-      img.className = "profile-pic";
-      img.src = data.profile || "https://via.placeholder.com/36?text=?";
-
-      const userBox = document.createElement("div");
-      userBox.className = "username-box";
-
-      const userNameDiv = document.createElement("div");
-      userNameDiv.className = "userid";
-      userNameDiv.textContent = data.user || "";
-      
-      const statusBadgeUrl = getStatusBadge(data.nickname);
-      if (statusBadgeUrl) {
-        const statusBadgeImg = document.createElement("img");
-        statusBadgeImg.className = "status-badge";
-        statusBadgeImg.src = statusBadgeUrl;
-        userNameDiv.appendChild(statusBadgeImg);
-      }
-
-      const nickDiv = document.createElement("div");
-      nickDiv.className = "nickname";
-
-      const displayNickname = data.nickname.startsWith('@') ? data.nickname : `@${data.nickname}`;
-
-      if (data.nickname !== currentUser) {
-        const clickableNick = document.createElement("span");
-        clickableNick.textContent = displayNickname;
-        clickableNick.style.textDecoration = "underline";
-        clickableNick.style.cursor = "pointer";
-        clickableNick.style.color = "#66aaff";
-
-        clickableNick.addEventListener("click", () => {
-          const url = new URL(window.location);
-          const baseUrl = url.origin + url.pathname;
-          const newUrl = baseUrl + "?other_user=" + encodeURIComponent(data.nickname);
-          window.history.replaceState(null, "", newUrl);
-        });
-
-        nickDiv.appendChild(clickableNick);
-      } else {
-        nickDiv.textContent = displayNickname;
-      }
-
-      userBox.appendChild(userNameDiv);
-      userBox.appendChild(nickDiv);
-      header.appendChild(img);
-      header.appendChild(userBox);
-
-      if (data.nickname === currentUser) {
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete-button material-icons";
-        deleteBtn.textContent = "delete";
-        deleteBtn.addEventListener("click", () => {
-          deletePostId = postId;
-          document.getElementById("confirmDialog").style.display = "flex";
-        });
-        header.appendChild(deleteBtn);
-      }
-
-      postEl.appendChild(header);
-
-      if (data.text) {
-        const text = document.createElement("div");
-        text.className = "post-text";
-        text.textContent = data.text;
-        postEl.appendChild(text);
-      }
-
-      if (data.image) {
-        const image = document.createElement("img");
-        image.className = "post-image";
-        image.src = data.image.replace(/\\/g, '').trim();
-        postEl.appendChild(image);
-      }
-
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "like-button";
-      if (isLikedByUser) likeBtn.classList.add("liked");
-      likeBtn.innerHTML = `
-        <span class="material-icons">favorite</span>
-        <span class="like-count">${data.likes || 0}</span>
-      `;
-      likeBtn.addEventListener("click", () => {
-        const likeRef = db.ref(`likes/${postId}/${currentUser}`);
-        const postRef = db.ref(`posts/${postId}`);
-
-        likeRef.once("value").then(snap => {
-          if (snap.exists()) {
-            likeRef.remove();
-            postRef.once("value").then(postSnap => {
-              let parsed = JSON.parse(postSnap.val());
-              parsed.likes = Math.max((parsed.likes || 1) - 1, 0);
-              postRef.set(JSON.stringify(parsed));
-            });
-          } else {
-            likeRef.set(true);
-            postRef.once("value").then(postSnap => {
-              let parsed = JSON.parse(postSnap.val());
-              parsed.likes = (parsed.likes || 0) + 1;
-              postRef.set(JSON.stringify(parsed));
-            });
-          }
-        });
-      });
-      postEl.appendChild(likeBtn);
-
-      const likedUsersSummary = document.createElement("div");
-      likedUsersSummary.className = "liked-users-summary";
-      const likedUsersList = document.createElement("div");
-      likedUsersList.className = "liked-users-list";
-
-      function updateLikedUsers() {
-        const users = Object.keys(likeCache[postId] || {});
-
-        if (users.length === 0) {
-          likedUsersSummary.textContent = "";
-          likedUsersList.style.display = "none";
-        } else if (users.length <= 2) {
-          likedUsersSummary.innerHTML = users.map(u => `<span>${u}</span>`).join(", ") + " bəyəndi";
-          likedUsersList.style.display = "none";
-        } else {
-          const firstTwo = users.slice(0, 2).map(u => `<span>${u}</span>`).join(", ");
-          likedUsersSummary.innerHTML = `${firstTwo} bəyəndi <span class="liked-users-more">... (kliklə)</span>`;
-          likedUsersList.style.display = "none";
-          likedUsersList.innerHTML = "";
-          users.slice(2).forEach(u => {
-            const div = document.createElement("div");
-            div.textContent = "" + u;
-            likedUsersList.appendChild(div);
-          });
-          likedUsersSummary.querySelector(".liked-users-more").onclick = () => {
-            if (likedUsersList.style.display === "none" || likedUsersList.style.display === "") {
-              likedUsersList.style.display = "block";
-              likedUsersSummary.querySelector(".liked-users-more").textContent = "(bağla)";
-            } else {
-              likedUsersList.style.display = "none";
-              likedUsersSummary.querySelector(".liked-users-more").textContent = "... (kliklə)";
+        function hideLoaderIfReady() {
+            if (dataLoaded.posts && dataLoaded.likes && dataLoaded.tick && dataLoaded.premium) {
+                const loader = document.getElementById("loader");
+                loader.style.opacity = 0;
+                setTimeout(() => {
+                    loader.style.display = "none";
+                    document.getElementById("posts").style.display = "block";
+                }, 500);
             }
-          };
         }
-      }
 
-      updateLikedUsers();
-      postEl.appendChild(likedUsersSummary);
-      postEl.appendChild(likedUsersList);
+        function getStatusBadge(nickname) {
+            const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
+            const isTick = tickUsers[cleanNickname] === "+";
+            const isPremium = premiumUsers[cleanNickname] === "+";
+            if (isTick && isPremium) {
+                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+            } else if (isTick) {
+                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+            } else if (isPremium) {
+                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+            }
+            return null;
+        }
+        
+        function renderPost(postId, data) {
+            const isLikedByUser = likeCache[postId] && likeCache[postId][currentUser];
+            const postEl = document.createElement("div");
+            postEl.className = "post";
+            postEl.id = "post_" + postId;
 
-      if (data.time) {
-        const timeDiv = document.createElement("div");
-        timeDiv.className = "post-time";
-        timeDiv.textContent = data.time;
-        postEl.appendChild(timeDiv);
-      }
+            const header = document.createElement("div");
+            header.className = "post-header";
 
-      return postEl;
-    }
+            const img = document.createElement("img");
+            img.className = "profile-pic";
+            img.src = data.profile || "https://via.placeholder.com/36?text=?";
 
-    document.getElementById("confirmYes").onclick = () => {
-      if (deletePostId) {
-        db.ref("posts/" + deletePostId).remove();
-        db.ref("likes/" + deletePostId).remove();
-        document.getElementById("confirmDialog").style.display = "none";
-        deletePostId = null;
-      }
-    };
+            const userBox = document.createElement("div");
+            userBox.className = "username-box";
 
-    document.getElementById("confirmNo").onclick = () => {
-      document.getElementById("confirmDialog").style.display = "none";
-      deletePostId = null;
-    };
+            const userNameDiv = document.createElement("div");
+            userNameDiv.className = "userid";
+            userNameDiv.textContent = data.user || "";
+            
+            const statusBadgeUrl = getStatusBadge(data.nickname);
+            if (statusBadgeUrl) {
+                const statusBadgeImg = document.createElement("img");
+                statusBadgeImg.className = "status-badge";
+                statusBadgeImg.src = statusBadgeUrl;
+                userNameDiv.appendChild(statusBadgeImg);
+            }
 
-    function updatePost(postId, data) {
-      const isLiked = likeCache[postId] && likeCache[postId][currentUser];
-      const postEl = renderPost(postId, data, isLiked);
-      const existing = document.getElementById("post_" + postId);
-      if (existing) {
-        postsContainer.replaceChild(postEl, existing);
-      } else {
-        postsContainer.prepend(postEl);
-      }
-    }
+            const nickDiv = document.createElement("div");
+            nickDiv.className = "nickname";
+            const displayNickname = data.nickname.startsWith('@') ? data.nickname : `@${data.nickname}`;
+            nickDiv.textContent = displayNickname;
 
-    function updateAllPosts() {
-      postsContainer.innerHTML = "";
-      db.ref("posts").once("value").then(postsSnap => {
-        const postDataArray = [];
-        postsSnap.forEach(snap => {
-          const data = JSON.parse(snap.val());
-          if (data.time) {
-            postDataArray.push({ id: snap.key, data: data });
-          }
+            userBox.appendChild(userNameDiv);
+            userBox.appendChild(nickDiv);
+            header.appendChild(img);
+            header.appendChild(userBox);
+
+            if (data.nickname === currentUser) {
+                const deleteBtn = document.createElement("button");
+                deleteBtn.className = "delete-button material-icons";
+                deleteBtn.textContent = "delete";
+                deleteBtn.addEventListener("click", () => {
+                    deletePostId = postId;
+                    document.getElementById("confirmDialog").style.display = "flex";
+                });
+                header.appendChild(deleteBtn);
+            }
+
+            postEl.appendChild(header);
+
+            if (data.text) {
+                const text = document.createElement("div");
+                text.className = "post-text";
+                text.textContent = data.text;
+                postEl.appendChild(text);
+            }
+
+            if (data.image) {
+                const image = document.createElement("img");
+                image.className = "post-image";
+                image.src = data.image.replace(/\\/g, '').trim();
+                postEl.appendChild(image);
+            }
+
+            const likeBtn = document.createElement("button");
+            likeBtn.className = "like-button";
+            if (isLikedByUser) likeBtn.classList.add("liked");
+            likeBtn.innerHTML = `
+                <span class="material-icons">favorite</span>
+                <span class="like-count">${data.likes || 0}</span>
+            `;
+            likeBtn.addEventListener("click", () => {
+                const likeRef = db.ref(`likes/${postId}/${currentUser}`);
+                const postRef = db.ref(`posts/${postId}`);
+                likeRef.once("value").then(snap => {
+                    const isCurrentlyLiked = snap.exists();
+                    if (isCurrentlyLiked) {
+                        likeRef.remove();
+                    } else {
+                        likeRef.set(true);
+                    }
+                });
+            });
+            postEl.appendChild(likeBtn);
+
+            const likedUsersSummary = document.createElement("div");
+            likedUsersSummary.className = "liked-users-summary";
+            const likedUsersList = document.createElement("div");
+            likedUsersList.className = "liked-users-list";
+
+            function updateLikedUsers() {
+                const users = Object.keys(likeCache[postId] || {});
+                if (users.length === 0) {
+                    likedUsersSummary.textContent = "";
+                    likedUsersList.style.display = "none";
+                } else if (users.length <= 2) {
+                    likedUsersSummary.innerHTML = users.map(u => `<span>${u}</span>`).join(", ") + " bəyəndi";
+                    likedUsersList.style.display = "none";
+                } else {
+                    const firstTwo = users.slice(0, 2).map(u => `<span>${u}</span>`).join(", ");
+                    likedUsersSummary.innerHTML = `${firstTwo} bəyəndi <span class="liked-users-more">... (kliklə)</span>`;
+                    likedUsersList.style.display = "none";
+                    likedUsersList.innerHTML = "";
+                    users.slice(2).forEach(u => {
+                        const div = document.createElement("div");
+                        div.textContent = "" + u;
+                        likedUsersList.appendChild(div);
+                    });
+                    likedUsersSummary.querySelector(".liked-users-more").onclick = () => {
+                        likedUsersList.style.display = (likedUsersList.style.display === "none" || likedUsersList.style.display === "") ? "block" : "none";
+                        likedUsersSummary.querySelector(".liked-users-more").textContent = (likedUsersList.style.display === "block") ? "(bağla)" : "... (kliklə)";
+                    };
+                }
+            }
+
+            updateLikedUsers();
+            postEl.appendChild(likedUsersSummary);
+            postEl.appendChild(likedUsersList);
+
+            if (data.time) {
+                const timeDiv = document.createElement("div");
+                timeDiv.className = "post-time";
+                timeDiv.textContent = data.time;
+                postEl.appendChild(timeDiv);
+            }
+
+            return postEl;
+        }
+
+        document.getElementById("confirmYes").onclick = () => {
+            if (deletePostId) {
+                db.ref("posts/" + deletePostId).remove();
+                db.ref("likes/" + deletePostId).remove();
+                document.getElementById("confirmDialog").style.display = "none";
+                deletePostId = null;
+            }
+        };
+
+        document.getElementById("confirmNo").onclick = () => {
+            document.getElementById("confirmDialog").style.display = "none";
+            deletePostId = null;
+        };
+        
+        function updatePostElement(postId, postData) {
+            if (!postData) return;
+            
+            const postEl = document.getElementById("post_" + postId);
+            if (postEl) {
+                const newPostEl = renderPost(postId, postData);
+                postsContainer.replaceChild(newPostEl, postEl);
+            } else {
+                const newPostEl = renderPost(postId, postData);
+                postsContainer.prepend(newPostEl);
+            }
+        }
+
+        // Real-time listeners for all data sources
+        db.ref("likes").on("value", (likesSnap) => {
+            likeCache = likesSnap.val() || {};
+            dataLoaded.likes = true;
+            for (const postId in postCache) {
+                const postLikes = Object.keys(likeCache[postId] || {}).length;
+                if (postCache[postId].likes !== postLikes) {
+                    postCache[postId].likes = postLikes;
+                    updatePostElement(postId, postCache[postId]);
+                }
+            }
+            hideLoaderIfReady();
+        });
+
+        tickDb.ref("tick").on("value", (snapshot) => {
+            tickUsers = snapshot.val() || {};
+            dataLoaded.tick = true;
+            for (const postId in postCache) {
+                updatePostElement(postId, postCache[postId]);
+            }
+            hideLoaderIfReady();
+        });
+
+        premiumDb.ref("premium").on("value", (snapshot) => {
+            premiumUsers = snapshot.val() || {};
+            dataLoaded.premium = true;
+            for (const postId in postCache) {
+                updatePostElement(postId, postCache[postId]);
+            }
+            hideLoaderIfReady();
         });
         
-        // Postları tarixinə görə azalan sırada (ən yenidən ən köhnəyə) sıralayır
-        const sortedPosts = postDataArray.sort((a, b) => {
-          const dateA = new Date(a.data.time);
-          const dateB = new Date(b.data.time);
-          return dateB - dateA;
+        db.ref("posts").on("value", (snapshot) => {
+            const allPosts = snapshot.val();
+            const postDataArray = [];
+            for (const postId in allPosts) {
+                try {
+                    const postData = JSON.parse(allPosts[postId]);
+                    postCache[postId] = postData;
+                    postDataArray.push({ id: postId, data: postData });
+                } catch (e) {
+                    console.error("Post məlumatı oxunarkən xəta:", postId, e);
+                }
+            }
+            
+            const sortedPosts = postDataArray.sort((a, b) => new Date(b.data.time) - new Date(a.data.time));
+            postsContainer.innerHTML = "";
+            sortedPosts.forEach(post => {
+                postsContainer.appendChild(renderPost(post.id, post.data));
+            });
+
+            dataLoaded.posts = true;
+            hideLoaderIfReady();
         });
-        
-        sortedPosts.forEach(post => {
-          updatePost(post.id, post.data);
+
+        db.ref("posts").on("child_changed", (snap) => {
+            try {
+                const postId = snap.key;
+                const data = JSON.parse(snap.val());
+                postCache[postId] = data;
+                updatePostElement(postId, data);
+            } catch (e) {
+                console.warn("Post dəyişilərkən xəta:", snap.key);
+            }
         });
-      });
-    }
 
-    function loadLivePosts() {
-      db.ref("likes").on("value", (likesSnap) => {
-        likeCache = likesSnap.val() || {};
-        updateAllPosts();
-      });
-
-      const postsRef = db.ref("posts");
-      postsRef.on("child_added", (snap) => {
-        try {
-          const postId = snap.key;
-          const data = JSON.parse(snap.val());
-          updatePost(postId, data);
-        } catch (e) {
-          console.warn("Post əlavə olunarkən xəta:", snap.key);
-        }
-      });
-      postsRef.on("child_changed", (snap) => {
-        try {
-          const postId = snap.key;
-          const data = JSON.parse(snap.val());
-          updatePost(postId, data);
-        } catch (e) {
-          console.warn("Post dəyişilərkən xəta:", snap.key);
-        }
-      });
-      postsRef.on("child_removed", (snap) => {
-        const postId = snap.key;
-        const el = document.getElementById("post_" + postId);
-        if (el) el.remove();
-      });
-    }
-
-    function checkAndUpdateProfilePictureByNickname() {
-      const nicknameToUpdate = urlParams.get("user");
-      const newProfileURL = urlParams.get("profile");
-
-      if (!nicknameToUpdate || !newProfileURL) return;
-      const postsRef = db.ref("posts");
-      postsRef.once("value").then(snapshot => {
-        snapshot.forEach(childSnap => {
-          const postId = childSnap.key;
-          let postData = JSON.parse(childSnap.val());
-          if (postData.nickname === nicknameToUpdate) {
-            postData.profile = newProfileURL;
-            postsRef.child(postId).set(JSON.stringify(postData));
-          }
+        db.ref("posts").on("child_removed", (snap) => {
+            const postId = snap.key;
+            delete postCache[postId];
+            const el = document.getElementById("post_" + postId);
+            if (el) el.remove();
         });
-      });
-    }
-
-    loadStatusData();
-    loadLivePosts();
-    checkAndUpdateProfilePictureByNickname();
-
-    setTimeout(() => {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("posts").style.display = "block";
-    }, 3000);
-  </script>
+    </script>
 </body>
 </html>
