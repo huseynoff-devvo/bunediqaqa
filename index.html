@@ -268,11 +268,12 @@
         const postsContainer = document.getElementById("posts");
         const urlParams = new URLSearchParams(window.location.search);
         const currentUser = urlParams.get("user") || "anonim";
+        let currentUserProfilePic = urlParams.get("profile");
 
         let likeCache = {};
         let postCache = {};
         let deletePostId = null;
-        let isFirstLoad = true;
+        let dataLoaded = { posts: false, likes: false, tick: false, premium: false };
 
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
@@ -302,7 +303,6 @@
 
         let tickUsers = {};
         let premiumUsers = {};
-        let dataLoaded = { posts: false, likes: false, tick: false, premium: false };
 
         function hideLoaderIfReady() {
             if (dataLoaded.posts && dataLoaded.likes && dataLoaded.tick && dataLoaded.premium) {
@@ -328,9 +328,21 @@
             }
             return null;
         }
-        
+
+        function getUniqueImageUrl(originalUrl) {
+            if (!originalUrl) return "https://via.placeholder.com/36?text=?";
+            // URL-ə dəyişiklik etmədən əvvəl timestamp-ı əlavə edirik
+            if (originalUrl.includes("?")) {
+                 return `${originalUrl}&t=${Date.now()}`;
+            } else {
+                 return `${originalUrl}?t=${Date.now()}`;
+            }
+        }
+
         function renderPost(postId, data) {
+            const postLikes = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
             const isLikedByUser = likeCache[postId] && likeCache[postId][currentUser];
+            
             const postEl = document.createElement("div");
             postEl.className = "post";
             postEl.id = "post_" + postId;
@@ -340,7 +352,8 @@
 
             const img = document.createElement("img");
             img.className = "profile-pic";
-            img.src = data.profile || "https://via.placeholder.com/36?text=?";
+            // Burada profil şəklinin URL-ini birbaşa istifadə edirik
+            img.src = getUniqueImageUrl(data.profile);
 
             const userBox = document.createElement("div");
             userBox.className = "username-box";
@@ -399,11 +412,10 @@
             if (isLikedByUser) likeBtn.classList.add("liked");
             likeBtn.innerHTML = `
                 <span class="material-icons">favorite</span>
-                <span class="like-count">${data.likes || 0}</span>
+                <span class="like-count">${postLikes}</span>
             `;
             likeBtn.addEventListener("click", () => {
                 const likeRef = db.ref(`likes/${postId}/${currentUser}`);
-                const postRef = db.ref(`posts/${postId}`);
                 likeRef.once("value").then(snap => {
                     const isCurrentlyLiked = snap.exists();
                     if (isCurrentlyLiked) {
@@ -420,7 +432,7 @@
             const likedUsersList = document.createElement("div");
             likedUsersList.className = "liked-users-list";
 
-            function updateLikedUsers() {
+            function updateLikedUsersSummary() {
                 const users = Object.keys(likeCache[postId] || {});
                 if (users.length === 0) {
                     likedUsersSummary.textContent = "";
@@ -445,7 +457,7 @@
                 }
             }
 
-            updateLikedUsers();
+            updateLikedUsersSummary();
             postEl.appendChild(likedUsersSummary);
             postEl.appendChild(likedUsersList);
 
@@ -472,10 +484,9 @@
             document.getElementById("confirmDialog").style.display = "none";
             deletePostId = null;
         };
-        
+
         function updatePostElement(postId, postData) {
             if (!postData) return;
-            
             const postEl = document.getElementById("post_" + postId);
             if (postEl) {
                 const newPostEl = renderPost(postId, postData);
@@ -485,17 +496,49 @@
                 postsContainer.prepend(newPostEl);
             }
         }
+        
+        // Bu funksiya bütün postları yoxlayır və istifadəçinin postlarını yeniləyir.
+        function updateProfileInFirebase(nickname, newProfilePicUrl) {
+            db.ref("posts").once("value", (snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    const postId = childSnapshot.key;
+                    let postData;
+                    try {
+                        postData = JSON.parse(childSnapshot.val());
+                    } catch (e) {
+                        console.error("Məlumat JSON formatında deyil:", childSnapshot.val());
+                        return; // Növbəti posta keçirik
+                    }
+                    
+                    // Postun niki URL-dəki nikə uyğundursa
+                    if (postData.nickname === nickname) {
+                        // Və profil şəkli fərqlidirsə
+                        if (postData.profile !== newProfilePicUrl) {
+                            postData.profile = newProfilePicUrl;
+                            // Yenilənmiş obyekti string kimi databazaya yazırıq
+                            db.ref("posts/" + postId).set(JSON.stringify(postData)).then(() => {
+                                console.log(`Post ${postId} for user ${nickname} updated.`);
+                            }).catch(error => {
+                                console.error(`Error updating profile pic for post ${postId}:`, error);
+                            });
+                        }
+                    }
+                });
+            });
+        }
+        
+        // --- Əsas İşləmə Logikası ---
+        if (currentUser && currentUserProfilePic) {
+            // Səhifə yüklənəndə profil şəklini yeniləyirik
+            updateProfileInFirebase(currentUser, currentUserProfilePic);
+        }
 
-        // Real-time listeners for all data sources
+        // Bütün dinləyicilər burada saxlanılır
         db.ref("likes").on("value", (likesSnap) => {
             likeCache = likesSnap.val() || {};
             dataLoaded.likes = true;
             for (const postId in postCache) {
-                const postLikes = Object.keys(likeCache[postId] || {}).length;
-                if (postCache[postId].likes !== postLikes) {
-                    postCache[postId].likes = postLikes;
-                    updatePostElement(postId, postCache[postId]);
-                }
+                updatePostElement(postId, postCache[postId]);
             }
             hideLoaderIfReady();
         });
@@ -536,7 +579,6 @@
             sortedPosts.forEach(post => {
                 postsContainer.appendChild(renderPost(post.id, post.data));
             });
-
             dataLoaded.posts = true;
             hideLoaderIfReady();
         });
