@@ -249,9 +249,9 @@
         };
 
         if (!currentUserNick || !groupId) {
-            container.innerHTML = "<p style='color:red'>User və ya group_id URL parametrləri tapılmadı.</p>";
+            container.innerHTML = "<p style='color:red'></p>";
             loading.style.display = "none";
-            throw new Error("User və ya group_id URL parametrləri tapılmadı.");
+            throw new Error("");
         }
 
         const messageRef = ref(db, groupId);
