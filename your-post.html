@@ -1,364 +1,348 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
 
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-  <style>
-    /* GLOBAL RESET FOR FOCUS AND TAP HIGHLIGHT */
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
+    <style>
+        /* GLOBAL RESET FOR FOCUS AND TAP HIGHLIGHT */
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
 
-    body {
-      background: #181818;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+        body {
+            background: #181818;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    /* Loader */
-    #loader {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: #181818;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 9999;
-    }
-    .spinner {
-      border: 3px solid #333;
-      border-top: 3px solid white;
-      border-radius: 50%;
-      width: 30px; height: 30px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+        /* Loader */
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #181818;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px; height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
 
-    /* MASONRY LAYOUT */
-    #posts-grid {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-      /* masonry columns */
-      column-count: 2;
-      column-gap: 16px;
-      display: block; /* will be visible after loader */
-    }
+        /* NO POSTS MESSAGE */
+        .no-posts {
+            display: none; /* Default hidden */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            text-align: center;
+            margin-top: 50px;
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .no-posts .material-icons {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
 
-    /* Telefon üçün də eyni 2 sütun saxlamaq */
-    @media (max-width: 720px) {
-      #posts-grid { column-count: 2; }
-    }
+        /* MASONRY LAYOUT */
+        #posts-grid {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            column-count: 2;
+            column-gap: 16px;
+            display: block;
+        }
 
-    /* Post kartları */
-    .post {
-      background: #1e1e1e;
-      border-radius: 10px;
-      /* padding: 6px; */
-      display: inline-block; /* masonry üçün vacib */
-      width: 100%;
-      margin: 0 0 16px;
-      vertical-align: top;
-      break-inside: avoid;
-      -webkit-column-break-inside: avoid;
-      -moz-column-break-inside: avoid;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.4);
-      position: relative;
-    }
-    
-    /* post-header silindiyi üçün bu hissələr artıq işləmir */
-    /*
-    .post-header { display: flex; align-items: center; margin-bottom: 10px; padding: 0 4px; }
-    .profile-pic { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px; }
-    .username-box { display: flex; flex-direction: column; }
-    .userid { font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; }
-    .status-badge { width: 16px; height: 16px; margin-left: 5px; }
-    .nickname { font-size: 0.7rem; color: #aaa; }
-    */
+        @media (max-width: 720px) {
+            #posts-grid { column-count: 2; }
+        }
 
-    .post-text {
-      margin:8px 6px;
-      font-size:0.86rem;
-      color:#eee;
-      line-height:1.3;
-    }
+        /* Post kartları */
+        .post {
+            background: #1e1e1e;
+            border-radius: 10px;
+            display: inline-block;
+            width: 100%;
+            margin: 0 0 16px;
+            vertical-align: top;
+            break-inside: avoid;
+            -webkit-column-break-inside: avoid;
+            -moz-column-break-inside: avoid;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+            position: relative;
+        }
 
-    .post-image {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-      display: block;
-      object-fit: cover;
-    }
+        .post-text {
+            margin:8px 6px;
+            font-size:0.86rem;
+            color:#eee;
+            line-height:1.3;
+        }
 
-    /* Only show like count, no button */
-    .post-footer {
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      padding: 6px 6px;
-    }
-    .like-summary {
-      display: flex;
-      align-items: center;
-      font-size: 0.88rem;
-      color: #ccc;
-      gap: 6px;
-    }
-    .like-summary .material-icons { font-size: 1.2rem; color: #ff4d4d; }
-  </style>
+        .post-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            object-fit: cover;
+        }
+
+        .post-footer {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 6px 6px;
+        }
+        .like-summary {
+            display: flex;
+            align-items: center;
+            font-size: 0.88rem;
+            color: #ccc;
+            gap: 6px;
+        }
+        .like-summary .material-icons { font-size: 1.2rem; color: #ff4d4d; }
+
+        /* Confirm dialog is for deletion, which is removed, but keeping styles just in case */
+        .confirm-dialog {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div id="loader">
-    <div class="spinner"></div>
-    <p style="color:white; margin-top:15px;"></p>
-  </div>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="color:white; margin-top:15px;"></p>
+    </div>
 
-  <div id="posts-grid" style="display:none;"></div>
+    <div id="posts-grid" style="display:none;"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <div id="no-posts" class="no-posts">
+        <span class="material-icons">sentiment_very_dissatisfied</span>
+        <span>Bu istifadəçinin postları yoxdur.</span>
+    </div>
 
-  <script>
-    // ---- Firebase əsas app (sənin konfiqurasiyalar) ----
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
-      authDomain: "pasyakaaz.firebaseapp.com",
-      projectId: "pasyakaaz",
-      storageBucket: "pasyakaaz.appspot.com",
-      messagingSenderId: "289629756800",
-      appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const postsContainer = document.getElementById("posts-grid");
+    <div class="confirm-dialog" id="confirmDialog">
+        <div>Bu postu silmək istəyirsiniz?</div>
+        <div style="margin-top:10px;">
+            <button class="yes" id="confirmYes">Bəli</button>
+            <button class="no" id="confirmNo">Xeyr</button>
+        </div>
+    </div>
 
-    // URL params
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentUser = (urlParams.get("user") || "anonim").trim();
-    const showOnlyMyPosts = urlParams.get("myPosts") === "true";
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-    let postDataCache = {};
+    <script>
+        // ---- Firebase əsas app (sənin konfiqurasiyalar) ----
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
+            authDomain: "pasyakaaz.firebaseapp.com",
+            projectId: "pasyakaaz",
+            storageBucket: "pasyakaaz.appspot.com",
+            messagingSenderId: "289629756800",
+            appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const postsContainer = document.getElementById("posts-grid");
+        const noPostsMessage = document.getElementById("no-posts");
 
-    // Tick & premium configs (sənin konfiqlar)
-    const tickFirebaseConfig = {
-      apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
-      authDomain: "pasyak-tick.firebaseapp.com",
-      databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
-      projectId: "pasyak-tick",
-      storageBucket: "pasyak-tick.firebasestorage.app",
-      messagingSenderId: "379214418412",
-      appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
-      measurementId: "G-DW00VF06NR"
-    };
-    const premiumFirebaseConfig = {
-      apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
-      authDomain: "pasyak-premium.firebaseapp.com",
-      databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
-      projectId: "pasyak-premium",
-      storageBucket: "pasyak-premium.firebasestorage.app",
-      messagingSenderId: "662922654975",
-      appId: "1:662922654975:web:54b78968d4cccba65f88ca",
-      measurementId: "G-QDTFGFYXKK"
-    };
+        // URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUser = (urlParams.get("user") || "anonim").trim();
+        const showOnlyMyPosts = urlParams.get("myPosts") === "true";
 
-    const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
-    const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
-    const tickDb = tickApp.database();
-    const premiumDb = premiumApp.database();
+        let postDataCache = {};
+        let likeCache = {}; // Cache for likes
 
-    let tickUsers = {};
-    let premiumUsers = {};
+        // Tick & premium configs (sənin konfiqlar)
+        const tickFirebaseConfig = {
+            apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
+            authDomain: "pasyak-tick.firebaseapp.com",
+            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
+            projectId: "pasyak-tick",
+            storageBucket: "pasyak-tick.firebasestorage.app",
+            messagingSenderId: "379214418412",
+            appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
+            measurementId: "G-DW00VF06NR"
+        };
+        const premiumFirebaseConfig = {
+            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
+            authDomain: "pasyak-premium.firebaseapp.com",
+            databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
+            projectId: "pasyak-premium",
+            storageBucket: "pasyak-premium.firebasestorage.app",
+            messagingSenderId: "662922654975",
+            appId: "1:662922654975:web:54b78968d4cccba65f88ca",
+            measurementId: "G-QDTFGFYXKK"
+        };
 
-    function loadStatusData() {
-      tickDb.ref("tick").on("value", (snapshot) => {
-        tickUsers = snapshot.val() || {};
-        renderAllPosts();
-      });
-      premiumDb.ref("premium").on("value", (snapshot) => {
-        premiumUsers = snapshot.val() || {};
-        renderAllPosts();
-      });
-    }
+        const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
+        const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
+        const tickDb = tickApp.database();
+        const premiumDb = premiumApp.database();
 
-    function getStatusBadge(nickname = "") {
-      const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
-      const isTick = tickUsers[cleanNickname] === "+";
-      const isPremium = premiumUsers[cleanNickname] === "+";
-      if (isTick && isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
-      if (isTick) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
-      if (isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
-      return null;
-    }
+        let tickUsers = {};
+        let premiumUsers = {};
 
-    // render single post
-    function renderPost(postId, data) {
-      if (!data) return null;
-      try {
-        // show only my posts check (safety)
-        if (showOnlyMyPosts) {
-          const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-          const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
-          if (postNick !== cleanCurrent) return null;
+        function loadStatusData() {
+            tickDb.ref("tick").on("value", (snapshot) => {
+                tickUsers = snapshot.val() || {};
+                renderAllPosts();
+            });
+            premiumDb.ref("premium").on("value", (snapshot) => {
+                premiumUsers = snapshot.val() || {};
+                renderAllPosts();
+            });
         }
-      } catch (e) { /* ignore */ }
 
-      const postEl = document.createElement("div");
-      postEl.className = "post";
-      postEl.id = "post_" + postId;
-
-      // post-header tamamilə silindi
-      /*
-      const header = document.createElement("div");
-      header.className = "post-header";
-      const img = document.createElement("img");
-      img.className = "profile-pic";
-      img.src = data.profile || "https://via.placeholder.com/36?text=?";
-      const userBox = document.createElement("div");
-      userBox.className = "username-box";
-      const userId = document.createElement("div");
-      userId.className = "userid";
-      userId.textContent = data.user || "Anonim";
-      const statusBadgeUrl = getStatusBadge(data.nickname || "");
-      if (statusBadgeUrl) {
-        const statusBadgeImg = document.createElement("img");
-        statusBadgeImg.className = "status-badge";
-        statusBadgeImg.src = statusBadgeUrl;
-        userId.appendChild(statusBadgeImg);
-      }
-      const nickname = document.createElement("div");
-      nickname.className = "nickname";
-      const displayNickname = (data.nickname || "").startsWith('@') ? data.nickname : `@${(data.nickname || "").replace(/^@/, '')}`;
-      nickname.textContent = displayNickname;
-      userBox.appendChild(userId);
-      userBox.appendChild(nickname);
-      header.appendChild(img);
-      header.appendChild(userBox);
-      postEl.appendChild(header);
-      */
-
-      if (data.image) {
-        const image = document.createElement("img");
-        image.className = "post-image";
-        image.src = (data.image || "").replace(/\\/g, '').trim();
-        // when image loads, trigger refresh so columns recalc nicely
-        image.addEventListener('load', () => refreshMasonry());
-        postEl.appendChild(image);
-      }
-
-      if (data.text) {
-        const text = document.createElement("div");
-        text.className = "post-text";
-        text.textContent = data.text;
-        postEl.appendChild(text);
-      }
-
-      const postFooter = document.createElement("div");
-      postFooter.className = "post-footer";
-
-      // Only display like count, no button
-      const likeSummary = document.createElement("div");
-      likeSummary.className = "like-summary";
-      likeSummary.innerHTML = `<span class="material-icons">favorite</span><span>${data.likes || 0}</span>`;
-      postFooter.appendChild(likeSummary);
-      
-      postEl.appendChild(postFooter);
-
-      return postEl;
-    }
-    
-    function renderAllPosts() {
-      postsContainer.innerHTML = "";
-      let postIds = Object.keys(postDataCache || {});
-      // filter by user if needed
-      if (showOnlyMyPosts) {
-        const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-        postIds = postIds.filter(id => {
-          const p = postDataCache[id] || {};
-          const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-          return nick === cleanCurrent;
-        });
-      }
-
-      // sort by time (descending) if possible
-      postIds.sort((a,b) => {
-        const aT = postDataCache[a] && postDataCache[a].time ? new Date(postDataCache[a].time) : null;
-        const bT = postDataCache[b] && postDataCache[b].time ? new Date(postDataCache[b].time) : null;
-        if (aT && bT) return bT.getTime() - aT.getTime();
-        return b.localeCompare(a);
-      });
-
-      postIds.forEach(postId => {
-        const data = postDataCache[postId];
-        const postEl = renderPost(postId, data);
-        if (postEl) postsContainer.appendChild(postEl);
-      });
-
-      // small refresh to reflow masonry
-      refreshMasonry();
-    }
-
-    // Live listeners
-    function loadLivePosts() {
-      const postsRef = db.ref("posts");
-      postsRef.on("child_added", (snap) => {
-        try {
-          const postId = snap.key;
-          const raw = snap.val();
-          const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
-          postDataCache[postId] = data;
-          renderAllPosts();
-        } catch (e) {
-          console.warn("Post əlavə olunarkən xəta:", snap.key, e);
+        function getStatusBadge(nickname = "") {
+            const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
+            const isTick = tickUsers[cleanNickname] === "+";
+            const isPremium = premiumUsers[cleanNickname] === "+";
+            if (isTick && isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+            if (isTick) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+            if (isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+            return null;
         }
-      });
-      postsRef.on("child_changed", (snap) => {
-        try {
-          const postId = snap.key;
-          const raw = snap.val();
-          const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
-          postDataCache[postId] = data;
-          renderAllPosts();
-        } catch (e) {
-          console.warn("Post dəyişilərkən xəta:", snap.key, e);
+
+        // render single post
+        function renderPost(postId, data) {
+            if (!data) return null;
+
+            if (showOnlyMyPosts) {
+                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+                const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
+                if (postNick !== cleanCurrent) return null;
+            }
+
+            const postEl = document.createElement("div");
+            postEl.className = "post";
+            postEl.id = "post_" + postId;
+
+            if (data.image) {
+                const image = document.createElement("img");
+                image.className = "post-image";
+                image.src = (data.image || "").replace(/\\/g, '').trim();
+                image.addEventListener('load', () => refreshMasonry());
+                postEl.appendChild(image);
+            }
+
+            if (data.text) {
+                const text = document.createElement("div");
+                text.className = "post-text";
+                text.textContent = data.text;
+                postEl.appendChild(text);
+            }
+
+            const postFooter = document.createElement("div");
+            postFooter.className = "post-footer";
+
+            const likeCount = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
+            const likeSummary = document.createElement("div");
+            likeSummary.className = "like-summary";
+            likeSummary.innerHTML = `<span class="material-icons">favorite</span><span>${likeCount}</span>`;
+            postFooter.appendChild(likeSummary);
+
+            postEl.appendChild(postFooter);
+
+            return postEl;
         }
-      });
-      postsRef.on("child_removed", (snap) => {
-        const postId = snap.key;
-        delete postDataCache[postId];
-        const el = document.getElementById("post_" + postId);
-        if (el) el.remove();
-        refreshMasonry();
-      });
-    }
 
-    // tiny trick to force reflow so column layout updates nicely
-    function refreshMasonry() {
-      // toggle a harmless style to force reflow
-      postsContainer.style.visibility = 'hidden';
-      // short timeout to allow browser to repaint
-      setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
-    }
+        function renderAllPosts() {
+            postsContainer.innerHTML = "";
+            let postIds = Object.keys(postDataCache || {});
 
-    // init
-    loadStatusData();
-    loadLivePosts();
+            if (showOnlyMyPosts) {
+                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+                postIds = postIds.filter(id => {
+                    const p = postDataCache[id] || {};
+                    const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
+                    return nick === cleanCurrent;
+                });
+            }
 
-    // hide loader and show posts grid
-    setTimeout(() => {
-      const loader = document.getElementById("loader");
-      if (loader) loader.style.display = "none";
-      postsContainer.style.display = "block"; // important: show as block (not grid)
-      refreshMasonry();
-    }, 1200);
-  </script>
+            // sort by time (descending) if possible
+            postIds.sort((a,b) => {
+                const aT = postDataCache[a] && postDataCache[a].time ? new Date(postDataCache[a].time) : null;
+                const bT = postDataCache[b] && postDataCache[b].time ? new Date(postDataCache[b].time) : null;
+                if (aT && bT) return bT.getTime() - aT.getTime();
+                return b.localeCompare(a);
+            });
+
+            if (postIds.length === 0) {
+                noPostsMessage.style.display = "flex";
+            } else {
+                noPostsMessage.style.display = "none";
+                postIds.forEach(postId => {
+                    const data = postDataCache[postId];
+                    const postEl = renderPost(postId, data);
+                    if (postEl) postsContainer.appendChild(postEl);
+                });
+            }
+
+            refreshMasonry();
+        }
+
+        // Live listeners
+        function loadLivePosts() {
+            // New listener for likes to update the like count
+            db.ref("likes").on("value", (likesSnapshot) => {
+                likeCache = likesSnapshot.val() || {};
+                renderAllPosts();
+            });
+
+            // Listener for all post changes
+            db.ref("posts").on("value", (snapshot) => {
+                postDataCache = {};
+                snapshot.forEach(snap => {
+                    try {
+                        const postId = snap.key;
+                        const raw = snap.val();
+                        const data = (typeof raw === "string") ? JSON.parse(raw) : raw;
+                        postDataCache[postId] = data;
+                    } catch (e) {
+                        console.warn("Post yüklənərkən xəta:", snap.key, e);
+                    }
+                });
+                renderAllPosts();
+            });
+        }
+
+        function refreshMasonry() {
+            postsContainer.style.visibility = 'hidden';
+            setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
+        }
+
+        // init
+        loadStatusData();
+        loadLivePosts();
+
+        setTimeout(() => {
+            const loader = document.getElementById("loader");
+            if (loader) loader.style.display = "none";
+            postsContainer.style.display = "block";
+            refreshMasonry();
+        }, 1200);
+    </script>
 </body>
 </html>
