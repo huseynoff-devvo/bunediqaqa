@@ -50,6 +50,10 @@
             100% { transform: rotate(360deg); }
         }
 
+        #posts {
+            display: none;
+        }
+
         .post {
             background: #1e1e1e;
             border-radius: 10px;
@@ -76,13 +80,17 @@
             flex-direction: column;
         }
 
+        .userid, .nickname {
+            cursor: pointer;
+        }
+
         .userid {
             font-weight: bold;
             font-size: 1rem;
             display: flex;
             align-items: center;
         }
-        
+
         .status-badge {
             width: 18px;
             height: 18px;
@@ -91,7 +99,7 @@
 
         .nickname {
             font-size: 0.8rem;
-            color: #aaa;
+            color: #4a90e2; /* Mavi rəng */
         }
 
         .post-text {
@@ -200,6 +208,7 @@
             color: #ccc;
             font-weight: normal;
             margin-right: 3px;
+            cursor: pointer;
         }
 
         .liked-users-summary span.liked-users-more {
@@ -225,6 +234,7 @@
         .liked-users-list div {
             margin: 2px 0;
             user-select: text;
+            cursor: pointer;
         }
 
         .post-time {
@@ -241,7 +251,7 @@
         <p style="color:white; margin-top: 15px;"></p>
     </div>
 
-    <div id="posts" style="display:none;"></div>
+    <div id="posts"></div>
 
     <div class="confirm-dialog" id="confirmDialog">
         <div>Bu postu silmək istəyirsiniz?</div>
@@ -331,18 +341,17 @@
 
         function getUniqueImageUrl(originalUrl) {
             if (!originalUrl) return "https://via.placeholder.com/36?text=?";
-            // URL-ə dəyişiklik etmədən əvvəl timestamp-ı əlavə edirik
             if (originalUrl.includes("?")) {
-                 return `${originalUrl}&t=${Date.now()}`;
+                return `${originalUrl}&t=${Date.now()}`;
             } else {
-                 return `${originalUrl}?t=${Date.now()}`;
+                return `${originalUrl}?t=${Date.now()}`;
             }
         }
 
         function renderPost(postId, data) {
             const postLikes = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
             const isLikedByUser = likeCache[postId] && likeCache[postId][currentUser];
-            
+
             const postEl = document.createElement("div");
             postEl.className = "post";
             postEl.id = "post_" + postId;
@@ -352,7 +361,6 @@
 
             const img = document.createElement("img");
             img.className = "profile-pic";
-            // Burada profil şəklinin URL-ini birbaşa istifadə edirik
             img.src = getUniqueImageUrl(data.profile);
 
             const userBox = document.createElement("div");
@@ -361,7 +369,7 @@
             const userNameDiv = document.createElement("div");
             userNameDiv.className = "userid";
             userNameDiv.textContent = data.user || "";
-            
+
             const statusBadgeUrl = getStatusBadge(data.nickname);
             if (statusBadgeUrl) {
                 const statusBadgeImg = document.createElement("img");
@@ -374,6 +382,13 @@
             nickDiv.className = "nickname";
             const displayNickname = data.nickname.startsWith('@') ? data.nickname : `@${data.nickname}`;
             nickDiv.textContent = displayNickname;
+
+            const userClickHandler = () => {
+                window.location.href = `?other_user=${encodeURIComponent(data.nickname)}`;
+            };
+            userNameDiv.addEventListener("click", userClickHandler);
+            nickDiv.addEventListener("click", userClickHandler);
+            img.addEventListener("click", userClickHandler);
 
             userBox.appendChild(userNameDiv);
             userBox.appendChild(nickDiv);
@@ -438,19 +453,24 @@
                     likedUsersSummary.textContent = "";
                     likedUsersList.style.display = "none";
                 } else if (users.length <= 2) {
-                    likedUsersSummary.innerHTML = users.map(u => `<span>${u}</span>`).join(", ") + " bəyəndi";
+                    const summaryHtml = users.map(u => `<span onclick="window.location.href='?other_user=${encodeURIComponent(u)}'">${u}</span>`).join(", ") + " bəyəndi";
+                    likedUsersSummary.innerHTML = summaryHtml;
                     likedUsersList.style.display = "none";
                 } else {
-                    const firstTwo = users.slice(0, 2).map(u => `<span>${u}</span>`).join(", ");
+                    const firstTwo = users.slice(0, 2).map(u => `<span onclick="window.location.href='?other_user=${encodeURIComponent(u)}'">${u}</span>`).join(", ");
                     likedUsersSummary.innerHTML = `${firstTwo} bəyəndi <span class="liked-users-more">... (kliklə)</span>`;
                     likedUsersList.style.display = "none";
                     likedUsersList.innerHTML = "";
                     users.slice(2).forEach(u => {
                         const div = document.createElement("div");
                         div.textContent = "" + u;
+                        div.onclick = () => {
+                             window.location.href = `?other_user=${encodeURIComponent(u)}`;
+                        };
                         likedUsersList.appendChild(div);
                     });
-                    likedUsersSummary.querySelector(".liked-users-more").onclick = () => {
+                    likedUsersSummary.querySelector(".liked-users-more").onclick = (e) => {
+                        e.stopPropagation();
                         likedUsersList.style.display = (likedUsersList.style.display === "none" || likedUsersList.style.display === "") ? "block" : "none";
                         likedUsersSummary.querySelector(".liked-users-more").textContent = (likedUsersList.style.display === "block") ? "(bağla)" : "... (kliklə)";
                     };
@@ -496,8 +516,7 @@
                 postsContainer.prepend(newPostEl);
             }
         }
-        
-        // Bu funksiya bütün postları yoxlayır və istifadəçinin postlarını yeniləyir.
+
         function updateProfileInFirebase(nickname, newProfilePicUrl) {
             db.ref("posts").once("value", (snapshot) => {
                 snapshot.forEach((childSnapshot) => {
@@ -507,15 +526,12 @@
                         postData = JSON.parse(childSnapshot.val());
                     } catch (e) {
                         console.error("Məlumat JSON formatında deyil:", childSnapshot.val());
-                        return; // Növbəti posta keçirik
+                        return;
                     }
-                    
-                    // Postun niki URL-dəki nikə uyğundursa
+
                     if (postData.nickname === nickname) {
-                        // Və profil şəkli fərqlidirsə
                         if (postData.profile !== newProfilePicUrl) {
                             postData.profile = newProfilePicUrl;
-                            // Yenilənmiş obyekti string kimi databazaya yazırıq
                             db.ref("posts/" + postId).set(JSON.stringify(postData)).then(() => {
                                 console.log(`Post ${postId} for user ${nickname} updated.`);
                             }).catch(error => {
@@ -526,14 +542,11 @@
                 });
             });
         }
-        
-        // --- Əsas İşləmə Logikası ---
+
         if (currentUser && currentUserProfilePic) {
-            // Səhifə yüklənəndə profil şəklini yeniləyirik
             updateProfileInFirebase(currentUser, currentUserProfilePic);
         }
 
-        // Bütün dinləyicilər burada saxlanılır
         db.ref("likes").on("value", (likesSnap) => {
             likeCache = likesSnap.val() || {};
             dataLoaded.likes = true;
@@ -560,7 +573,7 @@
             }
             hideLoaderIfReady();
         });
-        
+
         db.ref("posts").on("value", (snapshot) => {
             const allPosts = snapshot.val();
             const postDataArray = [];
@@ -573,7 +586,7 @@
                     console.error("Post məlumatı oxunarkən xəta:", postId, e);
                 }
             }
-            
+
             const sortedPosts = postDataArray.sort((a, b) => new Date(b.data.time) - new Date(a.data.time));
             postsContainer.innerHTML = "";
             sortedPosts.forEach(post => {
