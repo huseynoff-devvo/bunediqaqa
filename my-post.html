@@ -69,7 +69,7 @@
             margin: 0 auto;
             column-count: 2;
             column-gap: 16px;
-            display: block;
+            display: none; /* Changed from 'block' to 'none' */
         }
 
         @media (max-width: 720px) {
@@ -406,8 +406,10 @@
             });
 
             // Show/hide "no posts" message
-            if (postIds.length === 0) {
-                noPostsMessage.style.display = "flex";
+            if (postIds.length === 0 && showOnlyMyPosts) { // Only show 'no posts' when explicitly filtering for my posts
+                 noPostsMessage.style.display = "flex";
+            } else if (postIds.length === 0 && !showOnlyMyPosts) { // hide it if myPosts is false
+                 noPostsMessage.style.display = "none";
             } else {
                 noPostsMessage.style.display = "none";
                 postIds.forEach(postId => {
@@ -463,7 +465,11 @@
         setTimeout(() => {
             const loader = document.getElementById("loader");
             if (loader) loader.style.display = "none";
-            postsContainer.style.display = "block";
+
+            // If myPosts is true, show the grid. Otherwise, leave it hidden.
+            if (showOnlyMyPosts) {
+                postsContainer.style.display = "block";
+            }
             refreshMasonry();
         }, 1200);
     </script>
