@@ -69,7 +69,7 @@
             margin: 0 auto;
             column-count: 2;
             column-gap: 16px;
-            display: block;
+            display: none; /* Initial state is none */
         }
 
         @media (max-width: 720px) {
@@ -172,7 +172,7 @@
         const showOnlyMyPosts = urlParams.get("myPosts") === "true";
 
         let postDataCache = {};
-        let likeCache = {}; // Cache for likes
+        let likeCache = {};
 
         // Tick & premium configs (sənin konfiqlar)
         const tickFirebaseConfig = {
@@ -270,16 +270,22 @@
 
         function renderAllPosts() {
             postsContainer.innerHTML = "";
-            let postIds = Object.keys(postDataCache || {});
 
-            if (showOnlyMyPosts) {
-                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-                postIds = postIds.filter(id => {
-                    const p = postDataCache[id] || {};
-                    const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-                    return nick === cleanCurrent;
-                });
+            if (!showOnlyMyPosts) {
+                // If not showing only my posts, do not render anything
+                postsContainer.style.display = 'none';
+                noPostsMessage.style.display = 'none';
+                return;
             }
+
+            let postIds = Object.keys(postDataCache || {});
+            
+            const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+            postIds = postIds.filter(id => {
+                const p = postDataCache[id] || {};
+                const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
+                return nick === cleanCurrent;
+            });
 
             // sort by time (descending) if possible
             postIds.sort((a,b) => {
@@ -305,13 +311,11 @@
 
         // Live listeners
         function loadLivePosts() {
-            // New listener for likes to update the like count
             db.ref("likes").on("value", (likesSnapshot) => {
                 likeCache = likesSnapshot.val() || {};
                 renderAllPosts();
             });
 
-            // Listener for all post changes
             db.ref("posts").on("value", (snapshot) => {
                 postDataCache = {};
                 snapshot.forEach(snap => {
@@ -340,7 +344,10 @@
         setTimeout(() => {
             const loader = document.getElementById("loader");
             if (loader) loader.style.display = "none";
-            postsContainer.style.display = "block";
+            // The posts-grid will only be shown if showOnlyMyPosts is true, which is handled in renderAllPosts()
+            if(showOnlyMyPosts) {
+                postsContainer.style.display = "block";
+            }
             refreshMasonry();
         }, 1200);
     </script>
