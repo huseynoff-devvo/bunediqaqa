@@ -580,11 +580,11 @@
                 isFollowing(followedUsername).then(isFollowed => {
                     if (!isFollowed) {
                         // Add follower
-                        followerRef.set(""+"");
+                        followerRef.set("+");
                         followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
 
                         // Add following
-                        followedRef.set(""+"");
+                        followedRef.set("+");
                         followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
 
                         // Update cache and hide the button
