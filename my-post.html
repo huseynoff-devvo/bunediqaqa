@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
+    <title>Bütün Postlar + Bəyən Sayı</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         /* GLOBAL RESET FOR FOCUS AND TAP HIGHLIGHT */
@@ -89,10 +89,9 @@
             position: relative;
         }
 
+        /* Hide the header as requested */
         .post-header {
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
+            display: none;
         }
 
         .profile-pic {
@@ -156,16 +155,13 @@
             padding: 6px 6px;
         }
 
-        .like-button {
-            background: none; border: none;
-            color: white; cursor: pointer;
+        .like-display {
+            color: white;
             display:flex; align-items:center;
             gap:6px;
-            user-select:none; transition: color .2s;
             font-size:0.88rem;
         }
-        .like-button.liked { color: #ff4d4d; }
-        .like-button .material-icons { font-size:1.2rem; }
+        .like-display .material-icons { font-size:1.2rem; }
         .like-count { margin-left:2px; }
 
         .delete-button {
@@ -305,7 +301,7 @@
         }
 
         // render single post
-        function renderPost(postId, data, isLikedByUser, likeCount) {
+        function renderPost(postId, data, likeCount) {
             if (!data) return null;
             try {
                 // show only my posts check (safety)
@@ -375,7 +371,7 @@
                 image.src = (data.image || "").replace(/\\/g, '').trim();
                 image.addEventListener('load', () => refreshMasonry());
                 postEl.appendChild(image);
-            } else if (data.video) { // ADDED: New condition for video
+            } else if (data.video) {
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
@@ -394,26 +390,12 @@
             const postFooter = document.createElement("div");
             postFooter.className = "post-footer";
 
-            const likeBtn = document.createElement("button");
-            likeBtn.className = "like-button";
-            if (isLikedByUser) likeBtn.classList.add("liked");
+            const likeDisplay = document.createElement("div");
+            likeDisplay.className = "like-display";
+            likeDisplay.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${likeCount || 0}</span>`;
+            
+            postFooter.appendChild(likeDisplay);
 
-            likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${likeCount || 0}</span>`;
-
-            likeBtn.addEventListener("click", () => {
-                const likeRef = db.ref(`likes/${postId}/${currentUser}`);
-                likeRef.once("value").then(snap => {
-                    if (snap.exists()) {
-                        likeRef.remove();
-                    } else {
-                        likeRef.set(true);
-                    }
-                });
-            });
-
-            postFooter.appendChild(likeBtn);
-
-            // Delete button, if owner of post, moved to header
             if (cleanNickname && cleanNickname === cleanCurrentUser) {
                 const deleteBtn = document.createElement("button");
                 deleteBtn.className = "delete-button material-icons";
@@ -434,8 +416,17 @@
         // Confirm dialog actions
         document.getElementById("confirmYes").addEventListener("click", () => {
             if (deletePostId) {
-                // Determine which database to delete from based on the post ID
                 const isReel = postDataCache[deletePostId] && postDataCache[deletePostId].video;
+                
+                // Remove from local cache and UI first for instant feedback
+                const postElement = document.getElementById("post_" + deletePostId);
+                if (postElement) {
+                    postElement.remove();
+                    delete postDataCache[deletePostId];
+                    delete likeCache[deletePostId];
+                    refreshMasonry();
+                }
+
                 if (isReel) {
                     reelsDb.ref("reels/" + deletePostId).remove();
                     reelsDb.ref("likes/" + deletePostId).remove();
@@ -443,6 +434,7 @@
                     db.ref("posts/" + deletePostId).remove();
                     db.ref("likes/" + deletePostId).remove();
                 }
+
                 document.getElementById("confirmDialog").style.display = "none";
                 deletePostId = null;
             }
@@ -455,7 +447,7 @@
         function renderAllPosts() {
             postsContainer.innerHTML = "";
             let postIds = Object.keys(postDataCache || {});
-            // filter by user if needed
+            
             if (showOnlyMyPosts) {
                 const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
                 postIds = postIds.filter(id => {
@@ -465,7 +457,6 @@
                 });
             }
 
-            // sort by time (descending) if possible
             postIds.sort((a,b) => {
                 const aT = postDataCache[a] && postDataCache[a].time ? new Date(postDataCache[a].time) : null;
                 const bT = postDataCache[b] && postDataCache[b].time ? new Date(postDataCache[b].time) : null;
@@ -473,7 +464,6 @@
                 return b.localeCompare(a);
             });
 
-            // Show/hide "no posts" message
             if (postIds.length === 0 && showOnlyMyPosts) {
                 noPostsMessage.style.display = "flex";
             } else if (postIds.length === 0 && !showOnlyMyPosts) {
@@ -482,33 +472,45 @@
                 noPostsMessage.style.display = "none";
                 postIds.forEach(postId => {
                     const data = postDataCache[postId];
-                    const isLiked = likeCache[postId] && likeCache[postId][currentUser];
                     const likeCount = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
-                    const postEl = renderPost(postId, data, isLiked, likeCount);
+                    const postEl = renderPost(postId, data, likeCount);
                     if (postEl) postsContainer.appendChild(postEl);
                 });
             }
 
-            // small refresh to reflow masonry
             refreshMasonry();
         }
 
-        // Live listeners
         function loadLivePosts() {
             // Listen for changes in both posts and reels likes
             db.ref("likes").on("value", (likesSnap) => {
-                likeCache = { ...likeCache, ...(likesSnap.val() || {}) };
-                renderAllPosts();
+                const mainLikes = likesSnap.val() || {};
+                likeCache = { ...likeCache, ...mainLikes };
+                updateLikeCounts();
             });
 
             reelsDb.ref("likes").on("value", (likesSnap) => {
-                likeCache = { ...likeCache, ...(likesSnap.val() || {}) };
-                renderAllPosts();
+                const reelsLikes = likesSnap.val() || {};
+                likeCache = { ...likeCache, ...reelsLikes };
+                updateLikeCounts();
             });
 
-            // Listen for changes in both posts and reels data
+            function updateLikeCounts() {
+                for (const postId in likeCache) {
+                    const postElement = document.getElementById("post_" + postId);
+                    if (postElement) {
+                        const likeCountElement = postElement.querySelector(".like-count");
+                        if (likeCountElement) {
+                            const count = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
+                            likeCountElement.textContent = count;
+                        }
+                    }
+                }
+            }
+
             const postsRef = db.ref("posts");
             postsRef.on("value", (snapshot) => {
+                postDataCache = {};
                 snapshot.forEach(snap => {
                     try {
                         const postId = snap.key;
@@ -538,17 +540,14 @@
             });
         }
 
-        // tiny trick to force reflow so column layout updates nicely
         function refreshMasonry() {
             postsContainer.style.visibility = 'hidden';
             setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
         }
 
-        // init
         loadStatusData();
         loadLivePosts();
 
-        // hide loader and show posts grid
         setTimeout(() => {
             const loader = document.getElementById("loader");
             if (loader) loader.style.display = "none";
