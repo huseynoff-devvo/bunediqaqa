@@ -394,6 +394,15 @@
                     return false;
                 }
             }
+            
+            // --- Fisher-Yates shuffle alqoritmi ---
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
 
             // --- Real-time updates for likes, reels, and follows ---
 
@@ -418,9 +427,12 @@
             // Listener for real-time changes to reels
             reelDb.ref('reels').on('value', async (snapshot) => {
                 const postsData = snapshot.val() || {};
-                const loadedReels = [];
-                const postIds = Object.keys(postsData);
+                
+                // POST ID'LƏRİNİ ALIB QARIŞDIR
+                let postIds = Object.keys(postsData);
+                postIds = shuffleArray(postIds);
 
+                const loadedReels = [];
                 for (const postId of postIds) {
                     let post;
                     try {
@@ -447,56 +459,27 @@
                         reels.splice(reelIndex, 1);
                     }
                 });
+                
+                // Mövcud reel'ləri silmək və yeni, qarışdırılmış ardıcıllıqla əlavə etmək üçün 'app' elementini təmizlə
+                while(app.firstChild) {
+                    app.removeChild(app.firstChild);
+                }
+                reels = []; // 'reels' array-ini sıfırla
 
-                reels = loadedReels.map(post => {
-                    const existingReel = reels.find(r => r.postId === post.id);
-                    if (existingReel) {
-                        const profilePic = existingReel.element.querySelector('.profile-pic');
-                        const userid = existingReel.element.querySelector('.userid');
-                        const nickname = existingReel.element.querySelector('.nickname');
-                        const text = existingReel.element.querySelector('.text');
-                        const time = existingReel.element.querySelector('.time');
-                        const followButton = existingReel.element.querySelector('.follow-button');
-                        const likeCountElement = existingReel.element.querySelector('.like-count');
+                loadedReels.forEach(post => {
+                    const newReel = createReel(post);
+                    app.appendChild(newReel.element);
+                    reels.push(newReel);
 
-                        profilePic.src = post.profile || 'https://via.placeholder.com/48';
-                        userid.textContent = post.user;
-                        nickname.textContent = post.nickname;
-                        text.textContent = post.text || '';
-                        time.textContent = post.time || '';
-
-                        // Fetch and update like count on initial load
-                        reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
-                            const count = likeSnap.val() || 0;
-                            likeCountElement.textContent = count;
-                        });
-
-                        const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
-                        if (cleanPostNickname === cleanCurrentUser || post.isFollowed) {
-                            followButton.style.display = 'none';
-                        } else {
-                            followButton.style.display = 'block';
-                        }
-                        return existingReel;
-                    } else {
-                        const newReel = createReel(post);
-                        app.appendChild(newReel.element);
-
-                        // Fetch and update like count for the new reel
-                        reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
-                            const count = likeSnap.val() || 0;
-                            newReel.likeCount.textContent = count;
-                        });
-
-                        return newReel;
-                    }
+                    // Fetch and update like count for the new reel
+                    reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
+                        const count = likeSnap.val() || 0;
+                        newReel.likeCount.textContent = count;
+                    });
                 });
 
                 if (reels.length > 0) {
-                    if (activeIndex >= reels.length) {
-                        activeIndex = reels.length - 1;
-                    }
-                    reels.forEach(r => r.element.classList.remove('active'));
+                    activeIndex = 0; // İlk reel'i aktiv et
                     const activeReel = reels[activeIndex];
                     activeReel.element.classList.add('active');
                     activeReel.element.style.transform = 'translateY(0)';
