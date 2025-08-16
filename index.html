@@ -341,11 +341,7 @@
 
         function getUniqueImageUrl(originalUrl) {
             if (!originalUrl) return "https://via.placeholder.com/36?text=?";
-            if (originalUrl.includes("?")) {
-                return `${originalUrl}&t=${Date.now()}`;
-            } else {
-                return `${originalUrl}?t=${Date.now()}`;
-            }
+            return originalUrl;
         }
 
         function renderPost(postId, data) {
@@ -504,6 +500,54 @@
             document.getElementById("confirmDialog").style.display = "none";
             deletePostId = null;
         };
+        
+        function updateLikeInfo(postId) {
+            const postEl = document.getElementById("post_" + postId);
+            if (!postEl) return;
+
+            const likeBtn = postEl.querySelector(".like-button");
+            const likeCountSpan = likeBtn.querySelector(".like-count");
+            const likedUsersSummary = postEl.querySelector(".liked-users-summary");
+            const likedUsersList = postEl.querySelector(".liked-users-list");
+
+            const postLikes = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
+            const isLikedByUser = likeCache[postId] && likeCache[postId][currentUser];
+
+            likeCountSpan.textContent = postLikes;
+            if (isLikedByUser) {
+                likeBtn.classList.add("liked");
+            } else {
+                likeBtn.classList.remove("liked");
+            }
+            
+            const users = Object.keys(likeCache[postId] || {});
+            if (users.length === 0) {
+                likedUsersSummary.textContent = "";
+                likedUsersList.style.display = "none";
+            } else if (users.length <= 2) {
+                const summaryHtml = users.map(u => `<span onclick="window.location.href='?other_user=${encodeURIComponent(u)}'">${u}</span>`).join(", ") + " bəyəndi";
+                likedUsersSummary.innerHTML = summaryHtml;
+                likedUsersList.style.display = "none";
+            } else {
+                const firstTwo = users.slice(0, 2).map(u => `<span onclick="window.location.href='?other_user=${encodeURIComponent(u)}'">${u}</span>`).join(", ");
+                likedUsersSummary.innerHTML = `${firstTwo} bəyəndi <span class="liked-users-more">... (kliklə)</span>`;
+                likedUsersList.style.display = "none";
+                likedUsersList.innerHTML = "";
+                users.slice(2).forEach(u => {
+                    const div = document.createElement("div");
+                    div.textContent = "" + u;
+                    div.onclick = () => {
+                         window.location.href = `?other_user=${encodeURIComponent(u)}`;
+                    };
+                    likedUsersList.appendChild(div);
+                });
+                likedUsersSummary.querySelector(".liked-users-more").onclick = (e) => {
+                    e.stopPropagation();
+                    likedUsersList.style.display = (likedUsersList.style.display === "none" || likedUsersList.style.display === "") ? "block" : "none";
+                    likedUsersSummary.querySelector(".liked-users-more").textContent = (likedUsersList.style.display === "block") ? "(bağla)" : "... (kliklə)";
+                };
+            }
+        }
 
         function updatePostElement(postId, postData) {
             if (!postData) return;
@@ -551,7 +595,7 @@
             likeCache = likesSnap.val() || {};
             dataLoaded.likes = true;
             for (const postId in postCache) {
-                updatePostElement(postId, postCache[postId]);
+                updateLikeInfo(postId);
             }
             hideLoaderIfReady();
         });
@@ -586,10 +630,12 @@
                     console.error("Post məlumatı oxunarkən xəta:", postId, e);
                 }
             }
-
-            const sortedPosts = postDataArray.sort((a, b) => new Date(b.data.time) - new Date(a.data.time));
+            
+            // Postları təsadüfi qaydada sırala
+            const shuffledPosts = postDataArray.sort(() => 0.5 - Math.random());
+            
             postsContainer.innerHTML = "";
-            sortedPosts.forEach(post => {
+            shuffledPosts.forEach(post => {
                 postsContainer.appendChild(renderPost(post.id, post.data));
             });
             dataLoaded.posts = true;
