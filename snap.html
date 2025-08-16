@@ -228,7 +228,7 @@
 
         #snaps-p {
             position: fixed;
-             top: 5px;
+            top: 5px;
             right: 5px;
             z-index: 10;
             color: rgba(255, 255, 255, 0.8);
@@ -257,8 +257,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script>
         (function () {
-            // Firebase konfiqurasiyası
-            const firebaseConfig = {
+            // Firebase configuration for reels
+            const reelFirebaseConfig = {
                 apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
                 authDomain: "pasyak-reels.firebaseapp.com",
                 projectId: "pasyak-reels",
@@ -267,21 +267,33 @@
                 appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
                 measurementId: "G-FW0KJDLF4B"
             };
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.database();
+            const reelApp = firebase.initializeApp(reelFirebaseConfig, 'reelApp');
+            const reelDb = reelApp.database();
 
-            // DOM elementləri
+            // Firebase configuration for user profiles
+            const userFirebaseConfig = {
+                apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+                authDomain: "pasyak-user.firebaseapp.com",
+                databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+                projectId: "pasyak-user",
+                storageBucket: "pasyak-user.firebasestorage.app",
+                messagingSenderId: "898141218588",
+                appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+            };
+            const userApp = firebase.initializeApp(userFirebaseConfig, 'userApp');
+            const userDb = userApp.database();
+
+            // DOM elements
             const app = document.getElementById('app');
             const loader = document.getElementById('loader');
             const soundIndicator = document.getElementById('sound-indicator');
             const soundIcon = soundIndicator.querySelector('span');
 
-            // URL parametrlərini alırıq
+            // URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const currentUser = urlParams.get("user") || "anonim";
-            const customProfilePic = urlParams.get("profile");
 
-            // Global dəyişənlər
+            // Global variables
             let reels = [];
             let activeIndex = 0;
             let isAnimating = false;
@@ -290,8 +302,37 @@
             let indicatorTimeout = null;
             let touchStartY = null;
 
-            // Bütün like məlumatlarını real-time olaraq dinləyirik
-            db.ref('likes').on('value', (snapshot) => {
+            // Cache for user profiles
+            const userProfileCache = {};
+
+            // Function to fetch user profile from the user database
+            async function fetchUserProfile(username) {
+                // Remove the '@' symbol from the username if it exists
+                const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
+
+                if (userProfileCache[cleanUsername]) {
+                    return userProfileCache[cleanUsername];
+                }
+
+                try {
+                    const snapshot = await userDb.ref(`Users/${cleanUsername}`).once('value');
+                    const profileData = snapshot.val();
+                    if (profileData) {
+                        const parsedData = JSON.parse(profileData);
+                        const profilePicUrl = parsedData[2].trim(); // Get the URL and remove whitespace
+                        userProfileCache[cleanUsername] = profilePicUrl;
+                        return profilePicUrl;
+                    }
+                } catch (e) {
+                    console.error(`Error fetching profile for user ${cleanUsername}:`, e);
+                }
+                return 'https://via.placeholder.com/48'; // Fallback profile picture
+            }
+
+            // --- Real-time updates for likes and reels ---
+
+            // Listener for real-time changes to likes
+            reelDb.ref('likes').on('value', (snapshot) => {
                 const likesData = snapshot.val() || {};
                 reels.forEach(reel => {
                     const postLikes = likesData[reel.postId] || {};
@@ -308,7 +349,89 @@
                 });
             });
 
-            // Səs göstəricisini idarə edən funksiya
+            // Listener for real-time changes to reels
+            reelDb.ref('reels').on('value', async (snapshot) => {
+                const postsData = snapshot.val() || {};
+                const loadedReels = [];
+                const postIds = Object.keys(postsData);
+
+                // Create or update reel elements based on new data
+                for (const postId of postIds) {
+                    let post;
+                    try {
+                        post = JSON.parse(postsData[postId]);
+                    } catch (e) {
+                        console.error(`Error parsing JSON for reel ID ${postId}:`, e);
+                        continue;
+                    }
+
+                    // Fetch profile picture from the user database using the nickname
+                    const profilePicUrl = await fetchUserProfile(post.nickname);
+                    post.profile = profilePicUrl;
+
+                    loadedReels.push({ id: postId, ...post });
+                }
+
+                // Remove reels that are no longer in the database
+                const existingReelIds = reels.map(r => r.postId);
+                const reelsToRemove = existingReelIds.filter(id => !postIds.includes(id));
+
+                reelsToRemove.forEach(id => {
+                    const reelIndex = reels.findIndex(r => r.postId === id);
+                    if (reelIndex !== -1) {
+                        reels[reelIndex].element.remove();
+                        reels.splice(reelIndex, 1);
+                    }
+                });
+
+                // Re-create all reels based on the updated order
+                reels = loadedReels.map(post => {
+                    const existingReel = reels.find(r => r.postId === post.id);
+                    if (existingReel) {
+                        const profilePic = existingReel.element.querySelector('.profile-pic');
+                        const userid = existingReel.element.querySelector('.userid');
+                        const nickname = existingReel.element.querySelector('.nickname');
+                        const text = existingReel.element.querySelector('.text');
+                        const time = existingReel.element.querySelector('.time');
+
+                        profilePic.src = post.profile || 'https://via.placeholder.com/48';
+                        userid.textContent = post.user;
+                        nickname.textContent = post.nickname;
+                        text.textContent = post.text || '';
+                        time.textContent = post.time || '';
+
+                        return existingReel;
+                    } else {
+                        const newReel = createReel(post);
+                        app.appendChild(newReel.element);
+                        return newReel;
+                    }
+                });
+
+                if (reels.length > 0) {
+                    if (activeIndex >= reels.length) {
+                        activeIndex = reels.length - 1;
+                    }
+
+                    reels.forEach(r => r.element.classList.remove('active'));
+
+                    const activeReel = reels[activeIndex];
+                    activeReel.element.classList.add('active');
+                    activeReel.element.style.transform = 'translateY(0)';
+                    activeReel.element.style.opacity = '1';
+                    
+                    if (activeReel.video.readyState >= 4) {
+                        playActiveVideo(activeIndex);
+                    } else {
+                        activeReel.video.addEventListener('canplaythrough', () => playActiveVideo(activeIndex), { once: true });
+                    }
+                }
+
+                loader.style.display = 'none';
+            });
+
+            // --- Helper functions (no changes) ---
+
             function showSoundIndicator(muted) {
                 clearTimeout(indicatorTimeout);
                 soundIcon.textContent = muted ? 'volume_off' : 'volume_up';
@@ -318,7 +441,6 @@
                 }, 1000);
             }
 
-            // Aktiv videonu işə salan funksiya
             function playActiveVideo(index) {
                 if (reels[index] && reels[index].video) {
                     reels[index].video.muted = !allVideosSoundOn;
@@ -332,7 +454,6 @@
                 }
             }
 
-            // Aktiv olmayan videoları dayandıran funksiya
             function pauseInactiveVideos(activeIndex) {
                 reels.forEach((r, i) => {
                     if (i !== activeIndex && r.video && !r.video.paused) {
@@ -343,21 +464,16 @@
                 });
             }
 
-            // Like etmə əməliyyatını idarə edən funksiya
             function handleLikeClick(postId) {
-                const likeUserRef = db.ref(`likes/${postId}/users/${currentUser}`);
-                const likeCountRef = db.ref(`likes/${postId}/count`);
+                const likeUserRef = reelDb.ref(`likes/${postId}/users/${currentUser}`);
+                const likeCountRef = reelDb.ref(`likes/${postId}/count`);
 
                 likeUserRef.once('value').then(snap => {
                     if (snap.exists()) {
-                        // Əgər istifadəçi artıq like edibsə, like-ı silirik
                         likeUserRef.remove();
-                        // Like sayını azaldırıq
                         likeCountRef.transaction(currentCount => (currentCount || 1) - 1);
                     } else {
-                        // Əgər istifadəçi like etməyibsə, like-ı əlavə edirik
                         likeUserRef.set(true);
-                        // Like sayını artırırıq
                         likeCountRef.transaction(currentCount => (currentCount || 0) + 1);
                     }
                 }).catch(e => {
@@ -365,7 +481,6 @@
                 });
             }
 
-            // Reel elementini yaradan funksiya
             function createReel(post, liked, likesCount) {
                 const reel = document.createElement('div');
                 reel.className = 'reel';
@@ -401,7 +516,7 @@
 
                 const profilePic = document.createElement('img');
                 profilePic.className = 'profile-pic';
-                profilePic.src = customProfilePic && customProfilePic.trim() ? customProfilePic.trim() : (post.profile || 'https://via.placeholder.com/48');
+                profilePic.src = post.profile || 'https://via.placeholder.com/48';
 
                 const userDetails = document.createElement('div');
                 userDetails.className = 'user-details';
@@ -455,7 +570,6 @@
                 return { element: reel, video, likeIcon, likeCount, postId: post.id };
             }
 
-            // Aktiv reel-i dəyişən funksiya
             function setActiveReel(newIndex) {
                 if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= reels.length) return;
 
@@ -484,7 +598,6 @@
                 }, 500);
             }
 
-            // Sürüşmə (scroll) əməliyyatını idarə edən funksiya
             function handleScroll(direction) {
                 if (isAnimating) return;
 
@@ -495,7 +608,7 @@
                 }
             }
 
-            // Sürüşmə (wheel) hadisəsi
+            // Scroll events
             let wheelTimeout = null;
             window.addEventListener('wheel', e => {
                 if (!isAnimating) {
@@ -510,11 +623,15 @@
                 }
             });
 
-            // Toxunma (touch) hadisələri
+            // Touch events
             app.addEventListener('touchstart', e => {
                 if (!isAnimating && e.touches.length === 1) {
                     touchStartY = e.touches[0].clientY;
                 }
+            });
+
+            app.addEventListener('touchend', e => {
+                touchStartY = null;
             });
 
             app.addEventListener('touchmove', e => {
@@ -530,59 +647,6 @@
                     }
                 }
             });
-
-            // Reels-ləri Firebase-dən yükləyən funksiya
-            async function loadReels() {
-                const reelsRef = db.ref('reels');
-                const reelsSnap = await reelsRef.once('value');
-                const reelsData = reelsSnap.val() || {};
-
-                if (Object.keys(reelsData).length === 0) {
-                    loader.style.display = 'none';
-                    return;
-                }
-
-                const parsedReels = Object.entries(reelsData)
-                    .map(([key, value]) => {
-                        try {
-                            const post = JSON.parse(value);
-                            return { id: key, ...post };
-                        } catch (e) {
-                            console.error(`Error parsing JSON for reel ID ${key}:`, e);
-                            return null;
-                        }
-                    })
-                    .filter(Boolean)
-                    .sort(() => Math.random() - 0.5);
-
-                for (const post of parsedReels) {
-                    const likeDataSnap = await db.ref(`likes/${post.id}`).once('value');
-                    const likes = likeDataSnap.val() || {};
-                    const liked = likes.users && likes.users[currentUser];
-                    const likesCount = likes.count || 0;
-
-                    const reelObj = createReel(post, liked, likesCount);
-                    reels.push(reelObj);
-                    app.appendChild(reelObj.element);
-                }
-
-                if (reels.length > 0) {
-                    reels[0].element.classList.add('active');
-                    reels[0].element.style.transform = 'translateY(0)';
-                    reels[0].element.style.opacity = '1';
-
-                    await new Promise(res => {
-                        if (reels[0].video.readyState >= 4) {
-                            res();
-                        } else {
-                            reels[0].video.addEventListener('canplaythrough', res, { once: true });
-                        }
-                    });
-                    playActiveVideo(0);
-                }
-                loader.style.display = 'none';
-            }
-            loadReels();
         })();
     </script>
 </body>
