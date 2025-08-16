@@ -117,6 +117,12 @@
             display: flex;
             align-items: center;
             margin-bottom: 10px;
+            justify-content: space-between;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
         }
 
         .profile-pic {
@@ -135,13 +141,30 @@
 
         .userid {
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 15px;
             color: white;
         }
 
         .nickname {
             font-size: 0.9rem;
             color: #aaa;
+        }
+
+        .follow-button {
+            background-color: transparent;
+            color: rgb(255, 255, 255);
+            border: 2px solid rgb(255, 0, 0);
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .follow-button:hover {
+            background-color: white;
+            color: black;
         }
 
         .text {
@@ -283,6 +306,33 @@
             const userApp = firebase.initializeApp(userFirebaseConfig, 'userApp');
             const userDb = userApp.database();
 
+            // Firebase configuration for follows
+            const followsFirebaseConfig = {
+                apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
+                authDomain: "pasyak-follows.firebaseapp.com",
+                databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
+                projectId: "pasyak-follows",
+                storageBucket: "pasyak-follows.firebasestorage.app",
+                messagingSenderId: "571115478758",
+                appId: "1:571115478758:web:9b45de3c9169083d9a2527",
+                measurementId: "G-KHDDTM6FC9"
+            };
+            const followsApp = firebase.initializeApp(followsFirebaseConfig, 'followsApp');
+            const followsDb = followsApp.database();
+
+            // Firebase configuration for following
+            const followingFirebaseConfig = {
+                apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
+                authDomain: "pasyak-following.firebaseapp.com",
+                databaseURL: "https://pasyak-following-default-rtdb.firebaseio.com",
+                projectId: "pasyak-following",
+                storageBucket: "pasyak-following.firebasestorage.app",
+                messagingSenderId: "538884111637",
+                appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
+            };
+            const followingApp = firebase.initializeApp(followingFirebaseConfig, 'followingApp');
+            const followingDb = followingApp.database();
+
             // DOM elements
             const app = document.getElementById('app');
             const loader = document.getElementById('loader');
@@ -292,6 +342,7 @@
             // URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const currentUser = urlParams.get("user") || "anonim";
+            const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
 
             // Global variables
             let reels = [];
@@ -302,34 +353,49 @@
             let indicatorTimeout = null;
             let touchStartY = null;
 
-            // Cache for user profiles
+            // Cache for user profiles and follow status
             const userProfileCache = {};
+            const userFollowStatusCache = {};
 
             // Function to fetch user profile from the user database
             async function fetchUserProfile(username) {
-                // Remove the '@' symbol from the username if it exists
                 const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
-
                 if (userProfileCache[cleanUsername]) {
                     return userProfileCache[cleanUsername];
                 }
-
                 try {
                     const snapshot = await userDb.ref(`Users/${cleanUsername}`).once('value');
                     const profileData = snapshot.val();
                     if (profileData) {
                         const parsedData = JSON.parse(profileData);
-                        const profilePicUrl = parsedData[2].trim(); // Get the URL and remove whitespace
+                        const profilePicUrl = parsedData[2].trim();
                         userProfileCache[cleanUsername] = profilePicUrl;
                         return profilePicUrl;
                     }
                 } catch (e) {
                     console.error(`Error fetching profile for user ${cleanUsername}:`, e);
                 }
-                return 'https://via.placeholder.com/48'; // Fallback profile picture
+                return 'https://via.placeholder.com/48';
             }
 
-            // --- Real-time updates for likes and reels ---
+            // Function to check if the current user is already following the reel user
+            async function isFollowing(reelUserNickname) {
+                const cleanReelUserNickname = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
+                if (userFollowStatusCache[cleanReelUserNickname] !== undefined) {
+                    return userFollowStatusCache[cleanReelUserNickname];
+                }
+                try {
+                    const snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
+                    const isFollowed = snapshot.exists();
+                    userFollowStatusCache[cleanReelUserNickname] = isFollowed;
+                    return isFollowed;
+                } catch (e) {
+                    console.error("Error checking follow status:", e);
+                    return false;
+                }
+            }
+            
+            // --- Real-time updates for likes, reels, and follows ---
 
             // Listener for real-time changes to likes
             reelDb.ref('likes').on('value', (snapshot) => {
@@ -355,7 +421,6 @@
                 const loadedReels = [];
                 const postIds = Object.keys(postsData);
 
-                // Create or update reel elements based on new data
                 for (const postId of postIds) {
                     let post;
                     try {
@@ -365,14 +430,13 @@
                         continue;
                     }
 
-                    // Fetch profile picture from the user database using the nickname
                     const profilePicUrl = await fetchUserProfile(post.nickname);
                     post.profile = profilePicUrl;
+                    const isFollowed = await isFollowing(post.nickname);
 
-                    loadedReels.push({ id: postId, ...post });
+                    loadedReels.push({ id: postId, isFollowed, ...post });
                 }
 
-                // Remove reels that are no longer in the database
                 const existingReelIds = reels.map(r => r.postId);
                 const reelsToRemove = existingReelIds.filter(id => !postIds.includes(id));
 
@@ -384,7 +448,6 @@
                     }
                 });
 
-                // Re-create all reels based on the updated order
                 reels = loadedReels.map(post => {
                     const existingReel = reels.find(r => r.postId === post.id);
                     if (existingReel) {
@@ -393,6 +456,7 @@
                         const nickname = existingReel.element.querySelector('.nickname');
                         const text = existingReel.element.querySelector('.text');
                         const time = existingReel.element.querySelector('.time');
+                        const followButton = existingReel.element.querySelector('.follow-button');
 
                         profilePic.src = post.profile || 'https://via.placeholder.com/48';
                         userid.textContent = post.user;
@@ -400,6 +464,12 @@
                         text.textContent = post.text || '';
                         time.textContent = post.time || '';
 
+                        const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
+                        if (cleanPostNickname === cleanCurrentUser || post.isFollowed) {
+                            followButton.style.display = 'none';
+                        } else {
+                            followButton.style.display = 'block';
+                        }
                         return existingReel;
                     } else {
                         const newReel = createReel(post);
@@ -412,25 +482,22 @@
                     if (activeIndex >= reels.length) {
                         activeIndex = reels.length - 1;
                     }
-
                     reels.forEach(r => r.element.classList.remove('active'));
-
                     const activeReel = reels[activeIndex];
                     activeReel.element.classList.add('active');
                     activeReel.element.style.transform = 'translateY(0)';
                     activeReel.element.style.opacity = '1';
-                    
+
                     if (activeReel.video.readyState >= 4) {
                         playActiveVideo(activeIndex);
                     } else {
                         activeReel.video.addEventListener('canplaythrough', () => playActiveVideo(activeIndex), { once: true });
                     }
                 }
-
                 loader.style.display = 'none';
             });
 
-            // --- Helper functions (no changes) ---
+            // --- Helper functions ---
 
             function showSoundIndicator(muted) {
                 clearTimeout(indicatorTimeout);
@@ -481,7 +548,44 @@
                 });
             }
 
-            function createReel(post, liked, likesCount) {
+            function handleFollowClick(reelUserNickname) {
+                const followerUsername = cleanCurrentUser;
+                const followedUsername = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
+
+                // Update follows database: Add the follower to the followed user's "followers" list
+                const followsRef = followsDb.ref(followedUsername);
+                const followerRef = followsRef.child(currentUser);
+                const followCountRef = followsRef.child('follow');
+
+                // Update following database: Add the followed user to the follower's "following" list
+                const followingRef = followingDb.ref(followerUsername);
+                const followedRef = followingRef.child(reelUserNickname);
+                const followingCountRef = followingRef.child('following');
+
+                // Check if already following before updating
+                isFollowing(followedUsername).then(isFollowed => {
+                    if (!isFollowed) {
+                        // Add follower
+                        followerRef.set(""+"");
+                        followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+
+                        // Add following
+                        followedRef.set(""+"");
+                        followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+
+                        // Update cache and hide the button
+                        userFollowStatusCache[followedUsername] = true;
+                        document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`).style.display = 'none';
+
+                    } else {
+                        console.log(`User ${currentUser} is already following ${reelUserNickname}. No action needed.`);
+                    }
+                }).catch(e => {
+                    console.error("Follow operation failed:", e);
+                });
+            }
+
+            function createReel(post) {
                 const reel = document.createElement('div');
                 reel.className = 'reel';
 
@@ -514,6 +618,9 @@
                 const profileInfo = document.createElement('div');
                 profileInfo.className = 'profile-info';
 
+                const userInfo = document.createElement('div');
+                userInfo.className = 'user-info';
+                
                 const profilePic = document.createElement('img');
                 profilePic.className = 'profile-pic';
                 profilePic.src = post.profile || 'https://via.placeholder.com/48';
@@ -529,8 +636,33 @@
 
                 userDetails.appendChild(userid);
                 userDetails.appendChild(nickname);
-                profileInfo.appendChild(profilePic);
-                profileInfo.appendChild(userDetails);
+                userInfo.appendChild(profilePic);
+                userInfo.appendChild(userDetails);
+
+                profileInfo.appendChild(userInfo);
+
+                const followButton = document.createElement('button');
+                followButton.className = 'follow-button';
+                followButton.textContent = 'Takib Et';
+                followButton.setAttribute('data-nickname', post.nickname);
+
+                const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
+
+                isFollowing(cleanPostNickname).then(isFollowed => {
+                    if (cleanPostNickname === cleanCurrentUser || isFollowed) {
+                        followButton.style.display = 'none';
+                    } else {
+                        followButton.style.display = 'block';
+                    }
+                });
+
+                followButton.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFollowClick(post.nickname);
+                });
+
+                profileInfo.appendChild(followButton);
 
                 const text = document.createElement('div');
                 text.className = 'text';
@@ -545,11 +677,10 @@
                 const likeIcon = document.createElement('span');
                 likeIcon.className = 'material-icons like-icon';
                 likeIcon.textContent = 'favorite';
-                if (liked) likeIcon.classList.add('liked');
 
                 const likeCount = document.createElement('span');
                 likeCount.className = 'like-count';
-                likeCount.textContent = likesCount || 0;
+                likeCount.textContent = post.likesCount || 0;
 
                 likeSection.appendChild(likeIcon);
                 likeSection.appendChild(likeCount);
@@ -567,7 +698,7 @@
 
                 reel.appendChild(overlay);
 
-                return { element: reel, video, likeIcon, likeCount, postId: post.id };
+                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton };
             }
 
             function setActiveReel(newIndex) {
