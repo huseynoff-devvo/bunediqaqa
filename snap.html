@@ -141,23 +141,23 @@
 
         .userid {
             font-weight: bold;
-            font-size: 13px;
+            font-size: 1.1rem;
             color: white;
         }
 
         .nickname {
-            font-size: 10px;
+            font-size: 0.9rem;
             color: #aaa;
         }
 
         .follow-button {
             background-color: transparent;
-            color: rgb(255, 255, 255);
-            border: 2px solid rgb(255, 0, 0);
+            color: white;
+            border: 2px solid white;
             padding: 6px 16px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 1rem;
             font-weight: bold;
             transition: background-color 0.3s, color 0.3s;
         }
@@ -394,7 +394,7 @@
                     return false;
                 }
             }
-            
+
             // --- Real-time updates for likes, reels, and follows ---
 
             // Listener for real-time changes to likes
@@ -457,12 +457,19 @@
                         const text = existingReel.element.querySelector('.text');
                         const time = existingReel.element.querySelector('.time');
                         const followButton = existingReel.element.querySelector('.follow-button');
+                        const likeCountElement = existingReel.element.querySelector('.like-count');
 
                         profilePic.src = post.profile || 'https://via.placeholder.com/48';
                         userid.textContent = post.user;
                         nickname.textContent = post.nickname;
                         text.textContent = post.text || '';
                         time.textContent = post.time || '';
+
+                        // Fetch and update like count on initial load
+                        reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
+                            const count = likeSnap.val() || 0;
+                            likeCountElement.textContent = count;
+                        });
 
                         const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                         if (cleanPostNickname === cleanCurrentUser || post.isFollowed) {
@@ -474,6 +481,13 @@
                     } else {
                         const newReel = createReel(post);
                         app.appendChild(newReel.element);
+
+                        // Fetch and update like count for the new reel
+                        reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
+                            const count = likeSnap.val() || 0;
+                            newReel.likeCount.textContent = count;
+                        });
+
                         return newReel;
                     }
                 });
