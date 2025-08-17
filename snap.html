@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="az">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -442,7 +443,8 @@
                 });
             });
 
-            reelDb.ref('reels').on('value', async (snapshot) => {
+            // Verilənlərin yüklənməsini gözləyən əsas hissə
+            reelDb.ref('reels').once('value', async (snapshot) => {
                 const postsData = snapshot.val() || {};
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
                 
@@ -491,14 +493,11 @@
                     activeReel.element.style.transform = 'translateY(0)';
                     activeReel.element.style.opacity = '1';
 
-                    // Orijinal kodda bura "playActiveVideo(activeIndex);" idi
-                    // Artıq videonun özündə "canplaythrough" event-ini gözləyirik.
+                    playActiveVideo(activeIndex);
+                    preloadVideos();
                 }
-                
-                // İlk videonu oynat ve diğerlerini önceden yükle
-                playActiveVideo(activeIndex);
-                preloadVideos();
-                
+
+                // Yükləməni gizlət, çünki verilənlər artıq gəlib.
                 loader.style.display = 'none';
             });
             
@@ -829,10 +828,9 @@
                     if (Math.abs(yDiff) > 50) {
                         if (yDiff > 0) {
                             handleScroll('down');
-                        } else {
+                        } else if (yDiff < 0) {
                             handleScroll('up');
                         }
-                        touchStartY = null;
                     }
                 }
             });
