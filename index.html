@@ -284,6 +284,7 @@
         let postCache = {};
         let deletePostId = null;
         let dataLoaded = { posts: false, likes: false, tick: false, premium: false };
+        let initialLoadDone = false; // Yeni dəyişiklik
 
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
@@ -461,7 +462,7 @@
                         const div = document.createElement("div");
                         div.textContent = "" + u;
                         div.onclick = () => {
-                             window.location.href = `?other_user=${encodeURIComponent(u)}`;
+                            window.location.href = `?other_user=${encodeURIComponent(u)}`;
                         };
                         likedUsersList.appendChild(div);
                     });
@@ -500,7 +501,7 @@
             document.getElementById("confirmDialog").style.display = "none";
             deletePostId = null;
         };
-        
+
         function updateLikeInfo(postId) {
             const postEl = document.getElementById("post_" + postId);
             if (!postEl) return;
@@ -537,7 +538,7 @@
                     const div = document.createElement("div");
                     div.textContent = "" + u;
                     div.onclick = () => {
-                         window.location.href = `?other_user=${encodeURIComponent(u)}`;
+                        window.location.href = `?other_user=${encodeURIComponent(u)}`;
                     };
                     likedUsersList.appendChild(div);
                 });
@@ -546,18 +547,6 @@
                     likedUsersList.style.display = (likedUsersList.style.display === "none" || likedUsersList.style.display === "") ? "block" : "none";
                     likedUsersSummary.querySelector(".liked-users-more").textContent = (likedUsersList.style.display === "block") ? "(bağla)" : "... (kliklə)";
                 };
-            }
-        }
-
-        function updatePostElement(postId, postData) {
-            if (!postData) return;
-            const postEl = document.getElementById("post_" + postId);
-            if (postEl) {
-                const newPostEl = renderPost(postId, postData);
-                postsContainer.replaceChild(newPostEl, postEl);
-            } else {
-                const newPostEl = renderPost(postId, postData);
-                postsContainer.prepend(newPostEl);
             }
         }
 
@@ -591,6 +580,8 @@
             updateProfileInFirebase(currentUser, currentUserProfilePic);
         }
 
+        // --- Firebase Listeners ---
+
         db.ref("likes").on("value", (likesSnap) => {
             likeCache = likesSnap.val() || {};
             dataLoaded.likes = true;
@@ -604,7 +595,13 @@
             tickUsers = snapshot.val() || {};
             dataLoaded.tick = true;
             for (const postId in postCache) {
-                updatePostElement(postId, postCache[postId]);
+                const existingPostEl = document.getElementById(`post_${postId}`);
+                if (existingPostEl) {
+                    const postData = postCache[postId];
+                    // Update header only to reflect tick/premium changes
+                    const newHeader = renderPost(postId, postData).querySelector('.post-header');
+                    existingPostEl.querySelector('.post-header').replaceWith(newHeader);
+                }
             }
             hideLoaderIfReady();
         });
@@ -613,13 +610,20 @@
             premiumUsers = snapshot.val() || {};
             dataLoaded.premium = true;
             for (const postId in postCache) {
-                updatePostElement(postId, postCache[postId]);
+                const existingPostEl = document.getElementById(`post_${postId}`);
+                if (existingPostEl) {
+                    const postData = postCache[postId];
+                    // Update header only to reflect tick/premium changes
+                    const newHeader = renderPost(postId, postData).querySelector('.post-header');
+                    existingPostEl.querySelector('.post-header').replaceWith(newHeader);
+                }
             }
             hideLoaderIfReady();
         });
-
-        db.ref("posts").on("value", (snapshot) => {
-            const allPosts = snapshot.val();
+        
+        // İlk yükləmə: Postları təsadüfi sırala
+        db.ref("posts").once("value").then(snapshot => {
+            const allPosts = snapshot.val() || {};
             const postDataArray = [];
             for (const postId in allPosts) {
                 try {
@@ -639,26 +643,55 @@
                 postsContainer.appendChild(renderPost(post.id, post.data));
             });
             dataLoaded.posts = true;
+            initialLoadDone = true; // İlk yükləmə tamamlandı
+            hideLoaderIfReady();
+
+            // Real-time dinləyiciləri ilkin yükləmədən sonra işə sal
+            db.ref("posts").on("child_added", (snap) => {
+                if (initialLoadDone) { // Yalnız ilk yükləmədən sonra yeni əlavə olunanları dinlə
+                    const postId = snap.key;
+                    if (!postCache[postId]) {
+                        try {
+                            const postData = JSON.parse(snap.val());
+                            postCache[postId] = postData;
+                            const newPostEl = renderPost(postId, postData);
+                            postsContainer.prepend(newPostEl);
+                        } catch (e) {
+                            console.error("Yeni post əlavə edilərkən xəta:", postId, e);
+                        }
+                    }
+                }
+            });
+
+            db.ref("posts").on("child_changed", (snap) => {
+                const postId = snap.key;
+                try {
+                    const postData = JSON.parse(snap.val());
+                    postCache[postId] = postData;
+                    const existingPostEl = document.getElementById("post_" + postId);
+                    if (existingPostEl) {
+                        const newPostEl = renderPost(postId, postData);
+                        postsContainer.replaceChild(newPostEl, existingPostEl);
+                    }
+                } catch (e) {
+                    console.error("Post dəyişdirilərkən xəta:", postId, e);
+                }
+            });
+
+            db.ref("posts").on("child_removed", (snap) => {
+                const postId = snap.key;
+                delete postCache[postId];
+                const el = document.getElementById("post_" + postId);
+                if (el) el.remove();
+            });
+
+        }).catch(error => {
+            console.error("İlk post məlumatları yüklənərkən xəta:", error);
+            dataLoaded.posts = true;
+            initialLoadDone = true;
             hideLoaderIfReady();
         });
 
-        db.ref("posts").on("child_changed", (snap) => {
-            try {
-                const postId = snap.key;
-                const data = JSON.parse(snap.val());
-                postCache[postId] = data;
-                updatePostElement(postId, data);
-            } catch (e) {
-                console.warn("Post dəyişilərkən xəta:", snap.key);
-            }
-        });
-
-        db.ref("posts").on("child_removed", (snap) => {
-            const postId = snap.key;
-            delete postCache[postId];
-            const el = document.getElementById("post_" + postId);
-            if (el) el.remove();
-        });
     </script>
 </body>
 </html>
