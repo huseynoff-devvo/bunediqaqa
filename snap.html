@@ -80,6 +80,8 @@
             background: #121212FF;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             opacity: 0;
             transform: translateY(100%);
             transition: transform 0.5s ease, opacity 0.5s ease;
@@ -100,6 +102,16 @@
             background: #121212FF;
             user-select: none;
             cursor: pointer;
+            display: none;
+        }
+        
+        .reel-loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
         }
 
         .overlay {
@@ -390,10 +402,8 @@
                     return userFollowStatusCache[cleanReelUserNickname];
                 }
                 try {
-                    // Try with the cleaned username
                     let snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
                     
-                    // If no result, try with the "@" prefix (just in case the database format is inconsistent)
                     if (!snapshot.exists()) {
                         snapshot = await followingDb.ref(cleanCurrentUser).child(`@${cleanReelUserNickname}`).once('value');
                     }
@@ -407,7 +417,6 @@
                 }
             }
 
-            // --- Fisher-Yates shuffle alqoritmi ---
             function shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -416,7 +425,6 @@
                 return array;
             }
             
-            // Listener for real-time changes to likes
             reelDb.ref('likes').on('value', (snapshot) => {
                 const likesData = snapshot.val() || {};
                 reels.forEach(reel => {
@@ -434,7 +442,6 @@
                 });
             });
 
-            // Listener for real-time changes to reels
             reelDb.ref('reels').on('value', async (snapshot) => {
                 const postsData = snapshot.val() || {};
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
@@ -461,7 +468,6 @@
                     loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
                 }
                 
-                // Mevcut reel'leri temizle
                 while(app.firstChild) {
                     app.removeChild(app.firstChild);
                 }
@@ -485,31 +491,29 @@
                     activeReel.element.style.transform = 'translateY(0)';
                     activeReel.element.style.opacity = '1';
 
-                    if (activeReel.video.readyState >= 4) {
-                        playActiveVideo(activeIndex);
-                    } else {
-                        activeReel.video.addEventListener('canplaythrough', () => playActiveVideo(activeIndex), { once: true });
-                    }
+                    // Orijinal kodda bura "playActiveVideo(activeIndex);" idi
+                    // Artıq videonun özündə "canplaythrough" event-ini gözləyirik.
                 }
+                
+                // İlk videonu oynat ve diğerlerini önceden yükle
+                playActiveVideo(activeIndex);
+                preloadVideos();
+                
                 loader.style.display = 'none';
             });
             
-            // Listener for real-time changes to follows and following
             followingDb.ref(cleanCurrentUser).on('value', async (snapshot) => {
                 const followingData = snapshot.val() || {};
                 const followingUsers = Object.keys(followingData);
                 
-                // Update cache
                 for (const user in userFollowStatusCache) {
                     userFollowStatusCache[user] = followingUsers.includes(user);
                 }
                 
-                // Update buttons on the page
                 reels.forEach(reel => {
                     const cleanNickname = reel.userNickname.startsWith('@') ? reel.userNickname.substring(1) : reel.userNickname;
                     const followButton = reel.followButton;
                     if (followButton) {
-                        // Check both cleaned and @-prefixed usernames in the followingUsers list
                         if (followingUsers.includes(cleanNickname) || followingUsers.includes(`@${cleanNickname}`)) {
                             followButton.style.display = 'none';
                         } else {
@@ -519,8 +523,6 @@
                 });
             });
 
-            // --- Helper functions ---
-
             function showSoundIndicator(muted) {
                 clearTimeout(indicatorTimeout);
                 soundIcon.textContent = muted ? 'volume_off' : 'volume_up';
@@ -529,17 +531,42 @@
                     soundIndicator.classList.remove('show');
                 }, 1000);
             }
+            
+            function preloadVideos() {
+                for (let i = 0; i < reels.length; i++) {
+                    const video = reels[i].video;
+                    video.preload = 'auto'; // Tüm videoları otomatik önceden yükle
+                }
+            }
 
             function playActiveVideo(index) {
-                if (reels[index] && reels[index].video) {
-                    reels[index].video.muted = !allVideosSoundOn;
-                    reels[index].video.play().catch(e => {
-                        console.error("Video avtomatik başlamadı, səbəb: ", e);
-                        if (e.name === 'NotAllowedError') {
-                            reels[index].video.muted = true;
-                            reels[index].video.play().then(() => showSoundIndicator(true));
-                        }
-                    });
+                const reel = reels[index];
+                if (reel && reel.video) {
+                    reel.video.addEventListener('loadeddata', () => {
+                        reel.video.style.display = 'block';
+                        if(reel.loader) reel.loader.style.display = 'none';
+                        
+                        // Sadece aktif videoyu oynat
+                        reel.video.muted = !allVideosSoundOn;
+                        reel.video.play().catch(e => {
+                            console.error("Video avtomatik başlamadı, səbəb: ", e);
+                            if (e.name === 'NotAllowedError') {
+                                reel.video.muted = true;
+                                reel.video.play().then(() => showSoundIndicator(true));
+                            }
+                        });
+                    }, { once: true });
+                    
+                    if (reel.video.readyState < 2) {
+                        reel.video.style.display = 'none';
+                        if(reel.loader) reel.loader.style.display = 'block';
+                    } else {
+                         // Eğer zaten yüklüyse hemen oynat
+                        reel.video.style.display = 'block';
+                        if(reel.loader) reel.loader.style.display = 'none';
+                        reel.video.muted = !allVideosSoundOn;
+                        reel.video.play();
+                    }
                 }
             }
 
@@ -596,10 +623,8 @@
                         await followedRef.set("+");
                         await followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
 
-                        // Update cache
                         userFollowStatusCache[followedUsername] = true;
                         
-                        // Hide button after successful follow
                         const followButton = document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`);
                         if (followButton) followButton.style.display = 'none';
 
@@ -615,6 +640,10 @@
             function createReel(post) {
                 const reel = document.createElement('div');
                 reel.className = 'reel';
+                
+                const loader = document.createElement('div');
+                loader.className = 'reel-loader';
+                reel.appendChild(loader);
 
                 const video = document.createElement('video');
                 video.src = post.video && post.video.trim() ? post.video.trim() : fallbackVideo;
@@ -622,6 +651,7 @@
                 video.playsInline = true;
                 video.muted = !allVideosSoundOn;
                 video.preload = 'auto';
+                video.style.display = 'none';
 
                 video.onerror = () => {
                     console.warn(`Video yüklənmədi: ${video.src}. Fallback tətbiq olunur.`);
@@ -673,7 +703,6 @@
                 followButton.textContent = 'Takib Et';
                 followButton.setAttribute('data-nickname', post.nickname);
                 
-                // Set initial button state based on follow status
                 isFollowing(post.nickname).then(isFollowed => {
                     const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (cleanPostNickname === cleanCurrentUser || isFollowed) {
@@ -705,7 +734,6 @@
                 likeIcon.className = 'material-icons like-icon';
                 likeIcon.textContent = 'favorite';
                 
-                // Set the initial liked state on page load
                 if (post.isLiked) {
                     likeIcon.classList.add('liked');
                 }
@@ -730,7 +758,7 @@
 
                 reel.appendChild(overlay);
 
-                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton };
+                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton, loader: loader };
             }
 
             function setActiveReel(newIndex) {
@@ -771,7 +799,6 @@
                 }
             }
 
-            // Scroll events
             let wheelTimeout = null;
             window.addEventListener('wheel', e => {
                 if (!isAnimating) {
@@ -786,7 +813,6 @@
                 }
             });
 
-            // Touch events
             app.addEventListener('touchstart', e => {
                 if (!isAnimating && e.touches.length === 1) {
                     touchStartY = e.touches[0].clientY;
