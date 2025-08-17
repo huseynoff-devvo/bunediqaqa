@@ -1143,35 +1143,6 @@
                 });
             }
         })();
-         // Handle keyboard for comment input
-            const commentInputArea = document.querySelector('.comment-input-area');
-            const commentInput = document.querySelector('.comment-input');
-            let initialHeight = window.innerHeight;
-
-            function handleKeyboardOpen() {
-                const newHeight = window.innerHeight;
-                const keyboardHeight = initialHeight - newHeight;
-                if (keyboardHeight > 0) {
-                    commentInputArea.style.transform = `translateY(-${keyboardHeight}px)`;
-                }
-            }
-
-            function handleKeyboardClose() {
-                commentInputArea.style.transform = 'translateY(0)';
-            }
-
-            // Listen for focus and blur events on the input field
-            commentInput.addEventListener('focus', handleKeyboardOpen);
-            commentInput.addEventListener('blur', handleKeyboardClose);
-
-            // Fallback for some browsers, may not be perfect
-            window.addEventListener('resize', () => {
-                if (document.activeElement === commentInput) {
-                    handleKeyboardOpen();
-                } else {
-                    handleKeyboardClose();
-                }
-            });
     </script>
 </body>
 </html>
