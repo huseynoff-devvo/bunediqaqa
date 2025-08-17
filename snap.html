@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="az">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -183,6 +182,12 @@
         .text {
             margin: 6px 0;
             font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .text a {
+            color: #38b1f7;
+            text-decoration: none;
         }
 
         .time {
@@ -721,7 +726,25 @@
 
                 const text = document.createElement('div');
                 text.className = 'text';
-                text.textContent = post.text || '';
+
+                // Video mətnini qısa və tam formatda saxlayın
+                const fullText = (post.text || '').replace(/#(\w+)/g, '<a href="#">#$1</a>');
+                const shortText = fullText.split(' ').slice(0, 3).join(' ') + '...';
+                
+                text.innerHTML = shortText;
+                let isExpanded = false;
+
+                text.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (fullText.split(' ').length > 3) {
+                        if (isExpanded) {
+                            text.innerHTML = shortText;
+                        } else {
+                            text.innerHTML = fullText;
+                        }
+                        isExpanded = !isExpanded;
+                    }
+                });
 
                 const time = document.createElement('div');
                 time.className = 'time';
