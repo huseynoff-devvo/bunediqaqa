@@ -200,7 +200,7 @@
         /* New interaction section styles */
         .new-interaction-section {
             display: flex;
-            gap: 15px; /* Düymələr arasındakı boşluğu artırdım */
+            gap: 15px;
             margin-top: 15px;
             align-items: center;
         }
@@ -214,7 +214,7 @@
         }
 
         .interaction-icon {
-            font-size: 30px; /* Düymə ikonunun ölçüsünü bir az kiçiltdim */
+            font-size: 30px;
             color: white;
             transition: color 0.3s;
         }
@@ -339,37 +339,98 @@
             flex-grow: 1;
             padding: 15px;
             overflow-y: auto;
+            /* display: flex; */
+            flex-direction: column-reverse; /* Şərhləri yuxarıdan aşağı düzür */
         }
-
+        
         .comment-item {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            gap: 10px;
             margin-bottom: 12px;
         }
-
+        
+        .comment-main-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
         .comment-profile-pic {
             width: 32px;
             height: 32px;
             border-radius: 50%;
             object-fit: cover;
-            margin-right: 12px;
+            flex-shrink: 0;
         }
         
         .comment-content {
-            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
-
+        
+        .comment-text-bubble {
+            background: #2b2b2b;
+            border-radius: 18px;
+            padding: 10px 15px;
+            max-width: 90%;
+            word-wrap: break-word;
+            display: inline-block;
+        }
+        
         .comment-user {
             font-weight: bold;
-            margin-right: 5px;
             font-size: 0.95rem;
+            margin-right: 5px;
         }
-
+        
         .comment-text {
             font-size: 0.95rem;
             color: #fff;
         }
+        
+        .comment-actions {
+            display: flex;
+            gap: 15px;
+            margin-left: 10px;
+        }
 
+        .reply-button {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 2px 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .replies-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-left: 42px;
+            margin-top: 10px;
+        }
+        
+        .replies-list .comment-item {
+            margin-bottom: 0;
+        }
+        
+        .comment-text a.reply-user,
+        .comment-text a.hashtag {
+            color: #38b1f7;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .comment-text a.reply-user:hover,
+        .comment-text a.hashtag:hover {
+            text-decoration: underline;
+        }
+        
         .comment-input-area {
             display: flex;
             align-items: center;
@@ -395,6 +456,7 @@
             margin-left: 10px;
             cursor: pointer;
         }
+
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link rel="stylesheet"
@@ -519,7 +581,9 @@
             const fallbackVideo = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
             let indicatorTimeout = null;
             let touchStartY = null;
-
+            let activePostId = null;
+            let activeCommentId = null; // Cavab veriləcək şərhin ID-si
+            
             // Cache for user profiles and follow status
             const userProfileCache = {};
             const userFollowStatusCache = {};
@@ -658,9 +722,18 @@
                         newReel.likeCount.textContent = count;
                     });
                     
-                    commentsDb.ref(`comments/${post.id}`).on('value', snap => {
-                        const count = snap.numChildren();
-                        newReel.commentCountElement.textContent = count;
+                    commentsDb.ref(`comments/${post.id}`).on('value', async (snap) => {
+                        let totalComments = 0;
+                        const commentsData = snap.val();
+                        if (commentsData) {
+                            for (const commentId in commentsData) {
+                                totalComments++; // Count the main comment
+                                if (commentsData[commentId].replies) {
+                                    totalComments += Object.keys(commentsData[commentId].replies).length; // Add reply count
+                                }
+                            }
+                        }
+                        newReel.commentCountElement.textContent = totalComments;
                     });
                 });
 
@@ -1064,144 +1137,186 @@
                 }
             });
             
-          // Comment System Logic 
-let activePostId = null; 
-let commentsDbRef = null; 
+            // Yeni Şərh Sistemi Məntiqi 
+            let commentsDbRef = null; 
+            let commentAddedListenerAttached = false;
 
-function closeComments() { 
-    commentsContainer.classList.remove('open'); 
-    history.back(); 
-    if (commentsDbRef) { 
-        commentsDbRef.off(); 
-        commentsDbRef = null; 
-    } 
-} 
-
-closeCommentsBtn.addEventListener('click', closeComments); 
-
-sendCommentBtn.addEventListener('click', sendComment); 
-commentInput.addEventListener('keydown', (e) => { 
-    if (e.key === 'Enter') { 
-        sendComment(); 
-    }
-}); 
-
-window.addEventListener('popstate', () => { 
-    const urlParams = new URLSearchParams(window.location.search); 
-    if (urlParams.get('reply') !== 'true' && commentsContainer.classList.contains('open')) { 
-        closeComments(); 
-    } 
-}); 
-
-async function addCommentToDOM(comment) { 
-    const commentElement = document.createElement('div'); 
-    commentElement.className = 'comment-item'; 
-
-    // Kullanıcı profil ve adını getir
-    const userProfilePic = await fetchUserProfile(comment.user); 
-    const userName = await fetchUserName(comment.user); 
-
-    commentElement.innerHTML = ` 
-        <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" /> 
-        <div class="comment-content"> 
-            <span class="comment-user">${userName}</span> 
-            <span class="comment-text">${comment.text}</span> 
-        </div> 
-    `; 
-    // Yorumu listenin en başına ekle
-    commentsList.prepend(commentElement); 
-} 
-
-function openComments(postId) { 
-    activePostId = postId; 
-    commentsContainer.classList.add('open'); 
-
-    const newUrl = `${window.location.pathname}?user=@${cleanCurrentUser}&reply=true`; 
-    history.pushState({ postId: postId, user: cleanCurrentUser }, '', newUrl); 
-
-    if (commentsDbRef) { 
-        commentsDbRef.off(); 
-    } 
-
-    commentsList.innerHTML = ''; 
-
-    commentsDbRef = commentsDb.ref(`comments/${postId}`); 
-    
-    let initialLoadComplete = false;
-
-    // Yorumları tek seferde getir ve listeyi oluştur (initial load)
-    commentsDbRef.once('value', async (snapshot) => {
-        const comments = snapshot.val();
-        if (comments) {
-            const commentsArray = Object.values(comments).sort((a, b) => b.timestamp - a.timestamp);
+            function closeComments() { 
+                commentsContainer.classList.remove('open'); 
+                if (commentsDbRef) { 
+                    commentsDbRef.off(); 
+                    commentsDbRef = null; 
+                } 
+                commentAddedListenerAttached = false;
+                commentsList.innerHTML = '';
+            } 
             
-            const usersToFetch = commentsArray.map(comment => comment.user);
-            const uniqueUsers = [...new Set(usersToFetch)];
-            
-            const [userProfiles, userNames] = await Promise.all([
-                Promise.all(uniqueUsers.map(user => fetchUserProfile(user))),
-                Promise.all(uniqueUsers.map(user => fetchUserName(user)))
-            ]);
+            closeCommentsBtn.addEventListener('click', closeComments); 
 
-            const userData = {};
-            uniqueUsers.forEach((user, index) => {
-                userData[user] = {
-                    profilePic: userProfiles[index],
-                    name: userNames[index]
-                };
+            sendCommentBtn.addEventListener('click', sendComment); 
+            commentInput.addEventListener('keydown', (e) => { 
+                if (e.key === 'Enter') { 
+                    sendComment(); 
+                }
+            }); 
+            
+            window.addEventListener('popstate', () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('reply') !== 'true' && commentsContainer.classList.contains('open')) {
+                    closeComments();
+                }
             });
 
-            const fragment = document.createDocumentFragment();
-            for (const comment of commentsArray) {
+            async function addCommentToDOM(comment, parentCommentId = null) {
                 const commentElement = document.createElement('div');
-                commentElement.className = 'comment-item';
-                const user = userData[comment.user];
+                commentElement.className = `comment-item ${parentCommentId ? 'reply-item' : ''}`;
+                commentElement.dataset.commentId = comment.id;
 
+                const userProfilePic = await fetchUserProfile(comment.user);
+                const userName = await fetchUserName(comment.user);
+
+                let formattedText = comment.text;
+                formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
+                formattedText = formattedText.replace(/@(\w+)/g, '<a href="#" class="reply-user">@$1</a>');
+                
                 commentElement.innerHTML = `
-                    <img src="${user.profilePic}" class="comment-profile-pic" alt="${user.name}" />
-                    <div class="comment-content">
-                        <span class="comment-user">${user.name}</span>
-                        <span class="comment-text">${comment.text}</span>
+                    <div class="comment-main-content">
+                        <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" />
+                        <div class="comment-text-bubble">
+                            <span class="comment-user">${userName}</span>
+                            <span class="comment-text">${formattedText}</span>
+                        </div>
                     </div>
                 `;
-                fragment.appendChild(commentElement);
+
+                if (!parentCommentId) {
+                    const actionsHtml = `<div class="comment-actions">
+                        <button class="reply-button">
+                            <span class="reply-text">Reply</span>
+                            <span class="reply-count"></span>
+                        </button>
+                    </div>`;
+                    
+                    commentElement.innerHTML += actionsHtml;
+
+                    const repliesList = document.createElement('div');
+                    repliesList.className = 'replies-list';
+                    repliesList.style.display = 'none';
+                    commentElement.appendChild(repliesList);
+
+                    const replyButton = commentElement.querySelector('.reply-button');
+                    const replyCountSpan = commentElement.querySelector('.reply-count');
+                    
+                    commentsDb.ref(`comments/${activePostId}/${comment.id}/replies`).on('value', snap => {
+                        const count = snap.numChildren();
+                        if (count > 0) {
+                            replyCountSpan.textContent = `+${count}`;
+                            replyCountSpan.style.display = 'inline';
+                        } else {
+                            replyCountSpan.style.display = 'none';
+                        }
+                    });
+
+                    replyButton.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (repliesList.style.display === 'none' || repliesList.innerHTML === '') {
+                            repliesList.style.display = 'flex';
+                            repliesList.innerHTML = '';
+                            
+                            const repliesSnapshot = await commentsDb.ref(`comments/${activePostId}/${comment.id}/replies`).once('value');
+                            const replies = repliesSnapshot.val();
+                            if (replies) {
+                                const repliesArray = Object.keys(replies).map(key => ({ id: key, ...replies[key] }));
+                                repliesArray.sort((a, b) => a.timestamp - b.timestamp);
+                                for (const reply of repliesArray) {
+                                    await addCommentToDOM(reply, comment.id);
+                                }
+                            }
+                        } else {
+                            repliesList.style.display = 'none';
+                        }
+                    });
+
+                } else {
+                    commentElement.classList.add('reply-item');
+                }
+
+                commentElement.querySelector('.comment-text-bubble').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const replyText = `@${comment.user} `;
+                    commentInput.value = replyText;
+                    commentInput.focus();
+                    activeCommentId = comment.id;
+                });
+                
+                if (parentCommentId) {
+                    const parentCommentElement = commentsList.querySelector(`.comment-item[data-comment-id="${parentCommentId}"]`);
+                    if (parentCommentElement) {
+                        const repliesList = parentCommentElement.querySelector('.replies-list');
+                        if (repliesList) {
+                            repliesList.appendChild(commentElement);
+                        }
+                    }
+                } else {
+                    commentsList.prepend(commentElement);
+                }
             }
-            commentsList.appendChild(fragment);
-        }
-        initialLoadComplete = true;
-    });
 
-    // Yeni eklenen yorumları anlık dinle ve DOM'a ekle
-    commentsDbRef.on('child_added', (snapshot) => {
-        if (initialLoadComplete) {
-            const newComment = snapshot.val();
-            addCommentToDOM(newComment);
-        }
-    });
-} 
+            async function openComments(postId) { 
+                activePostId = postId; 
+                commentsContainer.classList.add('open'); 
+    
+                const newUrl = `${window.location.pathname}?user=@${cleanCurrentUser}&reply=true&post=${postId}`; 
+                history.pushState({ postId: postId, user: cleanCurrentUser }, '', newUrl); 
+    
+                commentsList.innerHTML = ''; 
+    
+                const commentsSnapshot = await commentsDb.ref(`comments/${postId}`).once('value');
+                const comments = commentsSnapshot.val();
+                
+                if (comments) {
+                    const commentsArray = Object.keys(comments).map(key => ({ id: key, ...comments[key] }));
+                    commentsArray.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    for (const comment of commentsArray) {
+                        await addCommentToDOM(comment);
+                    }
+                }
 
-async function sendComment() { 
-    const commentText = commentInput.value.trim(); 
-    if (commentText === "" || !activePostId) return; 
+                if (!commentAddedListenerAttached) {
+                    commentsDbRef = commentsDb.ref(`comments/${postId}`);
+                    commentsDbRef.on('child_added', async (snapshot) => {
+                         const newComment = { id: snapshot.key, ...snapshot.val() };
+                         if (!commentsList.querySelector(`[data-comment-id="${newComment.id}"]`)) {
+                             await addCommentToDOM(newComment);
+                         }
+                     });
+                     commentAddedListenerAttached = true;
+                }
+            }
 
-    const newCommentRef = commentsDbRef.push(); 
-    await newCommentRef.set({ 
-        user: cleanCurrentUser, 
-        text: commentText, 
-        timestamp: Date.now() 
-    }); 
-     
-    commentInput.value = ''; 
+            async function sendComment() { 
+                const commentText = commentInput.value.trim(); 
+                if (commentText === "" || !activePostId) return; 
+                
+                const newComment = { 
+                    user: cleanCurrentUser, 
+                    text: commentText, 
+                    timestamp: Date.now() 
+                };
 
-    const commentCountRef = commentsDb.ref(`comments/${activePostId}`).once('value'); 
-    commentCountRef.then(snap => { 
-        const count = snap.numChildren(); 
-        const reel = reels.find(r => r.postId === activePostId); 
-        if (reel) { 
-            reel.commentCountElement.textContent = count; 
-        } 
-    }); 
-}
+                const replyToUserMatch = commentText.match(/^@(\w+)/);
+                if (replyToUserMatch && activeCommentId) {
+                    const replyRef = commentsDb.ref(`comments/${activePostId}/${activeCommentId}/replies`).push();
+                    await replyRef.set(newComment);
+                    activeCommentId = null;
+                } else {
+                    const newCommentRef = commentsDb.ref(`comments/${activePostId}`).push();
+                    await newCommentRef.set(newComment);
+                }
+                
+                commentInput.value = ''; 
+            }
         })();
     </script>
 </body>
