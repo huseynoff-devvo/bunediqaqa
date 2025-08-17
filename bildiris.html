@@ -2,201 +2,147 @@
 <html lang="az">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <title>Meme Soundboard</title>
-  <style>
-    body {
-      text-align: center;
-      background: #121212FF;
-      font-family: sans-serif;
-      padding: 0px 0px;
-      margin: 0;
-    }
-#wrapper {
-  width: 350px;
-  margin: 0 auto;
-}
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Meme Soundboard</title>
+    <style>
+        body {
+            text-align: center;
+            background: #121212FF;
+            font-family: sans-serif;
+            padding: 0;
+            margin: 0;
+        }
 
-    .container-2 {
-      width: 330px;
-      height: 100px;
-      margin: 0 auto;
-      margin-top: -10px;
-      background: #121212FF;
-      border-radius: 8px;
-      padding: 10px;
-      /* border: 1px solid #121212FF; */
-    }
+        #wrapper {
+            width: 350px;
+            margin: 0 auto;
+        }
 
-    .container {
-      width: 330px;
-      height: 100px;
-      margin: 0 auto;
-      margin-top: -20px;
-      background: #121212FF;
-      border-radius: 8px;
-      padding: 10px;
-      /* border: 1px solid #121212FF; */
-    }
+        .container,
+        .container-2 {
+            width: 330px;
+            margin: 0 auto;
+            background: #121212FF;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
 
-    
+        .message {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px 0;
+            position: relative;
+        }
 
-    h2 {
-      margin-bottom: 20px;
-    }
+        .logo {
+            width: 55px;
+            height: 55px;
+            margin-right: 15px;
+        }
 
-    .message {
-      border-top: 1px solid #eee;
-      padding: 10px 0;
-      display: flex;
-      align-items: flex-start;
-    }
+        .content {
+            flex: 1;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-    .message:first-child {
-      border-top: none;
-    }
+        .title {
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            margin-bottom: 5px;
+        }
 
-    .logo {
-      width: 55px;
-      height: 55px;
-      /* margin-right: 15px; */
-    }
+        .text {
+            color: #e7e7e7;
+            font-size: 14px;
+            line-height: 1.4;
+        }
 
-    .content {
-      flex: 1;
-    }
+        .text p {
+            margin: 0;
+            display: inline;
+        }
+        
+        .tick-img {
+            width: 15px;
+            margin-left: 5px;
+            vertical-align: top;
+        }
 
-    .title {
-      position: relative;
-      margin-left: -8px;
-      margin-top: 8px;
-      margin-right: 190px;
-      font-weight: bold;
-      font-size: 12px;
-      color: white;
-    }
-
-    .text {
-      width: 250px;
-      margin-left: -30px;
-      position: relative;
-      margin-top: -5px;
-      color: #e7e7e7;
-      font-size: 14px;
-    }
-
-    .text-1 {
-      width: 250px;
-      margin-left: 36px;
-      position: relative;
-      margin-top: -9px;
-      color: #e7e7e7;
-      font-size: 14px;
-    }
-
-    .text-2 {
-      width: 240px;
-      margin-left: -18px;
-      position: relative;
-      top: -8px;
-      /* margin-top: -8px; */
-      color: #e7e7e7;
-      font-size: 14px;
-    }
-    .text-3 {
-      width: 240px;
-      /* margin-left: -3px; */
-      position: relative;
-      top: -8px;
-      /* margin-top: -8px; */
-      color: #e7e7e7;
-      font-size: 14px;
-    }
-
-    .date {
-      position: relative;
-      margin-top: -8px;
-      margin-left: 170px;
-      color: #999;
-      font-size: 12px;
-    }
-    .date-2 {
-      position: relative;
-      margin-top: -15px;
-      margin-left: 170px;
-      color: #999;
-      font-size: 12px;
-    }
-
-    .img{
-      position: relative;
-      margin-top: 3px;
-      margin-left: 5px;
-      width: 70px;
-      border: 1px solid #121212FF;
-      border-radius: 20px;
-    }
-
-    .star {
-      margin-left: auto;
-      cursor: pointer;
-      color: #ccc;
-    }
-
-    .star:hover {
-      color: gold;
-    }
-
-    a {
-      color: #5e3bea;
-      text-decoration: underline;
-    }
-  </style>
+        .date {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div id="wrapper">
+    <div id="wrapper">
 
-  <div class="container-2">
-      <div class="message">
-        <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
-        <div class="content">
-          <div class="title">Pasyak.az</div>
-          <div class="text-3"><p>Proqramda açılan fake hesablar və yaxud 3 dən çox hesab IP ban'a səbəb ola bilər.</p></div>
-          <div class="date-2">Avqust, 15</div>
+        <div class="container-2">
+            <div class="message">
+                <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
+                <div class="content">
+                    <div class="title">Pasyak.az</div>
+                    <div class="text">
+                        <p>Editorlar gücünüzü göstərin! Ən yaxşı editi düzəldən şəxsə qırmızı tik hədiyyə</p>
+                        <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png" class="tick-img">
+                        <p>.</p>
+                    </div>
+                </div>
+                <div class="date">Avqust, 17</div>
+            </div>
         </div>
-      </div>
-  </div>
 
- <div class="container-2">
-      <div class="message">
-        <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
-        <div class="content">
-          <div class="title">Pasyak.az</div>
-          <div class="text-2"><p>Azərbaycanın ilk sosial media proqramına xoş gəlmisiniz!🇦🇿</p></div>
-          <div class="date-2">Avqust, 10</div>
+        <div class="container-2">
+            <div class="message">
+                <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
+                <div class="content">
+                    <div class="title">Pasyak.az</div>
+                    <div class="text">
+                        <p>Proqramda açılan fake hesablar və yaxud 3 dən çox hesab IP ban'a səbəb ola bilər.</p>
+                    </div>
+                </div>
+                <div class="date">Avqust, 15</div>
+            </div>
         </div>
-      </div>
-  </div>
 
-  <div class="container">
-      <div class="message">
-        <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
-        <div class="content">
-          <div class="title">Pasyak.az</div>
-          <div class="text"><p>İd'i heç kəslə paylaşmayın!</p></div>
-          <div class="date">İyul, 09</div>
+        <div class="container-2">
+            <div class="message">
+                <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
+                <div class="content">
+                    <div class="title">Pasyak.az</div>
+                    <div class="text">
+                        <p>Azərbaycanın ilk sosial media proqramına xoş gəlmisiniz!🇦🇿</p>
+                    </div>
+                </div>
+                <div class="date">Avqust, 10</div>
+            </div>
         </div>
-      </div>
-  </div>
 
- 
-
-</div>
+        <div class="container">
+            <div class="message">
+                <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1752060569/Ads%C4%B1z_tasar%C4%B1m_1_kdispx.png" class="logo">
+                <div class="content">
+                    <div class="title">Pasyak.az</div>
+                    <div class="text">
+                        <p>İd'i heç kəslə paylaşmayın!</p>
+                    </div>
+                </div>
+                <div class="date">İyul, 09</div>
+            </div>
+        </div>
+    </div>
 
 </body>
 
