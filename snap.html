@@ -381,11 +381,23 @@
             // Function to check if the current user is already following the reel user
             async function isFollowing(reelUserNickname) {
                 const cleanReelUserNickname = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
+                const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+
+                if (cleanReelUserNickname === cleanCurrentUser) {
+                    return true;
+                }
                 if (userFollowStatusCache[cleanReelUserNickname] !== undefined) {
                     return userFollowStatusCache[cleanReelUserNickname];
                 }
                 try {
-                    const snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
+                    // Try with the cleaned username
+                    let snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
+                    
+                    // If no result, try with the "@" prefix (just in case the database format is inconsistent)
+                    if (!snapshot.exists()) {
+                        snapshot = await followingDb.ref(cleanCurrentUser).child(`@${cleanReelUserNickname}`).once('value');
+                    }
+
                     const isFollowed = snapshot.exists();
                     userFollowStatusCache[cleanReelUserNickname] = isFollowed;
                     return isFollowed;
@@ -394,7 +406,7 @@
                     return false;
                 }
             }
-            
+
             // --- Fisher-Yates shuffle alqoritmi ---
             function shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
@@ -403,9 +415,7 @@
                 }
                 return array;
             }
-
-            // --- Real-time updates for likes, reels, and follows ---
-
+            
             // Listener for real-time changes to likes
             reelDb.ref('likes').on('value', (snapshot) => {
                 const likesData = snapshot.val() || {};
@@ -427,8 +437,8 @@
             // Listener for real-time changes to reels
             reelDb.ref('reels').on('value', async (snapshot) => {
                 const postsData = snapshot.val() || {};
+                const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
                 
-                // POST ID'LƏRİNİ ALIB QARIŞDIR
                 let postIds = Object.keys(postsData);
                 postIds = shuffleArray(postIds);
 
@@ -444,34 +454,24 @@
 
                     const profilePicUrl = await fetchUserProfile(post.nickname);
                     post.profile = profilePicUrl;
+                    
                     const isFollowed = await isFollowing(post.nickname);
-
-                    loadedReels.push({ id: postId, isFollowed, ...post });
+                    const isLiked = likesData[postId] && likesData[postId].users && likesData[postId].users[currentUser];
+                    
+                    loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
                 }
-
-                const existingReelIds = reels.map(r => r.postId);
-                const reelsToRemove = existingReelIds.filter(id => !postIds.includes(id));
-
-                reelsToRemove.forEach(id => {
-                    const reelIndex = reels.findIndex(r => r.postId === id);
-                    if (reelIndex !== -1) {
-                        reels[reelIndex].element.remove();
-                        reels.splice(reelIndex, 1);
-                    }
-                });
                 
-                // Mövcud reel'ləri silmək və yeni, qarışdırılmış ardıcıllıqla əlavə etmək üçün 'app' elementini təmizlə
+                // Mevcut reel'leri temizle
                 while(app.firstChild) {
                     app.removeChild(app.firstChild);
                 }
-                reels = []; // 'reels' array-ini sıfırla
+                reels = [];
 
                 loadedReels.forEach(post => {
                     const newReel = createReel(post);
                     app.appendChild(newReel.element);
                     reels.push(newReel);
-
-                    // Fetch and update like count for the new reel
+                    
                     reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
                         const count = likeSnap.val() || 0;
                         newReel.likeCount.textContent = count;
@@ -479,7 +479,7 @@
                 });
 
                 if (reels.length > 0) {
-                    activeIndex = 0; // İlk reel'i aktiv et
+                    activeIndex = 0;
                     const activeReel = reels[activeIndex];
                     activeReel.element.classList.add('active');
                     activeReel.element.style.transform = 'translateY(0)';
@@ -492,6 +492,31 @@
                     }
                 }
                 loader.style.display = 'none';
+            });
+            
+            // Listener for real-time changes to follows and following
+            followingDb.ref(cleanCurrentUser).on('value', async (snapshot) => {
+                const followingData = snapshot.val() || {};
+                const followingUsers = Object.keys(followingData);
+                
+                // Update cache
+                for (const user in userFollowStatusCache) {
+                    userFollowStatusCache[user] = followingUsers.includes(user);
+                }
+                
+                // Update buttons on the page
+                reels.forEach(reel => {
+                    const cleanNickname = reel.userNickname.startsWith('@') ? reel.userNickname.substring(1) : reel.userNickname;
+                    const followButton = reel.followButton;
+                    if (followButton) {
+                        // Check both cleaned and @-prefixed usernames in the followingUsers list
+                        if (followingUsers.includes(cleanNickname) || followingUsers.includes(`@${cleanNickname}`)) {
+                            followButton.style.display = 'none';
+                        } else {
+                            followButton.style.display = 'block';
+                        }
+                    }
+                });
             });
 
             // --- Helper functions ---
@@ -545,43 +570,48 @@
                 });
             }
 
-            function handleFollowClick(reelUserNickname) {
+            async function handleFollowClick(reelUserNickname) {
                 const followerUsername = cleanCurrentUser;
                 const followedUsername = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
 
-                // Update follows database: Add the follower to the followed user's "followers" list
-                const followsRef = followsDb.ref(followedUsername);
-                const followerRef = followsRef.child(currentUser);
-                const followCountRef = followsRef.child('follow');
+                if (followerUsername === followedUsername) {
+                    console.log("Kendi kendinizi takip edemezsiniz.");
+                    return;
+                }
 
-                // Update following database: Add the followed user to the follower's "following" list
-                const followingRef = followingDb.ref(followerUsername);
-                const followedRef = followingRef.child(reelUserNickname);
-                const followingCountRef = followingRef.child('following');
-
-                // Check if already following before updating
-                isFollowing(followedUsername).then(isFollowed => {
+                try {
+                    const isFollowed = await isFollowing(followedUsername);
                     if (!isFollowed) {
-                        // Add follower
-                        followerRef.set("+");
-                        followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+                        const followsRef = followsDb.ref(followedUsername);
+                        const followerRef = followsRef.child(followerUsername);
+                        const followCountRef = followsRef.child('follow');
 
-                        // Add following
-                        followedRef.set("+");
-                        followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+                        const followingRef = followingDb.ref(followerUsername);
+                        const followedRef = followingRef.child(followedUsername);
+                        const followingCountRef = followingRef.child('following');
+                        
+                        await followerRef.set("+");
+                        await followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+                        
+                        await followedRef.set("+");
+                        await followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
 
-                        // Update cache and hide the button
+                        // Update cache
                         userFollowStatusCache[followedUsername] = true;
-                        document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`).style.display = 'none';
+                        
+                        // Hide button after successful follow
+                        const followButton = document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`);
+                        if (followButton) followButton.style.display = 'none';
 
+                        console.log(`User ${followerUsername} is now following ${followedUsername}.`);
                     } else {
-                        console.log(`User ${currentUser} is already following ${reelUserNickname}. No action needed.`);
+                        console.log(`User ${followerUsername} is already following ${followedUsername}. No action needed.`);
                     }
-                }).catch(e => {
+                } catch (e) {
                     console.error("Follow operation failed:", e);
-                });
+                }
             }
-
+            
             function createReel(post) {
                 const reel = document.createElement('div');
                 reel.className = 'reel';
@@ -642,10 +672,10 @@
                 followButton.className = 'follow-button';
                 followButton.textContent = 'Takib Et';
                 followButton.setAttribute('data-nickname', post.nickname);
-
-                const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
-
-                isFollowing(cleanPostNickname).then(isFollowed => {
+                
+                // Set initial button state based on follow status
+                isFollowing(post.nickname).then(isFollowed => {
+                    const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (cleanPostNickname === cleanCurrentUser || isFollowed) {
                         followButton.style.display = 'none';
                     } else {
@@ -674,6 +704,11 @@
                 const likeIcon = document.createElement('span');
                 likeIcon.className = 'material-icons like-icon';
                 likeIcon.textContent = 'favorite';
+                
+                // Set the initial liked state on page load
+                if (post.isLiked) {
+                    likeIcon.classList.add('liked');
+                }
 
                 const likeCount = document.createElement('span');
                 likeCount.className = 'like-count';
