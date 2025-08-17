@@ -1064,84 +1064,144 @@
                 }
             });
             
-            // Comment System Logic
-            let activePostId = null;
+          // Comment System Logic 
+let activePostId = null; 
+let commentsDbRef = null; 
 
-            function closeComments() {
-                commentsContainer.classList.remove('open');
-                history.back(); 
-            }
+function closeComments() { 
+    commentsContainer.classList.remove('open'); 
+    history.back(); 
+    if (commentsDbRef) { 
+        commentsDbRef.off(); 
+        commentsDbRef = null; 
+    } 
+} 
+
+closeCommentsBtn.addEventListener('click', closeComments); 
+
+sendCommentBtn.addEventListener('click', sendComment); 
+commentInput.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter') { 
+        sendComment(); 
+    }
+}); 
+
+window.addEventListener('popstate', () => { 
+    const urlParams = new URLSearchParams(window.location.search); 
+    if (urlParams.get('reply') !== 'true' && commentsContainer.classList.contains('open')) { 
+        closeComments(); 
+    } 
+}); 
+
+async function addCommentToDOM(comment) { 
+    const commentElement = document.createElement('div'); 
+    commentElement.className = 'comment-item'; 
+
+    // Kullanıcı profil ve adını getir
+    const userProfilePic = await fetchUserProfile(comment.user); 
+    const userName = await fetchUserName(comment.user); 
+
+    commentElement.innerHTML = ` 
+        <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" /> 
+        <div class="comment-content"> 
+            <span class="comment-user">${userName}</span> 
+            <span class="comment-text">${comment.text}</span> 
+        </div> 
+    `; 
+    // Yorumu listenin en başına ekle
+    commentsList.prepend(commentElement); 
+} 
+
+function openComments(postId) { 
+    activePostId = postId; 
+    commentsContainer.classList.add('open'); 
+
+    const newUrl = `${window.location.pathname}?user=@${cleanCurrentUser}&reply=true`; 
+    history.pushState({ postId: postId, user: cleanCurrentUser }, '', newUrl); 
+
+    if (commentsDbRef) { 
+        commentsDbRef.off(); 
+    } 
+
+    commentsList.innerHTML = ''; 
+
+    commentsDbRef = commentsDb.ref(`comments/${postId}`); 
+    
+    let initialLoadComplete = false;
+
+    // Yorumları tek seferde getir ve listeyi oluştur (initial load)
+    commentsDbRef.once('value', async (snapshot) => {
+        const comments = snapshot.val();
+        if (comments) {
+            const commentsArray = Object.values(comments).sort((a, b) => b.timestamp - a.timestamp);
             
-            closeCommentsBtn.addEventListener('click', closeComments);
+            const usersToFetch = commentsArray.map(comment => comment.user);
+            const uniqueUsers = [...new Set(usersToFetch)];
             
-            sendCommentBtn.addEventListener('click', sendComment);
-            commentInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    sendComment();
-                }
+            const [userProfiles, userNames] = await Promise.all([
+                Promise.all(uniqueUsers.map(user => fetchUserProfile(user))),
+                Promise.all(uniqueUsers.map(user => fetchUserName(user)))
+            ]);
+
+            const userData = {};
+            uniqueUsers.forEach((user, index) => {
+                userData[user] = {
+                    profilePic: userProfiles[index],
+                    name: userNames[index]
+                };
             });
-            
-            window.addEventListener('popstate', () => {
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('reply') !== 'true' && commentsContainer.classList.contains('open')) {
-                    commentsContainer.classList.remove('open');
-                }
-            });
 
-            function openComments(postId) {
-                activePostId = postId;
-                commentsContainer.classList.add('open');
-                
-                const newUrl = `${window.location.pathname}?user=@${cleanCurrentUser}&reply=true`;
-                history.pushState({ postId: postId, user: cleanCurrentUser }, '', newUrl);
+            const fragment = document.createDocumentFragment();
+            for (const comment of commentsArray) {
+                const commentElement = document.createElement('div');
+                commentElement.className = 'comment-item';
+                const user = userData[comment.user];
 
-                commentsList.innerHTML = '';
-                
-                commentsDb.ref(`comments/${postId}`).on('value', async (snapshot) => {
-                    commentsList.innerHTML = ''; 
-                    const comments = snapshot.val();
-                    if (comments) {
-                        const commentsArray = Object.values(comments);
-                        
-                        for (const comment of commentsArray.reverse()) {
-                            const commentElement = document.createElement('div');
-                            commentElement.className = 'comment-item';
-                            
-                            const userProfilePic = await fetchUserProfile(comment.user);
-                            const userName = await fetchUserName(comment.user);
-                            
-                            commentElement.innerHTML = `
-                                <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" />
-                                <div class="comment-content">
-                                    <span class="comment-user">${userName}</span>
-                                    <span class="comment-text">${comment.text}</span>
-                                </div>
-                            `;
-                            commentsList.appendChild(commentElement);
-                        }
-                    }
-                });
+                commentElement.innerHTML = `
+                    <img src="${user.profilePic}" class="comment-profile-pic" alt="${user.name}" />
+                    <div class="comment-content">
+                        <span class="comment-user">${user.name}</span>
+                        <span class="comment-text">${comment.text}</span>
+                    </div>
+                `;
+                fragment.appendChild(commentElement);
             }
+            commentsList.appendChild(fragment);
+        }
+        initialLoadComplete = true;
+    });
 
-            async function sendComment() {
-                const commentText = commentInput.value.trim();
-                if (commentText === "" || !activePostId) return;
+    // Yeni eklenen yorumları anlık dinle ve DOM'a ekle
+    commentsDbRef.on('child_added', (snapshot) => {
+        if (initialLoadComplete) {
+            const newComment = snapshot.val();
+            addCommentToDOM(newComment);
+        }
+    });
+} 
 
-                const newCommentRef = commentsDb.ref(`comments/${activePostId}`).push();
-                await newCommentRef.set({
-                    user: cleanCurrentUser,
-                    text: commentText,
-                    timestamp: Date.now()
-                });
-                
-                commentInput.value = '';
-                
-                const commentCountRef = commentsDb.ref(`comments/${activePostId}`).once('value');
-                commentCountRef.then(snap => {
-                    const count = snap.numChildren();
-                    reels.find(r => r.postId === activePostId).commentCountElement.textContent = count;
-                });
-            }
+async function sendComment() { 
+    const commentText = commentInput.value.trim(); 
+    if (commentText === "" || !activePostId) return; 
+
+    const newCommentRef = commentsDbRef.push(); 
+    await newCommentRef.set({ 
+        user: cleanCurrentUser, 
+        text: commentText, 
+        timestamp: Date.now() 
+    }); 
+     
+    commentInput.value = ''; 
+
+    const commentCountRef = commentsDb.ref(`comments/${activePostId}`).once('value'); 
+    commentCountRef.then(snap => { 
+        const count = snap.numChildren(); 
+        const reel = reels.find(r => r.postId === activePostId); 
+        if (reel) { 
+            reel.commentCountElement.textContent = count; 
+        } 
+    }); 
+}
         })();
     </script>
 </body>
