@@ -565,8 +565,9 @@
             const sendCommentBtn = document.querySelector('.send-comment-btn');
 
             // URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentUser = urlParams.get("user") || "anonim";
+            // @ işarəsinin dəyişməməsi üçün parametrləri birbaşa URL sətirindən alırıq.
+            const userFromUrl = window.location.search.match(/user=([^&]+)/)?.[1];
+            const currentUser = userFromUrl || "anonim";
             const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
             
             // Get current user's full name and profile picture from user database
@@ -1064,7 +1065,7 @@
                 
                 commentsContainer.classList.remove('open');
                 if (window.location.search.includes('reply=true')) {
-                    history.back(); 
+                    closeComments();
                 }
 
                 const currentReel = reels[activeIndex];
@@ -1149,6 +1150,19 @@
                 } 
                 commentAddedListenerAttached = false;
                 commentsList.innerHTML = '';
+                
+                // URL-dəki 'reply' və 'post' parametrlərini silən yeni məntiq
+                const searchString = window.location.search;
+                let userParam = null;
+                if (searchString.includes('user=')) {
+                    userParam = searchString.match(/user=([^&]+)/)?.[1];
+                }
+                
+                let newUrl = window.location.pathname;
+                if (userParam) {
+                    newUrl += `?user=${userParam}`;
+                }
+                history.replaceState({}, '', newUrl);
             } 
             
             closeCommentsBtn.addEventListener('click', closeComments); 
@@ -1266,8 +1280,8 @@
                 activePostId = postId; 
                 commentsContainer.classList.add('open'); 
     
-                const newUrl = `${window.location.pathname}?user=@${cleanCurrentUser}&reply=true&post=${postId}`; 
-                history.pushState({ postId: postId, user: cleanCurrentUser }, '', newUrl); 
+                const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`; 
+                history.pushState({ postId: postId, user: currentUser }, '', newUrl); 
     
                 commentsList.innerHTML = ''; 
     
