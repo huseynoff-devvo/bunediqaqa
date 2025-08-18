@@ -819,16 +819,16 @@
                 if (cleanReelUserNickname === cleanCurrentUser) {
                     return true;
                 }
-
                 if (userFollowStatusCache[cleanReelUserNickname] !== undefined) {
                     return userFollowStatusCache[cleanReelUserNickname];
                 }
-
                 try {
                     let snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
+
                     if (!snapshot.exists()) {
                         snapshot = await followingDb.ref(cleanCurrentUser).child(`@${cleanReelUserNickname}`).once('value');
                     }
+
                     const isFollowed = snapshot.exists();
                     userFollowStatusCache[cleanReelUserNickname] = isFollowed;
                     return isFollowed;
@@ -837,373 +837,6 @@
                     return false;
                 }
             }
-
-            /**
-             * Creates a new reel element with all its components.
-             * @param {object} post - The post data object.
-             * @returns {object} - An object containing the created DOM elements.
-             */
-            function createReel(post) {
-                const reelElement = document.createElement('div');
-                reelElement.classList.add('reel');
-
-                // Loader element
-                const loader = document.createElement('div');
-                loader.classList.add('reel-loader');
-                reelElement.appendChild(loader);
-
-                // Video element
-                const video = document.createElement('video');
-                video.muted = true;
-                video.autoplay = true;
-                video.loop = true;
-                video.playsInline = true;
-                video.preload = 'auto';
-                video.src = post.video.trim(); // Trim whitespace from the video URL
-                reelElement.appendChild(video);
-
-                // Overlay container for text and icons
-                const overlay = document.createElement('div');
-                overlay.classList.add('overlay');
-                reelElement.appendChild(overlay);
-
-                // Profile info section
-                const profileInfo = document.createElement('div');
-                profileInfo.classList.add('profile-info');
-                overlay.appendChild(profileInfo);
-
-                // Profile picture
-                const profilePic = document.createElement('img');
-                profilePic.classList.add('profile-pic');
-                profilePic.src = post.profile || 'https://via.placeholder.com/48';
-                profileInfo.appendChild(profilePic);
-
-                const userInfo = document.createElement('div');
-                userInfo.classList.add('user-info');
-                profileInfo.appendChild(userInfo);
-
-                const userDetails = document.createElement('div');
-                userDetails.classList.add('user-details');
-                userInfo.appendChild(userDetails);
-
-                // User ID
-                const userid = document.createElement('div');
-                userid.classList.add('userid');
-                userid.textContent = post.user;
-                userDetails.appendChild(userid);
-
-                // Nickname
-                const nickname = document.createElement('div');
-                nickname.classList.add('nickname');
-                nickname.textContent = post.nickname;
-                userDetails.appendChild(nickname);
-
-                // Follow button
-                const followButton = document.createElement('button');
-                followButton.classList.add('follow-button');
-                followButton.textContent = 'Follow';
-                followButton.style.display = post.isFollowed ? 'none' : 'block';
-                userInfo.appendChild(followButton);
-
-                // Reel text
-                const text = document.createElement('div');
-                text.classList.add('text');
-                const formattedText = formatText(post.text);
-                text.innerHTML = formattedText;
-                overlay.appendChild(text);
-
-                // Time
-                const time = document.createElement('div');
-                time.classList.add('time');
-                time.textContent = post.time;
-                overlay.appendChild(time);
-
-                // New interaction section
-                const newInteractionSection = document.createElement('div');
-                newInteractionSection.classList.add('new-interaction-section');
-                overlay.appendChild(newInteractionSection);
-
-                // Like icon and count
-                const likeItem = document.createElement('div');
-                likeItem.classList.add('interaction-item');
-                newInteractionSection.appendChild(likeItem);
-
-                const likeIcon = document.createElement('span');
-                likeIcon.classList.add('material-icons', 'interaction-icon', 'like-icon');
-                likeIcon.textContent = 'favorite_border';
-                if (post.isLiked) {
-                    likeIcon.classList.add('liked');
-                    likeIcon.textContent = 'favorite';
-                }
-                likeItem.appendChild(likeIcon);
-
-                const likeCount = document.createElement('span');
-                likeCount.classList.add('interaction-count');
-                likeCount.textContent = post.likes || 0;
-                likeItem.appendChild(likeCount);
-
-                // Comment icon and count
-                const commentItem = document.createElement('div');
-                commentItem.classList.add('interaction-item', 'comment-item');
-                newInteractionSection.appendChild(commentItem);
-
-                const commentIcon = document.createElement('span');
-                commentIcon.classList.add('material-icons', 'interaction-icon');
-                commentIcon.textContent = 'comment';
-                commentItem.appendChild(commentIcon);
-
-                const commentCountElement = document.createElement('span');
-                commentCountElement.classList.add('interaction-count', 'comment-count');
-                commentCountElement.textContent = 0;
-                commentItem.appendChild(commentCountElement);
-
-                // Share icon
-                const shareItem = document.createElement('div');
-                shareItem.classList.add('interaction-item');
-                newInteractionSection.appendChild(shareItem);
-
-                const shareIcon = document.createElement('span');
-                shareIcon.classList.add('material-icons', 'interaction-icon');
-                shareIcon.textContent = 'share';
-                shareItem.appendChild(shareIcon);
-
-                // Event Listeners
-                video.addEventListener('loadeddata', () => {
-                    video.style.display = 'block';
-                    loader.style.display = 'none';
-                    if (activeIndex === reels.findIndex(r => r.element === reelElement)) {
-                        video.play().catch(e => console.error("Video play failed:", e));
-                    }
-                });
-
-                video.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (video.paused) {
-                        video.play();
-                    } else {
-                        video.pause();
-                    }
-                });
-
-                likeItem.addEventListener('click', () => {
-                    toggleLike(post.id);
-                });
-
-                commentItem.addEventListener('click', () => {
-                    openComments(post.id);
-                });
-
-                followButton.addEventListener('click', () => {
-                    toggleFollow(post.nickname);
-                });
-
-                return { element: reelElement, video, likeIcon, likeCount, followButton, commentCountElement, userNickname: post.nickname, postId: post.id };
-            }
-
-            /**
-             * Toggles the like status of a reel.
-             * @param {string} postId - The ID of the reel to like/unlike.
-             */
-            async function toggleLike(postId) {
-                const likeRef = reelDb.ref(`likes/${postId}`);
-                const likeUserRef = likeRef.child('users');
-
-                const snapshot = await likeUserRef.once('value');
-                const users = snapshot.val() || {};
-                const isLiked = users[currentUser];
-
-                if (isLiked) {
-                    // Unlike
-                    await likeUserRef.child(currentUser).remove();
-                    await likeRef.child('count').transaction(currentCount => (currentCount || 0) - 1);
-                } else {
-                    // Like
-                    await likeUserRef.child(currentUser).set(true);
-                    await likeRef.child('count').transaction(currentCount => (currentCount || 0) + 1);
-                }
-            }
-
-            /**
-             * Toggles the follow status of a user.
-             * @param {string} userToFollowNickname - The nickname of the user to follow/unfollow.
-             */
-            async function toggleFollow(userToFollowNickname) {
-                const cleanUserToFollow = userToFollowNickname.startsWith('@') ? userToFollowNickname.substring(1) : userToFollowNickname;
-                const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-
-                const followingRef = followingDb.ref(cleanCurrentUser).child(cleanUserToFollow);
-
-                const snapshot = await followingRef.once('value');
-                if (snapshot.exists()) {
-                    // Unfollow
-                    await followingRef.remove();
-                } else {
-                    // Follow
-                    await followingRef.set(true);
-                }
-            }
-
-
-            /**
-             * Formats a raw text string, replacing hashtags and mentions with links.
-             * @param {string} text - The raw text string.
-             * @returns {string} - The formatted HTML string.
-             */
-            function formatText(text) {
-                if (!text) return '';
-                // Replace hashtags
-                let formatted = text.replace(/(#\w+)/g, '<a href="#">$1</a>');
-                // Replace mentions
-                formatted = formatted.replace(/(@\w+)/g, '<a href="#">$1</a>');
-                return formatted;
-            }
-
-            /**
-             * Handles touch events for vertical scrolling.
-             * @param {TouchEvent} e - The touch event object.
-             */
-            function handleTouchStart(e) {
-                touchStartY = e.touches[0].clientY;
-                if (reels[activeIndex] && reels[activeIndex].video) {
-                    reels[activeIndex].video.pause();
-                }
-            }
-
-            /**
-             * Handles touch move events for vertical scrolling.
-             * @param {TouchEvent} e - The touch event object.
-             */
-            function handleTouchMove(e) {
-                if (isAnimating || touchStartY === null) return;
-                const touchMoveY = e.touches[0].clientY;
-                const deltaY = touchMoveY - touchStartY;
-
-                // Stop scrolling if the video is not muted
-                const activeVideo = reels[activeIndex].video;
-                if (activeVideo && !activeVideo.muted) {
-                    e.preventDefault();
-                    return;
-                }
-
-                if (Math.abs(deltaY) > 50) {
-                    if (deltaY > 0) {
-                        // Swiping down
-                        if (activeIndex > 0) {
-                            showNextReel(-1);
-                        }
-                    } else {
-                        // Swiping up
-                        if (activeIndex < reels.length - 1) {
-                            showNextReel(1);
-                        }
-                    }
-                    touchStartY = null; // Reset for the next swipe
-                }
-            }
-
-            /**
-             * Handles touch end events.
-             * @param {TouchEvent} e - The touch event object.
-             */
-            function handleTouchEnd() {
-                if (reels[activeIndex] && reels[activeIndex].video) {
-                    reels[activeIndex].video.play().catch(e => console.error("Video play failed on touch end:", e));
-                }
-                touchStartY = null;
-            }
-
-            /**
-             * Switches to the next or previous reel with a sliding animation.
-             * @param {number} direction - 1 for next, -1 for previous.
-             */
-            function showNextReel(direction) {
-                if (isAnimating) return;
-                isAnimating = true;
-
-                const prevIndex = activeIndex;
-                activeIndex += direction;
-
-                if (activeIndex < 0) {
-                    activeIndex = 0;
-                    isAnimating = false;
-                    return;
-                }
-                if (activeIndex >= reels.length) {
-                    activeIndex = reels.length - 1;
-                    isAnimating = false;
-                    return;
-                }
-
-                const currentReel = reels[prevIndex];
-                const nextReel = reels[activeIndex];
-
-                currentReel.element.style.transform = `translateY(${-direction * 100}%)`;
-                currentReel.element.style.opacity = '0';
-
-                nextReel.element.classList.add('active');
-                nextReel.element.style.transform = 'translateY(0)';
-                nextReel.element.style.opacity = '1';
-
-                currentReel.video.pause();
-                currentReel.video.currentTime = 0;
-                currentReel.video.style.display = 'none';
-                currentReel.loader.style.display = 'block';
-
-                playActiveVideo(activeIndex);
-
-                setTimeout(() => {
-                    currentReel.element.classList.remove('active');
-                    isAnimating = false;
-                }, 500); // Duration of the CSS transition
-            }
-
-            // Keyboard navigation
-            window.addEventListener('keydown', (e) => {
-                if (isAnimating) return;
-                if (e.key === 'ArrowDown' && activeIndex < reels.length - 1) {
-                    showNextReel(1);
-                } else if (e.key === 'ArrowUp' && activeIndex > 0) {
-                    showNextReel(-1);
-                }
-            });
-
-            // Handle mouse wheel for vertical scrolling
-            let lastScrollTime = 0;
-            const scrollThreshold = 200; // milliseconds
-            window.addEventListener('wheel', (e) => {
-                const now = Date.now();
-                if (now - lastScrollTime < scrollThreshold || isAnimating) {
-                    return;
-                }
-                lastScrollTime = now;
-
-                if (e.deltaY > 0) {
-                    // Scrolling down
-                    if (activeIndex < reels.length - 1) {
-                        showNextReel(1);
-                    }
-                } else if (e.deltaY < 0) {
-                    // Scrolling up
-                    if (activeIndex > 0) {
-                        showNextReel(-1);
-                    }
-                }
-            });
-
-            // Sound toggle on video click
-            window.addEventListener('click', (e) => {
-                const activeVideo = reels[activeIndex]?.video;
-                if (!activeVideo || commentsContainer.classList.contains('open') ||
-                    e.target.closest('.overlay') || e.target.closest('.tabs-container')) {
-                    return;
-                }
-
-                const prevMutedState = activeVideo.muted;
-                activeVideo.muted = !prevMutedState;
-                allVideosSoundOn = !activeVideo.muted;
-                showSoundIndicator(!allVideosSoundOn);
-            });
-
 
             /**
              * Shuffles an array randomly.
@@ -1224,13 +857,13 @@
                 reels.forEach(reel => {
                     const postLikes = likesData[reel.postId] || {};
                     const likedByUser = postLikes.users && postLikes.users[currentUser];
+
                     if (likedByUser) {
                         reel.likeIcon.classList.add('liked');
-                        reel.likeIcon.textContent = 'favorite';
                     } else {
                         reel.likeIcon.classList.remove('liked');
-                        reel.likeIcon.textContent = 'favorite_border';
                     }
+
                     const likeCount = postLikes.count || 0;
                     reel.likeCount.textContent = likeCount;
                 });
@@ -1244,7 +877,6 @@
                 loader.style.display = 'flex';
                 currentUserName = await fetchUserName(cleanCurrentUser);
                 currentUserProfilePic = await fetchUserProfile(cleanCurrentUser);
-
                 await displayReels('snaps');
                 loader.style.display = 'none';
 
@@ -1258,7 +890,6 @@
                     }
                 }
             }
-
 
             async function displayReels(mode) {
                 if(isAnimating) return;
@@ -1276,6 +907,7 @@
 
                 const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
+
                 let postIds = Object.keys(postsData);
 
                 if (mode === 'friends') {
@@ -1305,6 +937,7 @@
 
                     const isFollowed = await isFollowing(post.nickname);
                     const isLiked = likesData[postId] && likesData[postId].users && likesData[postId].users[currentUser];
+
                     loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
                 }
 
@@ -1347,6 +980,7 @@
                 isAnimating = false;
             }
 
+
             initializeApp();
 
             // Nav-bar event listeners
@@ -1361,6 +995,7 @@
                 snapsNav.classList.remove('active');
                 displayReels('friends');
             });
+
 
             // Real-time update for follow button visibility
             followingDb.ref(cleanCurrentUser).on('value', async (snapshot) => {
@@ -1417,79 +1052,389 @@
                     reel.video.addEventListener('loadeddata', () => {
                         reel.video.style.display = 'block';
                         if(reel.loader) reel.loader.style.display = 'none';
+
                         reel.video.muted = !allVideosSoundOn;
                         reel.video.play().catch(e => {
-                            console.error("Video play failed:", e);
-                            reel.video.style.display = 'none';
+                            console.error("Video avtomatik başlamadı, səbəb: ", e);
+                            if (e.name === 'NotAllowedError') {
+                                reel.video.muted = true;
+                                reel.video.play().then(() => showSoundIndicator(true));
+                            }
                         });
-                    });
-                    // Immediately try to play if already loaded
-                    if (reel.video.readyState >= 3) {
+                    }, { once: true });
+
+                    if (reel.video.readyState < 2) {
+                        reel.video.style.display = 'none';
+                        if(reel.loader) reel.loader.style.display = 'block';
+                    } else {
                         reel.video.style.display = 'block';
                         if(reel.loader) reel.loader.style.display = 'none';
                         reel.video.muted = !allVideosSoundOn;
-                        reel.video.play().catch(e => {
-                            console.error("Video play failed:", e);
-                            reel.video.style.display = 'none';
-                        });
+                        reel.video.play();
                     }
                 }
             }
 
             /**
-             * Sets the active reel by index.
-             * @param {number} index - The index of the reel to set as active.
+             * Pauses videos of inactive reels and resets their playback position.
+             * @param {number} activeIndex - The index of the currently active reel.
              */
-            function setActiveReel(index) {
-                if (isAnimating) return;
+            function pauseInactiveVideos(activeIndex) {
+                reels.forEach((r, i) => {
+                    if (i !== activeIndex && r.video && !r.video.paused) {
+                        r.video.pause();
+                        r.video.currentTime = 0;
+                        r.video.muted = true;
+                    }
+                });
+            }
+
+            /**
+             * Handles liking/unliking a reel. Updates Firebase and UI.
+             * @param {string} postId - The ID of the post (reel).
+             */
+            function handleLikeClick(postId) {
+                const likeUserRef = reelDb.ref(`likes/${postId}/users/${currentUser}`);
+                const likeCountRef = reelDb.ref(`likes/${postId}/count`);
+
+                likeUserRef.once('value').then(snap => {
+                    if (snap.exists()) {
+                        likeUserRef.remove();
+                        likeCountRef.transaction(currentCount => (currentCount || 1) - 1);
+                    } else {
+                        likeUserRef.set(true);
+                        likeCountRef.transaction(currentCount => (currentCount || 0) + 1);
+                    }
+                }).catch(e => {
+                    console.error("Like əməliyyatı uğursuz oldu: ", e);
+                });
+            }
+
+            /**
+             * Handles following/unfollowing a user. Updates Firebase and UI.
+             * @param {string} reelUserNickname - The nickname of the user to follow/unfollow.
+             */
+            async function handleFollowClick(reelUserNickname) {
+                const followerUsername = cleanCurrentUser;
+                const followedUsername = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
+
+                if (followerUsername === followedUsername) {
+                    console.log("Kendi kendinizi takip edemezsiniz.");
+                    return;
+                }
+
+                try {
+                    const isFollowed = await isFollowing(followedUsername);
+                    if (!isFollowed) {
+                        const followsRef = followsDb.ref(followedUsername);
+                        const followerRef = followsRef.child(followerUsername);
+                        const followCountRef = followsRef.child('follow');
+
+                        const followingRef = followingDb.ref(followerUsername);
+                        const followedRef = followingRef.child(followedUsername);
+                        const followingCountRef = followingRef.child('following');
+
+                        await followerRef.set("+");
+                        await followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+
+                        await followedRef.set("+");
+                        await followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+
+                        userFollowStatusCache[followedUsername] = true;
+
+                        const followButton = document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`);
+                        if (followButton) followButton.style.display = 'none';
+
+                        console.log(`User ${followerUsername} is now following ${followedUsername}.`);
+                    } else {
+                        console.log(`User ${followerUsername} is already following ${followedUsername}. No action needed.`);
+                    }
+                } catch (e) {
+                    console.error("Follow operation failed:", e);
+                }
+            }
+
+            /**
+             * Creates a new reel element with video and overlay content.
+             * @param {object} post - The post data for the reel.
+             * @returns {object} - An object containing the reel element and other associated DOM elements.
+             */
+            function createReel(post) {
+                const reel = document.createElement('div');
+                reel.className = 'reel';
+
+                const loader = document.createElement('div');
+                loader.className = 'reel-loader';
+                reel.appendChild(loader);
+
+                const video = document.createElement('video');
+                video.src = post.video;
+                video.loop = true;
+                video.playsInline = true;
+                video.muted = !allVideosSoundOn;
+                video.preload = 'auto';
+                video.style.display = 'none';
+
+                video.addEventListener('click', () => {
+                    allVideosSoundOn = !allVideosSoundOn;
+                    reels.forEach(r => {
+                        r.video.muted = !allVideosSoundOn;
+                    });
+                    showSoundIndicator(!allVideosSoundOn);
+                });
+
+                reel.appendChild(video);
+
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+
+                const profileInfo = document.createElement('div');
+                profileInfo.className = 'profile-info';
+
+                const userInfo = document.createElement('div');
+                userInfo.className = 'user-info';
+
+                const profilePic = document.createElement('img');
+                profilePic.className = 'profile-pic';
+                profilePic.src = post.profile || 'https://via.placeholder.com/48';
+
+                const userDetails = document.createElement('div');
+                userDetails.className = 'user-details';
+                const userid = document.createElement('div');
+                userid.className = 'userid';
+                userid.textContent = post.user;
+                const nickname = document.createElement('div');
+                nickname.className = 'nickname';
+                nickname.textContent = post.nickname;
+
+                userDetails.appendChild(userid);
+                userDetails.appendChild(nickname);
+                userInfo.appendChild(profilePic);
+                userInfo.appendChild(userDetails);
+
+                profileInfo.appendChild(userInfo);
+
+                const followButton = document.createElement('button');
+                followButton.className = 'follow-button';
+                followButton.textContent = 'Takib Et';
+                followButton.setAttribute('data-nickname', post.nickname);
+
+                isFollowing(post.nickname).then(isFollowed => {
+                    const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
+                    if (cleanPostNickname === cleanCurrentUser || isFollowed) {
+                        followButton.style.display = 'none';
+                    } else {
+                        followButton.style.display = 'block';
+                    }
+                });
+
+                followButton.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFollowClick(post.nickname);
+                });
+
+                profileInfo.appendChild(followButton);
+
+                const text = document.createElement('div');
+                text.className = 'text';
+
+                const fullText = (post.text || '').replace(/#(\w+)/g, '<a href="#">#$1</a>');
+                const shortText = fullText.split(' ').slice(0, 3).join(' ') + '...';
+
+                text.innerHTML = shortText;
+                let isExpanded = false;
+
+                text.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (fullText.split(' ').length > 3) {
+                        if (isExpanded) {
+                            text.innerHTML = fullText;
+                        } else {
+                            text.innerHTML = shortText;
+                        }
+                        isExpanded = !isExpanded;
+                    }
+                });
+
+                const time = document.createElement('div');
+                time.className = 'time';
+                time.textContent = post.time || '';
+
+                const newInteractionSection = document.createElement('div');
+                newInteractionSection.className = 'new-interaction-section';
+
+                const likeSection = document.createElement('div');
+                likeSection.className = 'interaction-item';
+                const likeIcon = document.createElement('span');
+                likeIcon.className = 'material-icons interaction-icon like-icon';
+                likeIcon.textContent = 'favorite';
+
+                if (post.isLiked) {
+                    likeIcon.classList.add('liked');
+                }
+
+                const likeCount = document.createElement('span');
+                likeCount.className = 'interaction-count';
+                likeCount.textContent = post.likesCount || 0;
+
+                likeSection.appendChild(likeIcon);
+                likeSection.appendChild(likeCount);
+
+                likeSection.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLikeClick(post.id);
+                });
+
+                const commentSection = document.createElement('div');
+                commentSection.className = 'interaction-item';
+                const commentIcon = document.createElement('span');
+                commentIcon.className = 'material-icons interaction-icon';
+                commentIcon.textContent = 'comment';
+
+                commentIcon.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openComments(post.id);
+                });
+
+                const commentCount = document.createElement('span');
+                commentCount.className = 'interaction-count';
+                commentCount.textContent = post.commentCount || 0;
+
+                commentSection.appendChild(commentIcon);
+                commentSection.appendChild(commentCount);
+
+                newInteractionSection.appendChild(likeSection);
+                newInteractionSection.appendChild(commentSection);
+
+                overlay.appendChild(profileInfo);
+                overlay.appendChild(text);
+                overlay.appendChild(time);
+                overlay.appendChild(newInteractionSection);
+
+                reel.appendChild(overlay);
+
+                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton, loader: loader, commentCountElement: commentCount };
+            }
+
+            /**
+             * Sets the active reel based on the provided index, handling transitions.
+             * @param {number} newIndex - The index of the reel to make active.
+             */
+            function setActiveReel(newIndex) {
+                if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= reels.length) return;
+
                 isAnimating = true;
 
+                commentsContainer.classList.remove('open');
+                if (window.location.search.includes('reply=true')) {
+                    closeComments();
+                }
+
                 const currentReel = reels[activeIndex];
-                if (currentReel) {
-                    currentReel.element.classList.remove('active');
-                    currentReel.video.pause();
-                    currentReel.video.currentTime = 0;
-                    currentReel.video.style.display = 'none';
-                    if(currentReel.loader) currentReel.loader.style.display = 'block';
-                }
+                const nextReel = reels[newIndex];
 
-                activeIndex = index;
-                const nextReel = reels[activeIndex];
+                pauseInactiveVideos(newIndex);
 
-                if (nextReel) {
-                    nextReel.element.classList.add('active');
+                currentReel.element.style.transform = (newIndex > activeIndex) ? 'translateY(-100%)' : 'translateY(100%)';
+                currentReel.element.style.opacity = '0';
+                currentReel.element.style.zIndex = '1';
+                currentReel.element.classList.remove('active');
+
+                nextReel.element.style.transform = 'translateY(0)';
+                nextReel.element.style.opacity = '1';
+                nextReel.element.style.zIndex = '2';
+                nextReel.element.classList.add('active');
+
+                activeIndex = newIndex;
+
+                setTimeout(() => {
+                    isAnimating = false;
                     playActiveVideo(activeIndex);
-                }
-
-                isAnimating = false;
+                }, 500);
             }
 
+            /**
+             * Handles scrolling between reels based on direction.
+             * @param {string} direction - 'up' or 'down'.
+             */
+            function handleScroll(direction) {
+                if (isAnimating) return;
 
-            // Mobile touch event listeners
-            app.addEventListener('touchstart', handleTouchStart);
-            app.addEventListener('touchmove', handleTouchMove);
-            app.addEventListener('touchend', handleTouchEnd);
-
-
-            // Comments section functionality
-            closeCommentsBtn.addEventListener('click', () => {
-                commentsContainer.classList.remove('open');
-                if (reels[activeIndex] && reels[activeIndex].video) {
-                    reels[activeIndex].video.play().catch(e => console.error("Video play failed on comment close:", e));
+                if (direction === 'down' && activeIndex < reels.length - 1) {
+                    setActiveReel(activeIndex + 1);
+                } else if (direction === 'up' && activeIndex > 0) {
+                    setActiveReel(activeIndex - 1);
                 }
-                document.body.style.overflow = 'hidden';
+            }
+
+            let wheelTimeout = null;
+            window.addEventListener('wheel', e => {
+                if (!isAnimating) {
+                    clearTimeout(wheelTimeout);
+                    wheelTimeout = setTimeout(() => {
+                        if (e.deltaY > 0) {
+                            handleScroll('down');
+                        } else if (e.deltaY < 0) {
+                            handleScroll('up');
+                        }
+                    }, 80);
+                }
             });
 
-            async function openComments(postId) {
-                activePostId = postId;
-                commentsContainer.classList.add('open');
-                if (reels[activeIndex] && reels[activeIndex].video) {
-                    reels[activeIndex].video.pause();
+            // Touch event listeners for mobile scrolling
+            app.addEventListener('touchstart', e => {
+                if (!isAnimating && e.touches.length === 1) {
+                    touchStartY = e.touches[0].clientY;
                 }
-                document.body.style.overflow = 'hidden';
-                commentInput.focus();
-                await fetchAndDisplayComments(postId);
+            });
+
+            app.addEventListener('touchend', e => {
+                touchStartY = null;
+            });
+
+            app.addEventListener('touchmove', e => {
+                if (!isAnimating && touchStartY !== null) {
+                    const yDiff = touchStartY - e.touches[0].clientY;
+                    if (Math.abs(yDiff) > 50) {
+                        if (yDiff > 0) {
+                            handleScroll('down');
+                        } else if (yDiff < 0) {
+                            handleScroll('up');
+                        }
+                    }
+                }
+            });
+
+            /** Closes the comments modal and clears its content. */
+            function closeComments() {
+                commentsContainer.classList.remove('open');
+                commentsList.innerHTML = '';
+
+                const searchString = window.location.search;
+                let userParam = null;
+                if (searchString.includes('user=')) {
+                    userParam = searchString.match(/user=([^&]+)/)?.[1];
+                }
+
+                let newUrl = window.location.pathname;
+                if (userParam) {
+                    newUrl += `?user=${userParam}`;
+                }
+                history.replaceState({}, '', newUrl);
+
+                // Remove all previous listeners to prevent multiple events
+                if (activePostId) {
+                    const commentsRef = commentsDb.ref(`comments/${activePostId}`);
+                    commentsRef.off('child_added');
+                    commentsRef.off('child_changed');
+                }
+                commentAddedListenerAttached = false;
             }
+
+            closeCommentsBtn.addEventListener('click', closeComments);
 
             sendCommentBtn.addEventListener('click', sendComment);
             commentInput.addEventListener('keydown', (e) => {
@@ -1498,240 +1443,316 @@
                 }
             });
 
-            async function sendComment() {
-                const commentText = commentInput.value.trim();
-                if (!commentText) return;
+            // Checks if the user clears the reply username and resets the reply state
+            commentInput.addEventListener('input', () => {
+                if (activeCommentId && !commentInput.value.startsWith('@')) {
+                    activeCommentId = null;
+                }
+            });
 
-                const commentsRef = commentsDb.ref(`comments/${activePostId}`);
-                const newCommentRef = commentsRef.push();
-                const commentId = newCommentRef.key;
+            // Handles browser back/forward button for comments modal
+            window.addEventListener('popstate', () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('reply') !== 'true' && commentsContainer.classList.contains('open')) {
+                    closeComments();
+                }
+            });
 
-                const newComment = {
-                    user: currentUser,
-                    text: commentText,
-                    time: new Date().toISOString(),
-                    likes: 0,
-                };
+            /**
+             * Adds a comment (or reply) element to the DOM.
+             * @param {object} comment - The comment data.
+             * @param {string|null} parentCommentId - The ID of the parent comment if it's a reply.
+             */
+            async function addCommentToDOM(comment, parentCommentId = null) {
+                // Check if the comment already exists in the DOM to avoid duplicates
+                const existingElement = document.querySelector(`.comment-item[data-comment-id="${comment.id}"]`);
+                if (existingElement) {
+                    return;
+                }
 
-                await newCommentRef.set(newComment);
-                commentInput.value = '';
+                const commentElement = document.createElement('div');
+                commentElement.className = `comment-item ${parentCommentId ? 'reply-item' : ''}`;
+                commentElement.dataset.commentId = comment.id;
+                commentElement.dataset.user = comment.user;
+                if (parentCommentId) {
+                    commentElement.dataset.parentId = parentCommentId;
+                }
 
-                // Add real-time listener for the new comment's likes
-                addCommentLikeListener(commentId);
-            }
+                const userProfilePic = await fetchUserProfile(comment.user);
+                const userName = await fetchUserName(comment.user);
 
-            async function fetchAndDisplayComments(postId) {
-                commentsList.innerHTML = '';
-                commentsLoader.style.display = 'flex';
-                const commentsRef = commentsDb.ref(`comments/${postId}`);
+                let formattedText = comment.text;
+                // Highlight hashtags and replied users
+                formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
+                formattedText = formattedText.replace(/@(\w+)/g, '<a href="#" class="reply-user">@$1</a>');
 
-                // Attach real-time listeners for all comments
-                if (!commentAddedListenerAttached) {
-                    commentsRef.on('child_added', (snapshot) => {
-                        const commentId = snapshot.key;
-                        const commentData = snapshot.val();
-                        displayComment(commentId, commentData, postId);
-                        addCommentLikeListener(commentId);
-                    });
-                    commentsRef.on('child_removed', (snapshot) => {
-                        const commentId = snapshot.key;
-                        const commentElement = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
-                        if (commentElement) {
-                            commentElement.remove();
+                commentElement.innerHTML = `
+                    <div class="comment-main-content">
+                        <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" />
+                        <div class="comment-text-bubble">
+                            <span class="comment-user">${userName}</span>
+                            <span class="comment-text">${formattedText}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Add like and reply buttons only for main comments
+                if (!parentCommentId) {
+                    const actionsHtml = `<div class="comment-actions">
+                        <button class="reply-button">
+                            <span class="reply-text">Reply</span>
+                            <span class="reply-count"></span>
+                        </button>
+                        <div class="comment-like-section">
+                            <span class="material-icons comment-like-icon">favorite</span>
+                            <span class="comment-like-count">0</span>
+                        </div>
+                    </div>`;
+
+                    commentElement.innerHTML += actionsHtml;
+
+                    const repliesList = document.createElement('div');
+                    repliesList.className = 'replies-list';
+                    repliesList.style.display = 'none';
+                    commentElement.appendChild(repliesList);
+
+                    const replyButton = commentElement.querySelector('.reply-button');
+                    const replyCountSpan = commentElement.querySelector('.reply-count');
+                    const likeIcon = commentElement.querySelector('.comment-like-icon');
+                    const likeCountSpan = commentElement.querySelector('.comment-like-count');
+
+                    // Real-time listener for reply count
+                    commentsDb.ref(`comments/${activePostId}/${comment.id}/replies`).on('value', snap => {
+                        const count = snap.numChildren();
+                        if (count > 0) {
+                            replyCountSpan.textContent = `+${count}`;
+                            replyCountSpan.style.display = 'inline';
+                        } else {
+                            replyCountSpan.style.display = 'none';
                         }
                     });
-                    commentAddedListenerAttached = true;
-                }
 
-                const snapshot = await commentsRef.once('value');
-                const commentsData = snapshot.val();
-                if (commentsData) {
-                    // This is to display existing comments on open
-                    const commentsFragment = document.createDocumentFragment();
-                    for (const commentId in commentsData) {
-                        const commentData = commentsData[commentId];
-                        const commentElement = await createCommentElement(commentId, commentData, postId);
-                        commentsFragment.appendChild(commentElement);
-                    }
-                    commentsList.innerHTML = ''; // Clear and re-populate to maintain order
-                    commentsList.appendChild(commentsFragment);
-                }
-                commentsLoader.style.display = 'none';
-            }
+                    // Real-time listener for comment likes from the new database
+                    commentLikesDb.ref(`comment_likes/${activePostId}/${comment.id}/likes`).on('value', snap => {
+                        const likesData = snap.val() || {};
+                        const count = likesData.count || 0;
+                        const likedByUser = likesData.users && likesData.users[cleanCurrentUser];
 
-            async function createCommentElement(commentId, commentData, postId, isReply = false, parentId = null) {
-                const commentItem = document.createElement('div');
-                commentItem.classList.add('comment-item');
-                commentItem.dataset.commentId = commentId;
-                if (isReply) {
-                    commentItem.dataset.parentId = parentId;
-                }
+                        likeCountSpan.textContent = count;
+                        if (likedByUser) {
+                            likeIcon.classList.add('liked');
+                        } else {
+                            likeIcon.classList.remove('liked');
+                        }
+                    });
 
-                const commentMainContent = document.createElement('div');
-                commentMainContent.classList.add('comment-main-content');
+                    // Event listener for reply button
+                    replyButton.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (repliesList.style.display === 'none' || repliesList.innerHTML === '') {
+                            repliesList.style.display = 'flex';
+                            repliesList.innerHTML = '';
 
-                const profilePicUrl = await fetchUserProfile(commentData.user);
-                const profilePic = document.createElement('img');
-                profilePic.classList.add('comment-profile-pic');
-                profilePic.src = profilePicUrl;
-                commentMainContent.appendChild(profilePic);
-
-                const commentContent = document.createElement('div');
-                commentContent.classList.add('comment-content');
-
-                const textBubble = document.createElement('div');
-                textBubble.classList.add('comment-text-bubble');
-                const userSpan = document.createElement('span');
-                userSpan.classList.add('comment-user');
-                userSpan.textContent = commentData.user.startsWith('@') ? commentData.user : `@${commentData.user}`;
-                const textSpan = document.createElement('span');
-                textSpan.classList.add('comment-text');
-                textSpan.innerHTML = formatText(commentData.text);
-
-                textBubble.appendChild(userSpan);
-                textBubble.appendChild(textSpan);
-                commentContent.appendChild(textBubble);
-
-                commentMainContent.appendChild(commentContent);
-                commentItem.appendChild(commentMainContent);
-
-                const commentActions = document.createElement('div');
-                commentActions.classList.add('comment-actions');
-                commentContent.appendChild(commentActions);
-
-                if (!isReply) {
-                    const replyBtn = document.createElement('button');
-                    replyBtn.classList.add('reply-button');
-                    replyBtn.innerHTML = `<span>Cevabla</span>`;
-                    replyBtn.onclick = () => {
-                        commentInput.placeholder = `Cevapla: @${commentData.user}`;
-                        commentInput.focus();
-                        commentInput.onkeydown = (e) => {
-                            if (e.key === 'Enter') {
-                                sendReply(commentId, commentData.user);
+                            const repliesSnapshot = await commentsDb.ref(`comments/${activePostId}/${comment.id}/replies`).once('value');
+                            const replies = repliesSnapshot.val();
+                            if (replies) {
+                                const repliesArray = Object.keys(replies).map(key => ({ id: key, ...replies[key], parentId: comment.id }));
+                                repliesArray.sort((a, b) => a.timestamp - b.timestamp);
+                                for (const reply of repliesArray) {
+                                    await addCommentToDOM(reply, comment.id);
+                                }
                             }
-                        };
-                        sendCommentBtn.onclick = () => sendReply(commentId, commentData.user);
-                    };
-                    commentActions.appendChild(replyBtn);
-                }
+                        } else {
+                            repliesList.style.display = 'none';
+                        }
+                    });
 
-                const likeSection = document.createElement('div');
-                likeSection.classList.add('comment-like-section');
-                likeSection.dataset.commentId = commentId;
-                if (isReply) {
-                    likeSection.dataset.parentId = parentId;
-                }
-                commentActions.appendChild(likeSection);
+                    // Event listener for like button
+                    likeIcon.parentElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleCommentLikeClick(activePostId, comment.id);
+                    });
 
-                const likeIcon = document.createElement('span');
-                likeIcon.classList.add('material-icons', 'comment-like-icon');
-                likeIcon.textContent = 'favorite_border';
-                likeSection.appendChild(likeIcon);
-
-                const likeCount = document.createElement('span');
-                likeCount.classList.add('comment-like-count');
-                likeCount.textContent = commentData.likes || 0;
-                likeSection.appendChild(likeCount);
-
-                const likeRef = commentLikesDb.ref(`${postId}/${isReply ? `${parentId}/replies/` : ''}${commentId}`);
-                likeRef.on('value', (snapshot) => {
-                    const likes = snapshot.val() || { count: 0 };
-                    likeCount.textContent = likes.count;
-                    if (likes.users && likes.users[currentUser]) {
-                        likeIcon.classList.add('liked');
-                        likeIcon.textContent = 'favorite';
-                    } else {
-                        likeIcon.classList.remove('liked');
-                        likeIcon.textContent = 'favorite_border';
-                    }
-                });
-
-                likeSection.onclick = () => toggleCommentLike(postId, commentId, isReply, parentId);
-
-                // Long press for delete
-                commentItem.addEventListener('touchstart', (e) => {
-                    longPressTimer = setTimeout(() => {
-                        itemToDelete = commentItem;
-                        showDeleteDialog();
-                    }, 500);
-                });
-                commentItem.addEventListener('touchend', () => {
-                    clearTimeout(longPressTimer);
-                });
-                commentItem.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    itemToDelete = commentItem;
-                    showDeleteDialog();
-                });
-
-                // Display replies
-                if (commentData.replies && !isReply) {
-                    const repliesList = document.createElement('div');
-                    repliesList.classList.add('replies-list');
-                    commentContent.appendChild(repliesList);
-                    for (const replyId in commentData.replies) {
-                        const replyData = commentData.replies[replyId];
-                        const replyElement = await createCommentElement(replyId, replyData, postId, true, commentId);
-                        repliesList.appendChild(replyElement);
-                    }
-                }
-
-                return commentItem;
-            }
-
-            async function sendReply(parentId, parentUser) {
-                const replyText = commentInput.value.trim();
-                if (!replyText) return;
-
-                const replyRef = commentsDb.ref(`comments/${activePostId}/${parentId}/replies`).push();
-                const replyId = replyRef.key;
-
-                const newReply = {
-                    user: currentUser,
-                    text: replyText,
-                    time: new Date().toISOString(),
-                    likes: 0
-                };
-
-                await replyRef.set(newReply);
-                commentInput.value = '';
-                commentInput.placeholder = 'Şərh yazın...';
-                sendCommentBtn.onclick = sendComment; // Reset send button handler
-                commentInput.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        sendComment();
-                    }
-                };
-            }
-
-            async function toggleCommentLike(postId, commentId, isReply, parentId) {
-                const likesPath = `${postId}/${isReply ? `${parentId}/replies/` : ''}${commentId}`;
-                const likesRef = commentLikesDb.ref(likesPath);
-                const likeUserRef = likesRef.child('users');
-
-                const snapshot = await likeUserRef.once('value');
-                const users = snapshot.val() || {};
-                const isLiked = users[currentUser];
-
-                if (isLiked) {
-                    await likeUserRef.child(currentUser).remove();
-                    await likesRef.child('count').transaction(currentCount => (currentCount || 0) - 1);
                 } else {
-                    await likeUserRef.child(currentUser).set(true);
-                    await likesRef.child('count').transaction(currentCount => (currentCount || 0) + 1);
+                    commentElement.classList.add('reply-item');
+                }
+
+                // Click listener for comment bubble to trigger reply input
+                commentElement.querySelector('.comment-text-bubble').addEventListener('click', (e) => {
+                    e.stopPropagation();
+
+                    if (!parentCommentId) {
+                        const replyText = `@${comment.user} `;
+                        commentInput.value = replyText;
+                        commentInput.focus();
+                        activeCommentId = comment.id;
+                    }
+                });
+
+                // Long press event listeners for deletion
+                commentElement.addEventListener('touchstart', (e) => {
+                    if (commentElement.dataset.user === cleanCurrentUser) {
+                        longPressTimer = setTimeout(() => {
+                            e.preventDefault();
+                            showDeleteDialog(commentElement);
+                        }, 500); // 500ms long press
+                    }
+                });
+
+                commentElement.addEventListener('touchend', (e) => {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                });
+
+                // Append comment to the correct list (main list or replies list)
+                if (parentCommentId) {
+                    const parentCommentElement = document.querySelector(`.comment-item[data-comment-id="${parentCommentId}"]`);
+                    if (parentCommentElement) {
+                        const repliesList = parentCommentElement.querySelector('.replies-list');
+                        if (repliesList) {
+                            repliesList.appendChild(commentElement);
+                        }
+                    }
+                } else {
+                    commentsList.prepend(commentElement);
                 }
             }
 
-            function showDeleteDialog() {
+            /**
+             * Handles liking/unliking a specific comment.
+             * @param {string} postId - The ID of the post.
+             * @param {string} commentId - The ID of the comment.
+             */
+            async function handleCommentLikeClick(postId, commentId) {
+                const commentLikeUserRef = commentLikesDb.ref(`comment_likes/${postId}/${commentId}/likes/users/${cleanCurrentUser}`);
+                const commentLikeCountRef = commentLikesDb.ref(`comment_likes/${postId}/${commentId}/likes/count`);
+
+                try {
+                    const snap = await commentLikeUserRef.once('value');
+                    if (snap.exists()) {
+                        // User already liked, so unlike
+                        await commentLikeUserRef.remove();
+                        await commentLikeCountRef.transaction(currentCount => (currentCount || 1) - 1);
+                    } else {
+                        // User has not liked, so like
+                        await commentLikeUserRef.set(true);
+                        await commentLikeCountRef.transaction(currentCount => (currentCount || 0) + 1);
+                    }
+                } catch (e) {
+                    console.error("Şərh bəyənmə əməliyyatı uğursuz oldu:", e);
+                }
+            }
+
+
+            /**
+             * Opens the comments modal for a specific post.
+             * Shows a loading spinner until all comments are fetched.
+             * @param {string} postId - The ID of the post for which to open comments.
+             */
+            async function openComments(postId) {
+                activePostId = postId;
+                commentsContainer.classList.add('open');
+
+                // Update URL to reflect comments state for better navigation
+                const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`;
+                history.pushState({ postId: postId, user: currentUser }, '', newUrl);
+
+                commentsList.innerHTML = ''; // Clear previous comments
+                commentsLoader.style.display = 'flex'; // Show loading spinner
+
+                // Attach a listener for new comments and replies
+                if (!commentAddedListenerAttached) {
+                     const commentsRef = commentsDb.ref(`comments/${postId}`);
+
+                     // Listener for new main comments
+                     commentsRef.on('child_added', async (snapshot) => {
+                         const newComment = { id: snapshot.key, ...snapshot.val() };
+                         // Ensure we don't add duplicates
+                         if (!commentsList.querySelector(`[data-comment-id=\"${newComment.id}\"]`)) {
+                             await addCommentToDOM(newComment);
+                         }
+                     });
+
+                     // Listener for new replies
+                     commentsRef.on('child_changed', async (snapshot) => {
+                        const updatedComment = { id: snapshot.key, ...snapshot.val() };
+                        if (updatedComment.replies) {
+                            const newReplyId = Object.keys(updatedComment.replies)[Object.keys(updatedComment.replies).length - 1];
+                            const newReply = updatedComment.replies[newReplyId];
+
+                            const existingReply = document.querySelector(`.reply-item[data-comment-id=\"${newReplyId}\"]`);
+                            if (!existingReply) {
+                                // Add the new reply to its parent comment's replies list
+                                const parentCommentElement = commentsList.querySelector(`.comment-item[data-comment-id="${updatedComment.id}"]`);
+                                if (parentCommentElement && parentCommentElement.querySelector('.replies-list').style.display === 'flex') {
+                                    await addCommentToDOM({ id: newReplyId, ...newReply }, updatedComment.id);
+                                }
+                            }
+                        }
+                     });
+
+                     // Listener for deleted comments
+                     commentsRef.on('child_removed', (snapshot) => {
+                         const deletedCommentId = snapshot.key;
+                         const elementToRemove = document.querySelector(`.comment-item[data-comment-id="${deletedCommentId}"]`);
+                         if (elementToRemove) {
+                             elementToRemove.remove();
+                         }
+                     });
+
+                     commentAddedListenerAttached = true;
+                }
+
+                commentsLoader.style.display = 'none'; // Hide loading spinner after initial load
+            }
+
+            /**
+             * Sends a new comment or reply to Firebase.
+             * Adds the new comment/reply to the DOM immediately.
+             */
+            async function sendComment() {
+                const commentText = commentInput.value.trim();
+                if (commentText === "" || !activePostId) return;
+
+                const newComment = {
+                    user: cleanCurrentUser,
+                    text: commentText,
+                    timestamp: Date.now()
+                };
+
+                const replyToUserMatch = commentText.match(/^@(\w+)/);
+                if (replyToUserMatch && activeCommentId) {
+                    const replyRef = commentsDb.ref(`comments/${activePostId}/${activeCommentId}/replies`).push();
+                    await replyRef.set(newComment);
+                    activeCommentId = null;
+                } else {
+                    const newCommentRef = commentsDb.ref(`comments/${activePostId}`).push();
+                    await newCommentRef.set(newComment);
+                }
+
+                commentInput.value = ''; // Clear input field
+            }
+
+            /**
+             * Displays the delete confirmation dialog.
+             * @param {HTMLElement} element - The comment or reply element to be deleted.
+             */
+            function showDeleteDialog(element) {
+                itemToDelete = element;
                 deleteDialogOverlay.style.display = 'flex';
             }
 
+            /**
+             * Hides the delete confirmation dialog.
+             */
             function hideDeleteDialog() {
                 deleteDialogOverlay.style.display = 'none';
                 itemToDelete = null;
             }
 
+            /**
+             * Deletes a comment or reply from Firebase and the DOM.
+             */
             async function deleteItem() {
                 if (!itemToDelete) return;
 
