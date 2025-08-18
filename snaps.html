@@ -280,9 +280,9 @@
         }
 
         .tab-button.active {
-            background-color: #000000;
+            background-color: rgba(0, 0, 0, 0.5);
             color: #fff;
-            position: relative; 
+            position: relative;
         }
 
         /* .tab-button.active::after {
@@ -891,11 +891,11 @@
                     }
                 }
             }
-            
+
             async function displayReels(mode) {
                 if(isAnimating) return;
                 isAnimating = true;
-                
+
                 // Pause any playing video and clear the screen
                 if(reels[activeIndex] && reels[activeIndex].video) {
                     reels[activeIndex].video.pause();
@@ -908,7 +908,7 @@
 
                 const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
-                
+
                 let postIds = Object.keys(postsData);
 
                 if (mode === 'friends') {
@@ -920,7 +920,7 @@
                         return followingUsers.includes(cleanNickname) || followingUsers.includes(`@${cleanNickname}`);
                     });
                 }
-                
+
                 postIds = shuffleArray(postIds);
 
                 const loadedReels = [];
@@ -935,10 +935,10 @@
 
                     const profilePicUrl = await fetchUserProfile(post.nickname);
                     post.profile = profilePicUrl;
-                    
+
                     const isFollowed = await isFollowing(post.nickname);
                     const isLiked = likesData[postId] && likesData[postId].users && likesData[postId].users[currentUser];
-                    
+
                     loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
                 }
 
@@ -946,12 +946,12 @@
                     const newReel = createReel(post);
                     app.appendChild(newReel.element);
                     reels.push(newReel);
-                    
+
                     reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
                         const count = likeSnap.val() || 0;
                         newReel.likeCount.textContent = count;
                     });
-                    
+
                     commentsDb.ref(`comments/${post.id}`).on('value', async (snap) => {
                         let totalComments = 0;
                         const commentsData = snap.val();
