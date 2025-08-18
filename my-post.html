@@ -369,8 +369,11 @@
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.poster = data.poster || ""; // 'poster' sahəsi olmalıdır
-                // 'controls' atributu yoxdur, beləliklə video oynatmaq mümkün olmayacaq.
+                // Videolar için kontrol butonu ekliyoruz
+                video.controls = true; 
+                // Eğer poster bilgisi yoksa varsayılan bir resim kullanıyoruz.
+                video.poster = data.poster || "https://via.placeholder.com/400x600.png?text=Video"; 
+                
                 video.addEventListener('loadeddata', () => refreshMasonry());
                 postEl.appendChild(video);
             } else if (data.image) {
