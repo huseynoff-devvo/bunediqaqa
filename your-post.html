@@ -307,7 +307,10 @@
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.poster = data.thumbnail || ''; // Use a thumbnail if available
+                // VİDEO THUMBNAİLİ ÜÇÜN POSTER ATTRIBUTU
+                video.poster = data.thumbnail || ''; 
+                // VİDEO KONTROLLERİNİ GÖSTƏRMƏK ÜÇÜN KOD
+                video.controls = true; 
                 video.addEventListener('loadeddata', () => refreshMasonry());
                 mediaContainer.appendChild(video);
 
@@ -459,7 +462,7 @@
 
                             const likeSummaryElement = postElement.querySelector('.like-summary');
                             if (likeSummaryElement) {
-                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                                likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
                             }
                         }
                     });
@@ -486,7 +489,7 @@
 
                             const likeSummaryElement = postElement.querySelector('.like-summary');
                             if (likeSummaryElement) {
-                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                                likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
                             }
                         }
                     });
