@@ -741,7 +741,6 @@
             let activeIndex = 0;
             let isAnimating = false;
             let allVideosSoundOn = true;
-            const fallbackVideo = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
             let indicatorTimeout = null;
             let touchStartY = null;
             let activePostId = null;
@@ -1169,18 +1168,12 @@
                 reel.appendChild(loader);
 
                 const video = document.createElement('video');
-                video.src = post.video && post.video.trim() ? post.video.trim() : fallbackVideo;
+                video.src = post.video;
                 video.loop = true;
                 video.playsInline = true;
                 video.muted = !allVideosSoundOn;
                 video.preload = 'auto';
                 video.style.display = 'none';
-
-                video.onerror = () => {
-                    console.warn(`Video yüklənmədi: ${video.src}. Fallback tətbiq olunur.`);
-                    video.src = fallbackVideo;
-                    video.load();
-                };
 
                 video.addEventListener('click', () => {
                     allVideosSoundOn = !allVideosSoundOn;
