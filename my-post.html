@@ -340,7 +340,8 @@
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.controls = true;
+                video.poster = data.poster || ""; // 'poster' sahəsi olmalıdır
+                // 'controls' atributu yoxdur, beləliklə video oynatmaq mümkün olmayacaq.
                 video.addEventListener('loadeddata', () => refreshMasonry());
                 postEl.appendChild(video);
             } else if (data.image) {
@@ -441,7 +442,7 @@
             if (deletePostId) {
                 const post = postDataCache[deletePostId];
                 if(post && post.sourceDb) {
-                    // `reels` için `posts` yerine `reels` kullan
+                    // `reels` üçün `posts` yerinə `reels` istifadə et
                     const dbPath = post.sourceDb === videosDb ? "reels" : "posts";
                     post.sourceDb.ref(dbPath + "/" + deletePostId).remove();
                     post.sourceDb.ref("likes/" + deletePostId).remove();
@@ -553,14 +554,14 @@
                         const likeCountElement = postElement.querySelector('.like-count');
                         const likeButtonElement = postElement.querySelector('.like-button');
                         if (likeCountElement) {
-                           likeCountElement.textContent = currentLikeCount;
+                            likeCountElement.textContent = currentLikeCount;
                         }
                         if (likeButtonElement) {
-                           if (isLikedByUser) {
-                               likeButtonElement.classList.add("liked");
-                           } else {
-                               likeButtonElement.classList.remove("liked");
-                           }
+                            if (isLikedByUser) {
+                                likeButtonElement.classList.add("liked");
+                            } else {
+                                likeButtonElement.classList.remove("liked");
+                            }
                         }
                     }
                 });
@@ -591,14 +592,14 @@
                         const likeCountElement = postElement.querySelector('.like-count');
                         const likeButtonElement = postElement.querySelector('.like-button');
                         if (likeCountElement) {
-                           likeCountElement.textContent = currentLikeCount;
+                            likeCountElement.textContent = currentLikeCount;
                         }
                         if (likeButtonElement) {
-                           if (isLikedByUser) {
-                               likeButtonElement.classList.add("liked");
-                           } else {
-                               likeButtonElement.classList.remove("liked");
-                           }
+                            if (isLikedByUser) {
+                                likeButtonElement.classList.add("liked");
+                            } else {
+                                likeButtonElement.classList.remove("liked");
+                            }
                         }
                     }
                 });
@@ -622,11 +623,12 @@
             const loader = document.getElementById("loader");
             if (loader) loader.style.display = "none";
 
-            // If myPosts is true, show the grid. Otherwise, leave it hidden.
+            // Yalnız "myPosts=true" URL-də olduqda grid-i göstər
             if (showOnlyMyPosts) {
                 postsContainer.style.display = "block";
             } else {
-                postsContainer.style.display = "block";
+                postsContainer.style.display = "none";
+                noPostsMessage.style.display = "flex";
             }
             refreshMasonry();
         }, 1200);
