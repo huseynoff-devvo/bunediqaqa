@@ -91,7 +91,6 @@
             position: relative;
         }
 
-        /* Post header and related elements (for possible future use) */
         .post-header { display:none; }
 
         .post-text {
@@ -104,7 +103,7 @@
         .post-media-container {
             position: relative;
         }
-        
+
         .post-image, .post-video {
             width: 100%;
             height: auto;
@@ -112,11 +111,11 @@
             display: block;
             object-fit: cover;
         }
-
+        
         .post-video {
             max-height: 400px;
         }
-
+        
         /* Thumbnail label */
         .media-label {
             position: absolute;
@@ -217,9 +216,6 @@
         let likeCache = {};
         let postDataCache = {};
         
-        // ** YENİ KOD: Bu dəyişən cari oynayan videonu saxlayır **
-        let currentlyPlayingVideo = null;
-
         // Tick & premium configs (sənin konfiqlar)
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
@@ -275,6 +271,7 @@
         function renderPost(postId, data) {
             if (!data) return null;
             try {
+                // show only my posts check (safety)
                 if (showOnlyMyPosts) {
                     const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
                     const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
@@ -310,17 +307,7 @@
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.poster = data.thumbnail || ''; 
-                video.controls = true;
-
-                // ** YENİ KOD: Bir video başlayanda digərini dayandırır **
-                video.addEventListener('play', () => {
-                    if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
-                        currentlyPlayingVideo.pause();
-                    }
-                    currentlyPlayingVideo = video;
-                });
-                
+                video.poster = data.thumbnail || ''; // Use a thumbnail if available
                 video.addEventListener('loadeddata', () => refreshMasonry());
                 mediaContainer.appendChild(video);
 
@@ -342,13 +329,16 @@
             const postFooter = document.createElement("div");
             postFooter.className = "post-footer";
 
+            // LİKE SAYI VƏ DURUMUNU TƏYİN ETMƏ
             let currentLikeCount = 0;
             const postLikes = likeCache[postId];
 
             if (postLikes) {
+                // Check if it's the new video like structure
                 if (postLikes.count !== undefined) {
                     currentLikeCount = postLikes.count;
                 } else {
+                    // Assume it's the old post like structure
                     currentLikeCount = Object.keys(postLikes).length;
                 }
             }
@@ -363,7 +353,7 @@
             return postEl;
         }
 
-        // Confirm dialog actions
+        // Confirm dialog actions are no longer needed, but keeping empty functions for now
         document.getElementById("confirmYes").addEventListener("click", () => { /* no-op */ });
         document.getElementById("confirmNo").addEventListener("click", () => { /* no-op */ });
 
@@ -371,6 +361,7 @@
             postsContainer.innerHTML = "";
             let postIds = Object.keys(postDataCache || {});
             
+            // show only my posts check (safety)
             if (showOnlyMyPosts) {
                 const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
                 postIds = postIds.filter(id => {
@@ -380,6 +371,7 @@
                 });
             }
 
+            // sort by time (descending) if possible
             postIds.sort((a,b) => {
                 const aT = postDataCache[a] && postDataCache[a].time ? new Date(postDataCache[a].time) : null;
                 const bT = postDataCache[b] && postDataCache[b].time ? new Date(postDataCache[b].time) : null;
@@ -387,6 +379,7 @@
                 return b.localeCompare(a);
             });
 
+            // Show/hide "no posts" message
             if (postIds.length === 0) {
                  noPostsMessage.style.display = "flex";
             } else {
@@ -403,6 +396,7 @@
         
         // Fetch and merge all data from all sources
         function fetchAndMergeData() {
+            // Check if myPosts=true and user parameter exists
             if (showOnlyMyPosts && currentUser) {
                 Promise.all([
                     postsDb.ref("posts").once("value"),
@@ -430,6 +424,7 @@
                     console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
                 });
             } else {
+                // If not showing only my posts, hide the loader and grid, but keep the body background
                 document.getElementById("loader").style.display = "none";
                 postsContainer.style.display = "none";
                 noPostsMessage.style.display = "none"; 
@@ -442,11 +437,13 @@
                 postsDb.ref("posts").on("value", () => fetchAndMergeData());
                 videosDb.ref("reels").on("value", () => fetchAndMergeData());
                 
+                // LİKE İŞLEMLERİ İÇİN CANLI DİNLEYİCİLER
                 postsDb.ref("likes").on("value", (snapshot) => {
                     const likesData = snapshot.val() || {};
                     Object.keys(likesData).forEach(postId => {
                         likeCache[postId] = likesData[postId];
                     });
+                    // Sadece mevcut postların like sayılarını güncelle
                     Object.keys(postDataCache).forEach(postId => {
                         const postElement = document.getElementById(`post_${postId}`);
                         if (postElement) {
@@ -459,9 +456,10 @@
                                    currentLikeCount = Object.keys(postLikes).length;
                                }
                             }
+
                             const likeSummaryElement = postElement.querySelector('.like-summary');
                             if (likeSummaryElement) {
-                                likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
                             }
                         }
                     });
@@ -472,6 +470,7 @@
                     Object.keys(likesData).forEach(postId => {
                         likeCache[postId] = likesData[postId];
                     });
+                    // Sadece mevcut postların like sayılarını güncelle
                     Object.keys(postDataCache).forEach(postId => {
                         const postElement = document.getElementById(`post_${postId}`);
                         if (postElement) {
@@ -484,9 +483,10 @@
                                    currentLikeCount = Object.keys(postLikes).length;
                                }
                             }
+
                             const likeSummaryElement = postElement.querySelector('.like-summary');
                             if (likeSummaryElement) {
-                                likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
                             }
                         }
                     });
@@ -510,6 +510,8 @@
                 refreshMasonry();
             }, 1200);
         } else {
+            // If the conditions are not met, just hide the loader and the grid.
+            // The body background will remain as defined in CSS.
             document.getElementById("loader").style.display = 'none';
             postsContainer.style.display = 'none';
         }
