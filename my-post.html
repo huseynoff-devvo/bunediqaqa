@@ -69,7 +69,7 @@
             margin: 0 auto;
             column-count: 2;
             column-gap: 16px;
-            display: none; /* Changed from 'block' to 'none' */
+            display: none;
         }
 
         @media (max-width: 720px) {
@@ -117,16 +117,12 @@
             line-height:1.3;
         }
 
-        .post-image, .post-video {
+        .post-image {
             width: 100%;
             height: auto;
             border-radius: 8px;
             display: block;
             object-fit: cover;
-        }
-
-        .post-video {
-            max-height: 400px; /* Optional: limit video height */
         }
 
         .post-footer {
@@ -266,9 +262,6 @@
         let tickUsers = {};
         let premiumUsers = {};
 
-        // Keep track of the currently playing video
-        let currentlyPlayingVideo = null;
-
         function loadStatusData() {
             tickDb.ref("tick").on("value", (snapshot) => {
                 tickUsers = snapshot.val() || {};
@@ -369,26 +362,15 @@
 
             // Check for video first, then image
             if (data.video) {
-                const video = document.createElement("video");
-                video.className = "post-video";
-                video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.controls = true;
-                
-                // Add event listener to pause other videos
-                video.addEventListener('play', () => {
-                    if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
-                        currentlyPlayingVideo.pause();
-                    }
-                    currentlyPlayingVideo = video;
-                });
-
-                video.addEventListener('loadeddata', () => refreshMasonry());
-                postEl.appendChild(video);
+                const image = document.createElement("img");
+                image.className = "post-image";
+                image.src = data.poster || ""; // Videolar için poster (thumbnail) olarak
+                image.addEventListener('load', () => refreshMasonry());
+                postEl.appendChild(image);
             } else if (data.image) {
                 const image = document.createElement("img");
                 image.className = "post-image";
                 image.src = (data.image || "").replace(/\\/g, '').trim();
-                // when image loads, trigger refresh so columns recalc nicely
                 image.addEventListener('load', () => refreshMasonry());
                 postEl.appendChild(image);
             }
