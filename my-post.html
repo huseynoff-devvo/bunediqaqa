@@ -69,7 +69,7 @@
             margin: 0 auto;
             column-count: 2;
             column-gap: 16px;
-            display: none;
+            display: none; /* Changed from 'block' to 'none' */
         }
 
         @media (max-width: 720px) {
@@ -117,13 +117,16 @@
             line-height:1.3;
         }
 
-        /* Şəkil və video üçün yeni stil */
-        .post-media {
+        .post-image, .post-video {
             width: 100%;
             height: auto;
             border-radius: 8px;
             display: block;
             object-fit: cover;
+        }
+
+        .post-video {
+            max-height: 400px; /* Optional: limit video height */
         }
 
         .post-footer {
@@ -205,21 +208,22 @@
             appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
         };
         // videos firebase config (pasyak-reels)
+        /* Bu hissə videoları yükləyir, buna ehtiyac yoxdur.
         const videosFirebaseConfig = {
-            apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
+            apiKey: "AIzaSyA4Qf_SjC1D4V1Q6xX1J_7C92Q9U2T_2W0",
             authDomain: "pasyak-reels.firebaseapp.com",
             databaseURL: "https://pasyak-reels-default-rtdb.firebaseio.com",
             projectId: "pasyak-reels",
-            storageBucket: "pasyak-reels.firebasestorage.app",
-            messagingSenderId: "635054499590",
-            appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
-            measurementId: "G-FW0KJDLF4B"
+            storageBucket: "pasyak-reels.appspot.com",
+            messagingSenderId: "36009848243",
+            appId: "1:36009848243:web:7f3a61f2216e2547b7a1e0"
         };
+        */
 
         const postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
-        const videosApp = firebase.initializeApp(videosFirebaseConfig, "videosApp");
+        // const videosApp = firebase.initializeApp(videosFirebaseConfig, "videosApp"); // Şərhə salındı
         const postsDb = postsApp.database();
-        const videosDb = videosApp.database();
+        // const videosDb = videosApp.database(); // Şərhə salındı
 
         const postsContainer = document.getElementById("posts-grid");
         const noPostsMessage = document.getElementById("no-posts");
@@ -300,15 +304,12 @@
             postEl.className = "post";
             postEl.id = "post_" + postId;
             
-            // Şəkil və ya video varsa badge əlavə et
-            if (data.video || data.image) {
+            // SADECE ŞƏKİL VƏ YA VİDEO VARSA BADGE ƏLAVƏ ET
+            // Bu hissə dəyişdirildi. Yalnız postlar üçün badge yaradılır.
+            if (data.image) {
                 const badge = document.createElement("div");
                 badge.className = "post-type-badge";
-                if (data.sourceDb === videosDb) {
-                    badge.textContent = "Snap";
-                } else if (data.sourceDb === postsDb) {
-                    badge.textContent = "Post";
-                }
+                badge.textContent = "Post";
                 postEl.appendChild(badge);
             }
 
@@ -361,24 +362,16 @@
 
             postEl.appendChild(header);
 
-            // DƏYİŞDİ: Şəkil və video hissəsi tamamilə yeniləndi
+            // Check for image only (video section removed)
             if (data.image) {
                 const image = document.createElement("img");
-                image.className = "post-media";
-                image.src = data.image.replace(/\\/g, '').trim();
+                image.className = "post-image";
+                image.src = (data.image || "").replace(/\\/g, '').trim();
+                // when image loads, trigger refresh so columns recalc nicely
                 image.addEventListener('load', () => refreshMasonry());
                 postEl.appendChild(image);
-            } else if (data.video) {
-                const video = document.createElement("video");
-                video.className = "post-media";
-                video.src = data.video.replace(/\\/g, '').trim();
-                if (data.poster) {
-                    video.poster = data.poster.replace(/\\/g, '').trim();
-                }
-                video.addEventListener('loadedmetadata', () => refreshMasonry());
-                postEl.appendChild(video);
             }
-            
+
             if (data.text) {
                 const text = document.createElement("div");
                 text.className = "post-text";
@@ -395,15 +388,9 @@
             const postLikes = likeCache[postId];
 
             if (postLikes) {
-                if (postLikes.count !== undefined) {
-                    // New structure for videos
-                    currentLikeCount = postLikes.count;
-                    isLikedByUser = postLikes.users && postLikes.users[currentUser];
-                } else {
-                    // Old structure for posts
-                    currentLikeCount = Object.keys(postLikes).length;
-                    isLikedByUser = postLikes[currentUser];
-                }
+                // Post yapısına göre like sayısını belirle
+                currentLikeCount = Object.keys(postLikes).length;
+                isLikedByUser = postLikes[currentUser];
             }
 
             const likeBtn = document.createElement("button");
@@ -413,32 +400,14 @@
             likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${currentLikeCount || 0}</span>`;
 
             likeBtn.addEventListener("click", () => {
-                const dbToUse = data.sourceDb;
-                if (!dbToUse) return;
-                const likesRef = dbToUse.ref(`likes/${postId}`);
+                const likesRef = postsDb.ref(`likes/${postId}`);
 
                 likesRef.once("value").then(snap => {
                     const currentLikesData = snap.val();
-                    let newCount = 0;
-                    let newUsers = {};
-                    let isVideoLike = currentLikesData && currentLikesData.users;
-
-                    if (isVideoLike) {
-                        newUsers = currentLikesData.users || {};
-                        if (newUsers[currentUser]) {
-                            delete newUsers[currentUser];
-                        } else {
-                            newUsers[currentUser] = true;
-                        }
-                        newCount = Object.keys(newUsers).length;
-                        likesRef.set({ count: newCount, users: newUsers });
+                    if (currentLikesData && currentLikesData[currentUser]) {
+                        likesRef.child(currentUser).remove();
                     } else {
-                        // Old post structure
-                        if (currentLikesData && currentLikesData[currentUser]) {
-                            likesRef.child(currentUser).remove();
-                        } else {
-                            likesRef.child(currentUser).set(true);
-                        }
+                        likesRef.child(currentUser).set(true);
                     }
                 });
             });
@@ -466,13 +435,8 @@
         // Confirm dialog actions
         document.getElementById("confirmYes").addEventListener("click", () => {
             if (deletePostId) {
-                const post = postDataCache[deletePostId];
-                if(post && post.sourceDb) {
-                    // `reels` üçün `posts` yerinə `reels` istifadə et
-                    const dbPath = post.sourceDb === videosDb ? "reels" : "posts";
-                    post.sourceDb.ref(dbPath + "/" + deletePostId).remove();
-                    post.sourceDb.ref("likes/" + deletePostId).remove();
-                }
+                postsDb.ref("posts/" + deletePostId).remove();
+                postsDb.ref("likes/" + deletePostId).remove();
                 document.getElementById("confirmDialog").style.display = "none";
                 deletePostId = null;
             }
@@ -522,9 +486,8 @@
         // Fetch and merge all data from all sources
         function fetchAndMergeData() {
             Promise.all([
-                postsDb.ref("posts").once("value"),
-                videosDb.ref("reels").once("value")
-            ]).then(([postsSnap, videosSnap]) => {
+                postsDb.ref("posts").once("value")
+            ]).then(([postsSnap]) => {
                 postDataCache = {};
                 postsSnap.forEach(snap => {
                     try {
@@ -532,14 +495,6 @@
                         postDataCache[snap.key] = {...data, sourceDb: postsDb};
                     } catch (e) {
                         console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e);
-                    }
-                });
-                videosSnap.forEach(snap => {
-                    try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                    } catch (e) {
-                        console.warn("videosDb: Post yüklənərkən xəta:", snap.key, e);
                     }
                 });
                 
@@ -552,7 +507,6 @@
         // Set up live listeners to trigger data refresh
         function setupLiveListeners() {
             postsDb.ref("posts").on("value", () => fetchAndMergeData());
-            videosDb.ref("reels").on("value", () => fetchAndMergeData());
             
             // LİKE İŞLEMLERİ İÇİN CANLI DİNLEYİCİLER
             postsDb.ref("likes").on("value", (snapshot) => {
@@ -568,51 +522,8 @@
                         let currentLikeCount = 0;
                         let isLikedByUser = false;
                         if (postLikes) {
-                           if (postLikes.count !== undefined) {
-                               currentLikeCount = postLikes.count;
-                               isLikedByUser = postLikes.users && postLikes.users[currentUser];
-                           } else {
-                               currentLikeCount = Object.keys(postLikes).length;
-                               isLikedByUser = postLikes[currentUser];
-                           }
-                        }
-
-                        const likeCountElement = postElement.querySelector('.like-count');
-                        const likeButtonElement = postElement.querySelector('.like-button');
-                        if (likeCountElement) {
-                            likeCountElement.textContent = currentLikeCount;
-                        }
-                        if (likeButtonElement) {
-                            if (isLikedByUser) {
-                                likeButtonElement.classList.add("liked");
-                            } else {
-                                likeButtonElement.classList.remove("liked");
-                            }
-                        }
-                    }
-                });
-            });
-
-            videosDb.ref("likes").on("value", (snapshot) => {
-                const likesData = snapshot.val() || {};
-                Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                });
-                // Sadece mevcut postların like sayılarını güncelle
-                Object.keys(postDataCache).forEach(postId => {
-                    const postElement = document.getElementById(`post_${postId}`);
-                    if (postElement) {
-                        const postLikes = likeCache[postId];
-                        let currentLikeCount = 0;
-                        let isLikedByUser = false;
-                        if (postLikes) {
-                           if (postLikes.count !== undefined) {
-                               currentLikeCount = postLikes.count;
-                               isLikedByUser = postLikes.users && postLikes.users[currentUser];
-                           } else {
-                               currentLikeCount = Object.keys(postLikes).length;
-                               isLikedByUser = postLikes[currentUser];
-                           }
+                            currentLikeCount = Object.keys(postLikes).length;
+                            isLikedByUser = postLikes[currentUser];
                         }
 
                         const likeCountElement = postElement.querySelector('.like-count');
