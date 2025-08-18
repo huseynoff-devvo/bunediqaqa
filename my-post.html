@@ -266,6 +266,9 @@
         let tickUsers = {};
         let premiumUsers = {};
 
+        // Keep track of the currently playing video
+        let currentlyPlayingVideo = null;
+
         function loadStatusData() {
             tickDb.ref("tick").on("value", (snapshot) => {
                 tickUsers = snapshot.val() || {};
@@ -371,6 +374,14 @@
                 video.src = (data.video || "").replace(/\\/g, '').trim();
                 video.controls = true;
                 
+                // Add event listener to pause other videos
+                video.addEventListener('play', () => {
+                    if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
+                        currentlyPlayingVideo.pause();
+                    }
+                    currentlyPlayingVideo = video;
+                });
+
                 video.addEventListener('loadeddata', () => refreshMasonry());
                 postEl.appendChild(video);
             } else if (data.image) {
