@@ -100,6 +100,10 @@
             line-height:1.3;
         }
 
+        .post-media-container {
+            position: relative;
+        }
+
         .post-image, .post-video {
             width: 100%;
             height: auto;
@@ -110,6 +114,22 @@
         
         .post-video {
             max-height: 400px;
+        }
+        
+        /* Thumbnail label */
+        .media-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.4);
         }
 
         .post-footer {
@@ -190,7 +210,7 @@
 
         // URL params
         const urlParams = new URLSearchParams(window.location.search);
-        const currentUser = (urlParams.get("user") || "anonim").trim();
+        const currentUser = (urlParams.get("user") || "").trim();
         const showOnlyMyPosts = urlParams.get("myPosts") === "true";
 
         let likeCache = {};
@@ -264,18 +284,39 @@
             postEl.id = "post_" + postId;
 
             if (data.image) {
+                const mediaContainer = document.createElement("div");
+                mediaContainer.className = "post-media-container";
+                
                 const image = document.createElement("img");
                 image.className = "post-image";
                 image.src = (data.image || "").replace(/\\/g, '').trim();
                 image.addEventListener('load', () => refreshMasonry());
-                postEl.appendChild(image);
+                mediaContainer.appendChild(image);
+                
+                const label = document.createElement("div");
+                label.className = "media-label";
+                label.textContent = "POST";
+                mediaContainer.appendChild(label);
+
+                postEl.appendChild(mediaContainer);
+
             } else if (data.video) {
+                const mediaContainer = document.createElement("div");
+                mediaContainer.className = "post-media-container";
+                
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.controls = true;
+                video.poster = data.thumbnail || ''; // Use a thumbnail if available
                 video.addEventListener('loadeddata', () => refreshMasonry());
-                postEl.appendChild(video);
+                mediaContainer.appendChild(video);
+
+                const label = document.createElement("div");
+                label.className = "media-label";
+                label.textContent = "SNAP";
+                mediaContainer.appendChild(label);
+                
+                postEl.appendChild(mediaContainer);
             }
 
             if (data.text) {
@@ -352,95 +393,105 @@
 
             refreshMasonry();
         }
-
+        
         // Fetch and merge all data from all sources
         function fetchAndMergeData() {
-            Promise.all([
-                postsDb.ref("posts").once("value"),
-                videosDb.ref("reels").once("value")
-            ]).then(([postsSnap, videosSnap]) => {
-                postDataCache = {};
-                postsSnap.forEach(snap => {
-                    try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: postsDb};
-                    } catch (e) {
-                        console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e);
-                    }
+            // Check if myPosts=true and user parameter exists
+            if (showOnlyMyPosts && currentUser) {
+                Promise.all([
+                    postsDb.ref("posts").once("value"),
+                    videosDb.ref("reels").once("value")
+                ]).then(([postsSnap, videosSnap]) => {
+                    postDataCache = {};
+                    postsSnap.forEach(snap => {
+                        try {
+                            const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
+                            postDataCache[snap.key] = {...data, sourceDb: postsDb};
+                        } catch (e) {
+                            console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e);
+                        }
+                    });
+                    videosSnap.forEach(snap => {
+                        try {
+                            const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
+                            postDataCache[snap.key] = {...data, sourceDb: videosDb};
+                        } catch (e) {
+                            console.warn("videosDb: Post yüklənərkən xəta:", snap.key, e);
+                        }
+                    });
+                    renderAllPosts();
+                }).catch(error => {
+                    console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
                 });
-                videosSnap.forEach(snap => {
-                    try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                    } catch (e) {
-                        console.warn("videosDb: Post yüklənərkən xəta:", snap.key, e);
-                    }
-                });
-                renderAllPosts();
-            }).catch(error => {
-                console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
-            });
+            } else {
+                // If not showing only my posts, hide the loader and grid, but keep the body background
+                document.getElementById("loader").style.display = "none";
+                postsContainer.style.display = "none";
+                noPostsMessage.style.display = "none"; 
+            }
         }
-        
+
         // Set up live listeners to trigger data refresh
         function setupLiveListeners() {
-            postsDb.ref("posts").on("value", () => fetchAndMergeData());
-            videosDb.ref("reels").on("value", () => fetchAndMergeData());
-            
-            // LİKE İŞLEMLERİ İÇİN CANLI DİNLEYİCİLER
-            postsDb.ref("likes").on("value", (snapshot) => {
-                const likesData = snapshot.val() || {};
-                Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                });
-                // Sadece mevcut postların like sayılarını güncelle
-                Object.keys(postDataCache).forEach(postId => {
-                    const postElement = document.getElementById(`post_${postId}`);
-                    if (postElement) {
-                        const postLikes = likeCache[postId];
-                        let currentLikeCount = 0;
-                        if (postLikes) {
-                           if (postLikes.count !== undefined) {
-                               currentLikeCount = postLikes.count;
-                           } else {
-                               currentLikeCount = Object.keys(postLikes).length;
-                           }
-                        }
+            if (showOnlyMyPosts && currentUser) {
+                postsDb.ref("posts").on("value", () => fetchAndMergeData());
+                videosDb.ref("reels").on("value", () => fetchAndMergeData());
+                
+                // LİKE İŞLEMLERİ İÇİN CANLI DİNLEYİCİLER
+                postsDb.ref("likes").on("value", (snapshot) => {
+                    const likesData = snapshot.val() || {};
+                    Object.keys(likesData).forEach(postId => {
+                        likeCache[postId] = likesData[postId];
+                    });
+                    // Sadece mevcut postların like sayılarını güncelle
+                    Object.keys(postDataCache).forEach(postId => {
+                        const postElement = document.getElementById(`post_${postId}`);
+                        if (postElement) {
+                            const postLikes = likeCache[postId];
+                            let currentLikeCount = 0;
+                            if (postLikes) {
+                               if (postLikes.count !== undefined) {
+                                   currentLikeCount = postLikes.count;
+                               } else {
+                                   currentLikeCount = Object.keys(postLikes).length;
+                               }
+                            }
 
-                        const likeSummaryElement = postElement.querySelector('.like-summary');
-                        if (likeSummaryElement) {
-                           likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                            const likeSummaryElement = postElement.querySelector('.like-summary');
+                            if (likeSummaryElement) {
+                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                            }
                         }
-                    }
+                    });
                 });
-            });
 
-            videosDb.ref("likes").on("value", (snapshot) => {
-                const likesData = snapshot.val() || {};
-                Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                });
-                // Sadece mevcut postların like sayılarını güncelle
-                Object.keys(postDataCache).forEach(postId => {
-                    const postElement = document.getElementById(`post_${postId}`);
-                    if (postElement) {
-                        const postLikes = likeCache[postId];
-                        let currentLikeCount = 0;
-                        if (postLikes) {
-                           if (postLikes.count !== undefined) {
-                               currentLikeCount = postLikes.count;
-                           } else {
-                               currentLikeCount = Object.keys(postLikes).length;
-                           }
-                        }
+                videosDb.ref("likes").on("value", (snapshot) => {
+                    const likesData = snapshot.val() || {};
+                    Object.keys(likesData).forEach(postId => {
+                        likeCache[postId] = likesData[postId];
+                    });
+                    // Sadece mevcut postların like sayılarını güncelle
+                    Object.keys(postDataCache).forEach(postId => {
+                        const postElement = document.getElementById(`post_${postId}`);
+                        if (postElement) {
+                            const postLikes = likeCache[postId];
+                            let currentLikeCount = 0;
+                            if (postLikes) {
+                               if (postLikes.count !== undefined) {
+                                   currentLikeCount = postLikes.count;
+                               } else {
+                                   currentLikeCount = Object.keys(postLikes).length;
+                               }
+                            }
 
-                        const likeSummaryElement = postElement.querySelector('.like-summary');
-                        if (likeSummaryElement) {
-                           likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                            const likeSummaryElement = postElement.querySelector('.like-summary');
+                            if (likeSummaryElement) {
+                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
+                            }
                         }
-                    }
+                    });
                 });
-            });
+            }
         }
 
         function refreshMasonry() {
@@ -449,19 +500,21 @@
         }
 
         // init
-        loadStatusData();
-        setupLiveListeners();
-
-        setTimeout(() => {
-            const loader = document.getElementById("loader");
-            if (loader) loader.style.display = "none";
-            if (showOnlyMyPosts) {
+        if (showOnlyMyPosts && currentUser) {
+            loadStatusData();
+            setupLiveListeners();
+            setTimeout(() => {
+                const loader = document.getElementById("loader");
+                if (loader) loader.style.display = "none";
                 postsContainer.style.display = "block";
-            } else {
-                postsContainer.style.display = "block";
-            }
-            refreshMasonry();
-        }, 1200);
+                refreshMasonry();
+            }, 1200);
+        } else {
+            // If the conditions are not met, just hide the loader and the grid.
+            // The body background will remain as defined in CSS.
+            document.getElementById("loader").style.display = 'none';
+            postsContainer.style.display = 'none';
+        }
     </script>
 </body>
 </html>
