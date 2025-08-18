@@ -117,8 +117,8 @@
             line-height:1.3;
         }
 
-        /* Şəkil və thumbnail üçün yeni stil */
-        .post-image {
+        /* Şəkil və video üçün yeni stil */
+        .post-media {
             width: 100%;
             height: auto;
             border-radius: 8px;
@@ -361,30 +361,22 @@
 
             postEl.appendChild(header);
 
-            // DƏYİŞDİ: Video URL-dən thumbnail yaratmağa cəhd edin
-            let postMediaSrc = "";
+            // DƏYİŞDİ: Şəkil və video hissəsi tamamilə yeniləndi
             if (data.image) {
-                postMediaSrc = data.image;
-            } else if (data.video) {
-                // Əvvəlcə posteri yoxlayın, yoxdursa video URL-dən yaradın
-                if (data.poster) {
-                    postMediaSrc = data.poster;
-                } else {
-                    // Video URL-dəki fayl uzantısını .jpg ilə əvəz edərək thumbnail yaradın
-                    const videoUrl = data.video || "";
-                    const lastDot = videoUrl.lastIndexOf('.');
-                    if (lastDot > 0) {
-                        postMediaSrc = videoUrl.substring(0, lastDot) + '.jpg';
-                    }
-                }
-            }
-
-            if (postMediaSrc) {
                 const image = document.createElement("img");
-                image.className = "post-image";
-                image.src = postMediaSrc.replace(/\\/g, '').trim();
+                image.className = "post-media";
+                image.src = data.image.replace(/\\/g, '').trim();
                 image.addEventListener('load', () => refreshMasonry());
                 postEl.appendChild(image);
+            } else if (data.video) {
+                const video = document.createElement("video");
+                video.className = "post-media";
+                video.src = data.video.replace(/\\/g, '').trim();
+                if (data.poster) {
+                    video.poster = data.poster.replace(/\\/g, '').trim();
+                }
+                video.addEventListener('loadedmetadata', () => refreshMasonry());
+                postEl.appendChild(video);
             }
             
             if (data.text) {
