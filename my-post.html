@@ -91,6 +91,23 @@
             position: relative;
         }
 
+        /* NEW STYLE: "Reels" / "Post" indicator */
+        .post-type-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.4);
+            text-transform: uppercase;
+        }
+
         .post-header { display:none; }
 
         .post-text {
@@ -285,6 +302,18 @@
             const postEl = document.createElement("div");
             postEl.className = "post";
             postEl.id = "post_" + postId;
+            
+            // SADECE ŞƏKİL VƏ YA VİDEO VARSA BADGE ƏLAVƏ ET
+            if (data.video || data.image) {
+                const badge = document.createElement("div");
+                badge.className = "post-type-badge";
+                if (data.sourceDb === videosDb) {
+                    badge.textContent = "Snap";
+                } else if (data.sourceDb === postsDb) {
+                    badge.textContent = "Post";
+                }
+                postEl.appendChild(badge);
+            }
 
             const header = document.createElement("div");
             header.className = "post-header";
@@ -627,8 +656,8 @@
             if (showOnlyMyPosts) {
                 postsContainer.style.display = "block";
             } else {
-                postsContainer.style.display = "none";
-                noPostsMessage.style.display = "flex";
+                postsContainer.style.display = "block";
+                fetchAndMergeData();
             }
             refreshMasonry();
         }, 1200);
