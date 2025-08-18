@@ -369,10 +369,7 @@
                 const video = document.createElement("video");
                 video.className = "post-video";
                 video.src = (data.video || "").replace(/\\/g, '').trim();
-                // Videolar üçün kontrol butonu əlavə etdik
-                video.controls = true; 
-                // Eğer poster bilgisi yoksa varsayılan bir resim kullanıyoruz.
-                video.poster = data.poster || "https://via.placeholder.com/400x600.png?text=Video"; 
+                video.controls = true;
                 
                 video.addEventListener('loadeddata', () => refreshMasonry());
                 postEl.appendChild(video);
