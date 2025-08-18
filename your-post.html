@@ -269,7 +269,7 @@
 
         // render single post
         function renderPost(postId, data) {
-            if (!data) return null;
+            if (!data || data.video) return null; // ADDED: RETURN NULL IF IT'S A VIDEO
             try {
                 // show only my posts check (safety)
                 if (showOnlyMyPosts) {
@@ -299,25 +299,8 @@
                 mediaContainer.appendChild(label);
 
                 postEl.appendChild(mediaContainer);
-
-            } else if (data.video) {
-                const mediaContainer = document.createElement("div");
-                mediaContainer.className = "post-media-container";
-                
-                const video = document.createElement("video");
-                video.className = "post-video";
-                video.src = (data.video || "").replace(/\\/g, '').trim();
-                video.poster = data.thumbnail || ''; // Use a thumbnail if available
-                video.addEventListener('loadeddata', () => refreshMasonry());
-                mediaContainer.appendChild(video);
-
-                const label = document.createElement("div");
-                label.className = "media-label";
-                label.textContent = "SNAP";
-                mediaContainer.appendChild(label);
-                
-                postEl.appendChild(mediaContainer);
             }
+            // REMOVED: THE 'ELSE IF (data.video)' BLOCK TO AVOID RENDERING VIDEOS
 
             if (data.text) {
                 const text = document.createElement("div");
@@ -367,7 +350,7 @@
                 postIds = postIds.filter(id => {
                     const p = postDataCache[id] || {};
                     const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-                    return nick === cleanCurrent;
+                    return nick === cleanCurrent && !p.video; // ADDED: FILTER OUT VIDEOS
                 });
             }
 
@@ -400,25 +383,20 @@
             if (showOnlyMyPosts && currentUser) {
                 Promise.all([
                     postsDb.ref("posts").once("value"),
-                    videosDb.ref("reels").once("value")
-                ]).then(([postsSnap, videosSnap]) => {
+                    // REMOVED: videosDb.ref("reels").once("value")
+                ]).then(([postsSnap]) => {
                     postDataCache = {};
                     postsSnap.forEach(snap => {
                         try {
                             const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                            postDataCache[snap.key] = {...data, sourceDb: postsDb};
+                            if (!data.video) { // ADDED: IGNORE VIDEO DATA FROM THE 'posts' DATABASE
+                                postDataCache[snap.key] = {...data, sourceDb: postsDb};
+                            }
                         } catch (e) {
                             console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e);
                         }
                     });
-                    videosSnap.forEach(snap => {
-                        try {
-                            const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                            postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                        } catch (e) {
-                            console.warn("videosDb: Post yüklənərkən xəta:", snap.key, e);
-                        }
-                    });
+                    // REMOVED: THE 'videosSnap' LOOP TO AVOID PROCESSING VIDEOS
                     renderAllPosts();
                 }).catch(error => {
                     console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
@@ -435,7 +413,7 @@
         function setupLiveListeners() {
             if (showOnlyMyPosts && currentUser) {
                 postsDb.ref("posts").on("value", () => fetchAndMergeData());
-                videosDb.ref("reels").on("value", () => fetchAndMergeData());
+                // REMOVED: videosDb.ref("reels").on("value", () => fetchAndMergeData());
                 
                 // LİKE İŞLEMLERİ İÇİN CANLI DİNLEYİCİLER
                 postsDb.ref("likes").on("value", (snapshot) => {
@@ -465,32 +443,7 @@
                     });
                 });
 
-                videosDb.ref("likes").on("value", (snapshot) => {
-                    const likesData = snapshot.val() || {};
-                    Object.keys(likesData).forEach(postId => {
-                        likeCache[postId] = likesData[postId];
-                    });
-                    // Sadece mevcut postların like sayılarını güncelle
-                    Object.keys(postDataCache).forEach(postId => {
-                        const postElement = document.getElementById(`post_${postId}`);
-                        if (postElement) {
-                            const postLikes = likeCache[postId];
-                            let currentLikeCount = 0;
-                            if (postLikes) {
-                               if (postLikes.count !== undefined) {
-                                   currentLikeCount = postLikes.count;
-                               } else {
-                                   currentLikeCount = Object.keys(postLikes).length;
-                               }
-                            }
-
-                            const likeSummaryElement = postElement.querySelector('.like-summary');
-                            if (likeSummaryElement) {
-                               likeSummaryElement.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
-                            }
-                        }
-                    });
-                });
+                // REMOVED: THE 'videosDb.ref("likes").on("value")' BLOCK
             }
         }
 
