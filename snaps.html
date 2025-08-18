@@ -104,7 +104,7 @@
             cursor: pointer;
             display: none;
         }
-        
+
         .reel-loader {
             border: 4px solid rgba(255, 255, 255, 0.2);
             border-top: 4px solid white;
@@ -186,7 +186,7 @@
             font-size: 1rem;
             cursor: pointer;
         }
-        
+
         .text a {
             color: #38b1f7;
             text-decoration: none;
@@ -196,7 +196,7 @@
             font-size: 0.75rem;
             color: #777;
         }
-        
+
         /* New interaction section styles */
         .new-interaction-section {
             display: flex;
@@ -218,12 +218,12 @@
             color: white;
             transition: color 0.3s;
         }
-        
+
         .interaction-count {
-            font-size: 1rem; 
+            font-size: 1rem;
             font-weight: bold;
         }
-        
+
         .like-icon.liked {
             color: #ff4d4d;
         }
@@ -254,31 +254,47 @@
             color: white;
         }
 
-        #snaps-title {
+        /* Nav-bar styling */
+        .tabs-container {
+            display: flex;
             position: fixed;
-            top: 10px;
-            left: 20px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            /* background-color: #333; */
+            border-radius: 25px;
+            padding: 5px;
             z-index: 10;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 700;
-            font-size: 20px;
-            letter-spacing: 1px;
-            padding: 5px 12px;
-            border-radius: 12px;
         }
 
-        #snaps-a {
-            position: fixed;
-            top: 10px;
-            left: 85px;
-            z-index: 10;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 700;
-            font-size: 20px;
-            letter-spacing: 1px;
-            padding: 5px 12px;
-            border-radius: 12px;
+        .tab-button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: color 0.3s ease;
         }
+
+        .tab-button.active {
+            background-color: #000000;
+            color: #fff;
+            position: relative; 
+        }
+
+        /* .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 2px;
+            background-color: #fff;
+        } */
 
         #snaps-p {
             position: fixed;
@@ -292,7 +308,7 @@
             padding: 5px 12px;
             border-radius: 12px;
         }
-        
+
         /* New Comment System CSS */
         .comments-container {
             position: fixed;
@@ -311,9 +327,9 @@
         }
 
         .comments-container.open {
-            height: 80vh; 
+            height: 80vh;
         }
-        
+
         .comments-header {
             display: flex;
             justify-content: space-between;
@@ -342,7 +358,7 @@
             flex-direction: column-reverse;
             position: relative;
         }
-        
+
         #comments-loader {
             position: absolute;
             top: 50%;
@@ -358,19 +374,19 @@
             flex-direction: column-reverse;
             gap: 12px;
         }
-        
+
         .comment-item {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        
+
         .comment-main-content {
             display: flex;
             align-items: flex-start;
             gap: 10px;
         }
-        
+
         .comment-profile-pic {
             width: 32px;
             height: 32px;
@@ -378,12 +394,12 @@
             object-fit: cover;
             flex-shrink: 0;
         }
-        
+
         .comment-content {
             display: flex;
             flex-direction: column;
         }
-        
+
         .comment-text-bubble {
             background: #2b2b2b;
             border-radius: 18px;
@@ -392,18 +408,18 @@
             word-wrap: break-word;
             display: inline-block;
         }
-        
+
         .comment-user {
             font-weight: bold;
             font-size: 0.95rem;
             margin-right: 5px;
         }
-        
+
         .comment-text {
             font-size: 0.95rem;
             color: #fff;
         }
-        
+
         .comment-actions {
             display: flex;
             gap: 15px;
@@ -422,7 +438,7 @@
             align-items: center;
             gap: 5px;
         }
-        
+
         .replies-list {
             display: flex;
             flex-direction: column;
@@ -430,23 +446,23 @@
             margin-left: 42px;
             margin-top: 10px;
         }
-        
+
         .replies-list .comment-item {
             margin-bottom: 0;
         }
-        
+
         .comment-text a.reply-user,
         .comment-text a.hashtag {
             color: #38b1f7;
             text-decoration: none;
             font-weight: bold;
         }
-        
+
         .comment-text a.reply-user:hover,
         .comment-text a.hashtag:hover {
             text-decoration: underline;
         }
-        
+
         .comment-input-area {
             display: flex;
             align-items: center;
@@ -563,7 +579,6 @@
         .delete-dialog-buttons #cancel-delete:hover {
             background-color: #555;
         }
-
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link rel="stylesheet"
@@ -574,8 +589,12 @@
         <div class="spinner"></div>
     </div>
     <div id="app"></div>
-    <div id="snaps-title">Snaps</div>
-    <span id="snaps-a" class="material-symbols-outlined">keyboard_arrow_down</span>
+
+    <div class="tabs-container">
+        <button class="tab-button active" id="snaps-nav">Snaps</button>
+        <button class="tab-button" id="friends-nav">Friends</button>
+    </div>
+
     <div id="snaps-p">^_^</div>
     <div id="sound-indicator"><span class="material-icons">volume_up</span></div>
 
@@ -705,12 +724,14 @@
             const deleteDialogOverlay = document.getElementById('delete-dialog-overlay');
             const confirmDeleteBtn = document.getElementById('confirm-delete');
             const cancelDeleteBtn = document.getElementById('cancel-delete');
+            const snapsNav = document.getElementById('snaps-nav');
+            const friendsNav = document.getElementById('friends-nav');
 
             // URL parameters
             const userFromUrl = window.location.search.match(/user=([^&]+)/)?.[1];
             const currentUser = userFromUrl || "anonim";
             const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-            
+
             // Get current user's full name and profile picture from user database
             let currentUserName = cleanCurrentUser;
             let currentUserProfilePic = 'https://via.placeholder.com/48';
@@ -724,7 +745,7 @@
             let indicatorTimeout = null;
             let touchStartY = null;
             let activePostId = null;
-            let activeCommentId = null; 
+            let activeCommentId = null;
             let commentAddedListenerAttached = false;
             let longPressTimer = null;
             let itemToDelete = null; // Store the comment/reply element to be deleted
@@ -759,7 +780,7 @@
                 }
                 return 'https://via.placeholder.com/48';
             }
-            
+
             /**
              * Fetches user's full name from Firebase.
              * Caches the result to avoid repeated calls.
@@ -804,7 +825,7 @@
                 }
                 try {
                     let snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
-                    
+
                     if (!snapshot.exists()) {
                         snapshot = await followingDb.ref(cleanCurrentUser).child(`@${cleanReelUserNickname}`).once('value');
                     }
@@ -830,7 +851,7 @@
                 }
                 return array;
             }
-            
+
             // Real-time listener for reel likes (updates like count and icon for reels)
             reelDb.ref('likes').on('value', (snapshot) => {
                 const likesData = snapshot.val() || {};
@@ -854,13 +875,52 @@
              * and rendering the reels.
              */
             async function initializeApp() {
+                loader.style.display = 'flex';
+                currentUserName = await fetchUserName(cleanCurrentUser);
+                currentUserProfilePic = await fetchUserProfile(cleanCurrentUser);
+                await displayReels('snaps');
+                loader.style.display = 'none';
+
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('reply') === 'true' && urlParams.get('post')) {
+                    const postIdFromUrl = urlParams.get('post');
+                    const postIndex = reels.findIndex(r => r.postId === postIdFromUrl);
+                    if (postIndex !== -1) {
+                        setActiveReel(postIndex);
+                        openComments(postIdFromUrl);
+                    }
+                }
+            }
+            
+            async function displayReels(mode) {
+                if(isAnimating) return;
+                isAnimating = true;
+                
+                // Pause any playing video and clear the screen
+                if(reels[activeIndex] && reels[activeIndex].video) {
+                    reels[activeIndex].video.pause();
+                }
+                while (app.firstChild) {
+                    app.removeChild(app.firstChild);
+                }
+                reels = [];
+                activeIndex = 0;
+
                 const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
                 
-                currentUserName = await fetchUserName(cleanCurrentUser);
-                currentUserProfilePic = await fetchUserProfile(cleanCurrentUser);
-
                 let postIds = Object.keys(postsData);
+
+                if (mode === 'friends') {
+                    const followingSnapshot = await followingDb.ref(cleanCurrentUser).once('value');
+                    const followingUsers = Object.keys(followingSnapshot.val() || {});
+                    postIds = postIds.filter(id => {
+                        const post = JSON.parse(postsData[id]);
+                        const cleanNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
+                        return followingUsers.includes(cleanNickname) || followingUsers.includes(`@${cleanNickname}`);
+                    });
+                }
+                
                 postIds = shuffleArray(postIds);
 
                 const loadedReels = [];
@@ -881,11 +941,6 @@
                     
                     loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
                 }
-                
-                while(app.firstChild) {
-                    app.removeChild(app.firstChild);
-                }
-                reels = [];
 
                 loadedReels.forEach(post => {
                     const newReel = createReel(post);
@@ -921,27 +976,37 @@
 
                     playActiveVideo(activeIndex);
                     preloadVideos();
-                    
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.get('reply') === 'true' && urlParams.get('post') && urlParams.get('post') === reels[activeIndex].postId) {
-                        openComments(reels[activeIndex].postId);
-                    }
                 }
 
-                loader.style.display = 'none';
+                isAnimating = false;
             }
 
+
             initializeApp();
+
+            // Nav-bar event listeners
+            snapsNav.addEventListener('click', () => {
+                snapsNav.classList.add('active');
+                friendsNav.classList.remove('active');
+                displayReels('snaps');
+            });
+
+            friendsNav.addEventListener('click', () => {
+                friendsNav.classList.add('active');
+                snapsNav.classList.remove('active');
+                displayReels('friends');
+            });
+
 
             // Real-time update for follow button visibility
             followingDb.ref(cleanCurrentUser).on('value', async (snapshot) => {
                 const followingData = snapshot.val() || {};
                 const followingUsers = Object.keys(followingData);
-                
+
                 for (const user in userFollowStatusCache) {
                     userFollowStatusCache[user] = followingUsers.includes(user);
                 }
-                
+
                 reels.forEach(reel => {
                     const cleanNickname = reel.userNickname.startsWith('@') ? reel.userNickname.substring(1) : reel.userNickname;
                     const followButton = reel.followButton;
@@ -968,12 +1033,12 @@
                     soundIndicator.classList.remove('show');
                 }, 1000);
             }
-            
+
             /** Preloads videos for smoother playback. */
             function preloadVideos() {
                 for (let i = 0; i < reels.length; i++) {
                     const video = reels[i].video;
-                    video.preload = 'auto'; 
+                    video.preload = 'auto';
                 }
             }
 
@@ -988,7 +1053,7 @@
                     reel.video.addEventListener('loadeddata', () => {
                         reel.video.style.display = 'block';
                         if(reel.loader) reel.loader.style.display = 'none';
-                        
+
                         reel.video.muted = !allVideosSoundOn;
                         reel.video.play().catch(e => {
                             console.error("Video avtomatik başlamadı, səbəb: ", e);
@@ -998,7 +1063,7 @@
                             }
                         });
                     }, { once: true });
-                    
+
                     if (reel.video.readyState < 2) {
                         reel.video.style.display = 'none';
                         if(reel.loader) reel.loader.style.display = 'block';
@@ -1069,15 +1134,15 @@
                         const followingRef = followingDb.ref(followerUsername);
                         const followedRef = followingRef.child(followedUsername);
                         const followingCountRef = followingRef.child('following');
-                        
+
                         await followerRef.set("+");
                         await followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
-                        
+
                         await followedRef.set("+");
                         await followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
 
                         userFollowStatusCache[followedUsername] = true;
-                        
+
                         const followButton = document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`);
                         if (followButton) followButton.style.display = 'none';
 
@@ -1089,7 +1154,7 @@
                     console.error("Follow operation failed:", e);
                 }
             }
-            
+
             /**
              * Creates a new reel element with video and overlay content.
              * @param {object} post - The post data for the reel.
@@ -1098,7 +1163,7 @@
             function createReel(post) {
                 const reel = document.createElement('div');
                 reel.className = 'reel';
-                
+
                 const loader = document.createElement('div');
                 loader.className = 'reel-loader';
                 reel.appendChild(loader);
@@ -1135,7 +1200,7 @@
 
                 const userInfo = document.createElement('div');
                 userInfo.className = 'user-info';
-                
+
                 const profilePic = document.createElement('img');
                 profilePic.className = 'profile-pic';
                 profilePic.src = post.profile || 'https://via.placeholder.com/48';
@@ -1160,7 +1225,7 @@
                 followButton.className = 'follow-button';
                 followButton.textContent = 'Takib Et';
                 followButton.setAttribute('data-nickname', post.nickname);
-                
+
                 isFollowing(post.nickname).then(isFollowed => {
                     const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (cleanPostNickname === cleanCurrentUser || isFollowed) {
@@ -1183,7 +1248,7 @@
 
                 const fullText = (post.text || '').replace(/#(\w+)/g, '<a href="#">#$1</a>');
                 const shortText = fullText.split(' ').slice(0, 3).join(' ') + '...';
-                
+
                 text.innerHTML = shortText;
                 let isExpanded = false;
 
@@ -1202,7 +1267,7 @@
                 const time = document.createElement('div');
                 time.className = 'time';
                 time.textContent = post.time || '';
-                
+
                 const newInteractionSection = document.createElement('div');
                 newInteractionSection.className = 'new-interaction-section';
 
@@ -1211,7 +1276,7 @@
                 const likeIcon = document.createElement('span');
                 likeIcon.className = 'material-icons interaction-icon like-icon';
                 likeIcon.textContent = 'favorite';
-                
+
                 if (post.isLiked) {
                     likeIcon.classList.add('liked');
                 }
@@ -1234,28 +1299,28 @@
                 const commentIcon = document.createElement('span');
                 commentIcon.className = 'material-icons interaction-icon';
                 commentIcon.textContent = 'comment';
-                
+
                 commentIcon.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
                     openComments(post.id);
                 });
-                
+
                 const commentCount = document.createElement('span');
                 commentCount.className = 'interaction-count';
                 commentCount.textContent = post.commentCount || 0;
-                
+
                 commentSection.appendChild(commentIcon);
                 commentSection.appendChild(commentCount);
-                
+
                 newInteractionSection.appendChild(likeSection);
                 newInteractionSection.appendChild(commentSection);
-                
+
                 overlay.appendChild(profileInfo);
                 overlay.appendChild(text);
                 overlay.appendChild(time);
                 overlay.appendChild(newInteractionSection);
-                
+
                 reel.appendChild(overlay);
 
                 return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton, loader: loader, commentCountElement: commentCount };
@@ -1269,7 +1334,7 @@
                 if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= reels.length) return;
 
                 isAnimating = true;
-                
+
                 commentsContainer.classList.remove('open');
                 if (window.location.search.includes('reply=true')) {
                     closeComments();
@@ -1349,24 +1414,24 @@
                     }
                 }
             });
-            
+
             /** Closes the comments modal and clears its content. */
-            function closeComments() { 
-                commentsContainer.classList.remove('open'); 
-                commentsList.innerHTML = ''; 
-                
+            function closeComments() {
+                commentsContainer.classList.remove('open');
+                commentsList.innerHTML = '';
+
                 const searchString = window.location.search;
                 let userParam = null;
                 if (searchString.includes('user=')) {
                     userParam = searchString.match(/user=([^&]+)/)?.[1];
                 }
-                
+
                 let newUrl = window.location.pathname;
                 if (userParam) {
                     newUrl += `?user=${userParam}`;
                 }
                 history.replaceState({}, '', newUrl);
-                
+
                 // Remove all previous listeners to prevent multiple events
                 if (activePostId) {
                     const commentsRef = commentsDb.ref(`comments/${activePostId}`);
@@ -1374,17 +1439,17 @@
                     commentsRef.off('child_changed');
                 }
                 commentAddedListenerAttached = false;
-            } 
-            
-            closeCommentsBtn.addEventListener('click', closeComments); 
+            }
 
-            sendCommentBtn.addEventListener('click', sendComment); 
-            commentInput.addEventListener('keydown', (e) => { 
-                if (e.key === 'Enter') { 
-                    sendComment(); 
+            closeCommentsBtn.addEventListener('click', closeComments);
+
+            sendCommentBtn.addEventListener('click', sendComment);
+            commentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    sendComment();
                 }
-            }); 
-            
+            });
+
             // Checks if the user clears the reply username and resets the reply state
             commentInput.addEventListener('input', () => {
                 if (activeCommentId && !commentInput.value.startsWith('@')) {
@@ -1427,7 +1492,7 @@
                 // Highlight hashtags and replied users
                 formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
                 formattedText = formattedText.replace(/@(\w+)/g, '<a href="#" class="reply-user">@$1</a>');
-                
+
                 commentElement.innerHTML = `
                     <div class="comment-main-content">
                         <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" />
@@ -1450,7 +1515,7 @@
                             <span class="comment-like-count">0</span>
                         </div>
                     </div>`;
-                    
+
                     commentElement.innerHTML += actionsHtml;
 
                     const repliesList = document.createElement('div');
@@ -1479,7 +1544,7 @@
                         const likesData = snap.val() || {};
                         const count = likesData.count || 0;
                         const likedByUser = likesData.users && likesData.users[cleanCurrentUser];
-                        
+
                         likeCountSpan.textContent = count;
                         if (likedByUser) {
                             likeIcon.classList.add('liked');
@@ -1494,7 +1559,7 @@
                         if (repliesList.style.display === 'none' || repliesList.innerHTML === '') {
                             repliesList.style.display = 'flex';
                             repliesList.innerHTML = '';
-                            
+
                             const repliesSnapshot = await commentsDb.ref(`comments/${activePostId}/${comment.id}/replies`).once('value');
                             const replies = repliesSnapshot.val();
                             if (replies) {
@@ -1522,7 +1587,7 @@
                 // Click listener for comment bubble to trigger reply input
                 commentElement.querySelector('.comment-text-bubble').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    
+
                     if (!parentCommentId) {
                         const replyText = `@${comment.user} `;
                         commentInput.value = replyText;
@@ -1545,7 +1610,7 @@
                     clearTimeout(longPressTimer);
                     longPressTimer = null;
                 });
-                
+
                 // Append comment to the correct list (main list or replies list)
                 if (parentCommentId) {
                     const parentCommentElement = document.querySelector(`.comment-item[data-comment-id="${parentCommentId}"]`);
@@ -1591,21 +1656,21 @@
              * Shows a loading spinner until all comments are fetched.
              * @param {string} postId - The ID of the post for which to open comments.
              */
-            async function openComments(postId) { 
-                activePostId = postId; 
-                commentsContainer.classList.add('open'); 
-    
+            async function openComments(postId) {
+                activePostId = postId;
+                commentsContainer.classList.add('open');
+
                 // Update URL to reflect comments state for better navigation
-                const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`; 
-                history.pushState({ postId: postId, user: currentUser }, '', newUrl); 
-    
+                const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`;
+                history.pushState({ postId: postId, user: currentUser }, '', newUrl);
+
                 commentsList.innerHTML = ''; // Clear previous comments
                 commentsLoader.style.display = 'flex'; // Show loading spinner
-                
+
                 // Attach a listener for new comments and replies
                 if (!commentAddedListenerAttached) {
                      const commentsRef = commentsDb.ref(`comments/${postId}`);
-                     
+
                      // Listener for new main comments
                      commentsRef.on('child_added', async (snapshot) => {
                          const newComment = { id: snapshot.key, ...snapshot.val() };
@@ -1614,14 +1679,14 @@
                              await addCommentToDOM(newComment);
                          }
                      });
-                     
+
                      // Listener for new replies
                      commentsRef.on('child_changed', async (snapshot) => {
                         const updatedComment = { id: snapshot.key, ...snapshot.val() };
                         if (updatedComment.replies) {
                             const newReplyId = Object.keys(updatedComment.replies)[Object.keys(updatedComment.replies).length - 1];
                             const newReply = updatedComment.replies[newReplyId];
-                            
+
                             const existingReply = document.querySelector(`.reply-item[data-comment-id=\"${newReplyId}\"]`);
                             if (!existingReply) {
                                 // Add the new reply to its parent comment's replies list
@@ -1632,7 +1697,7 @@
                             }
                         }
                      });
-                     
+
                      // Listener for deleted comments
                      commentsRef.on('child_removed', (snapshot) => {
                          const deletedCommentId = snapshot.key;
@@ -1644,7 +1709,7 @@
 
                      commentAddedListenerAttached = true;
                 }
-                
+
                 commentsLoader.style.display = 'none'; // Hide loading spinner after initial load
             }
 
@@ -1652,14 +1717,14 @@
              * Sends a new comment or reply to Firebase.
              * Adds the new comment/reply to the DOM immediately.
              */
-            async function sendComment() { 
-                const commentText = commentInput.value.trim(); 
-                if (commentText === "" || !activePostId) return; 
-                
-                const newComment = { 
-                    user: cleanCurrentUser, 
-                    text: commentText, 
-                    timestamp: Date.now() 
+            async function sendComment() {
+                const commentText = commentInput.value.trim();
+                if (commentText === "" || !activePostId) return;
+
+                const newComment = {
+                    user: cleanCurrentUser,
+                    text: commentText,
+                    timestamp: Date.now()
                 };
 
                 const replyToUserMatch = commentText.match(/^@(\w+)/);
@@ -1671,7 +1736,7 @@
                     const newCommentRef = commentsDb.ref(`comments/${activePostId}`).push();
                     await newCommentRef.set(newComment);
                 }
-                
+
                 commentInput.value = ''; // Clear input field
             }
 
@@ -1728,7 +1793,6 @@
                     hideDeleteDialog();
                 }
             });
-
         })();
     </script>
 </body>
