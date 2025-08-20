@@ -1,0 +1,99 @@
+body {
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .user-card {
+            background-color: #282828;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .user-card img.profile-pic {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .name {
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .nickname {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .status-badge {
+            width: 18px;
+            height: 18px;
+            margin-left: 5px;
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            opacity: 0.8;
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+        }
+
+        .online-circle {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .online-circle.online {
+            background-color: #4CAF50;
+        }
+
+        .online-circle.offline {
+            background-color: #F44336;
+        }
+
+        #userList {
+            display: none;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #444;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
