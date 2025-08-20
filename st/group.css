@@ -1,0 +1,97 @@
+* {
+            outline: none !important;
+            box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #181818;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            margin-top: -30px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        h2 {
+            /* margin-top: 40px; */
+            font-size: 20px;
+            border-bottom: 2px solid #383838;
+            padding-bottom: 5px;
+        }
+        #groupList, #recommendedGroups {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .group-card {
+            background-color: #282828;
+            border-radius: 12px;
+            width: 100%;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .group-card:hover {
+            background-color: #383838;
+        }
+        .group-card img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .group-name {
+            font-size: 18px;
+            font-weight: bold;
+            word-break: break-word;
+            flex-grow: 1;
+        }
+        .join-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .join-button:hover {
+            background-color: #45a049;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid #333;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            z-index: 999;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .error-message {
+            text-align: center;
+            color: #ff6347;
+            margin-top: 20px;
+        }
+        #noGroupsMessage {
+            text-align: center;
+            color: #bbb;
+            margin-top: 20px;
+        }
