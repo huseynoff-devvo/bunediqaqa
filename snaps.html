@@ -25,7 +25,7 @@
         body {
             height: 100%;
             background: #121212FF;
-            overflow: hidden;
+            overflow: auto; /* DƏYİŞİKLİK: 'hidden' 'auto' ilə əvəz edildi */
             font-family: Arial, sans-serif;
             color: white;
         }
@@ -62,13 +62,14 @@
         }
 
         #app {
-            height: 100vh;
+            height: 100%; /* DƏYİŞİKLİK: '100vh' '100%' ilə əvəz edildi */
             width: 100vw;
             position: relative;
             overflow: hidden;
             background: #121212FF;
             scroll-behavior: smooth;
             touch-action: none;
+            display: block;
         }
 
         .reel {
@@ -104,6 +105,97 @@
             cursor: pointer;
             display: none;
         }
+        
+        /* New Styles for My Snaps Grid */
+        #my-snaps-grid {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 60px); /* Dəyişiklik: Yalnız bu elementi scrollable etmək üçün hündürlük hesablandı */
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #121212FF;
+            z-index: 1;
+            transform: translateY(100%);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            display: none;
+        }
+
+        #my-snaps-grid.active {
+            transform: translateY(0);
+            opacity: 1;
+            z-index: 2;
+            display: grid;
+        }
+        
+        .my-snap-item {
+            position: relative;
+            width: 100%;
+            height: 300px; /* Adjust height as needed */
+            background: #2b2b2b;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        
+        .my-snap-item.post {
+            height: 400px;
+        }
+        
+        .my-snap-item video,
+        .my-snap-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .my-snap-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 30%, transparent 100%);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .my-snap-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .my-snap-info .icon-text {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .my-snap-info .icon-text .material-icons {
+            font-size: 1.2rem;
+        }
+        
+        .my-snap-type {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
 
         .reel-loader {
             border: 4px solid rgba(255, 255, 255, 0.2);
@@ -258,7 +350,7 @@
         .tabs-container {
             display: flex;
             position: fixed;
-            top: 20px;
+            top: 18px;
             left: 50%;
             transform: translateX(-50%);
             /* background-color: #333; */
@@ -271,7 +363,7 @@
             background: transparent;
             border: none;
             color: rgba(255, 255, 255, 0.5);
-            font-size: 1.1rem;
+            font-size: 15px;
             font-weight: bold;
             padding: 10px 20px;
             border-radius: 20px;
@@ -284,18 +376,7 @@
             color: #fff;
             position: relative;
         }
-
-        /* .tab-button.active::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 2px;
-            background-color: #fff;
-        } */
-
+        
         #snaps-p {
             position: fixed;
             top: 5px;
@@ -589,9 +670,11 @@
         <div class="spinner"></div>
     </div>
     <div id="app"></div>
+    <div id="my-snaps-grid"></div>
 
     <div class="tabs-container">
-        <button class="tab-button active" id="snaps-nav">Snaps</button>
+        <button class="tab-button" id="my-snaps-nav">Snaplarım</button>
+        <button class="tab-button active" id="snaps-nav">Snaplar</button>
         <button class="tab-button" id="friends-nav">Dostlar</button>
     </div>
 
@@ -712,6 +795,7 @@
 
             // DOM elements
             const app = document.getElementById('app');
+            const mySnapsGrid = document.getElementById('my-snaps-grid');
             const loader = document.getElementById('loader');
             const soundIndicator = document.getElementById('sound-indicator');
             const soundIcon = soundIndicator.querySelector('span');
@@ -726,6 +810,7 @@
             const cancelDeleteBtn = document.getElementById('cancel-delete');
             const snapsNav = document.getElementById('snaps-nav');
             const friendsNav = document.getElementById('friends-nav');
+            const mySnapsNav = document.getElementById('my-snaps-nav');
 
             // URL parameters
             const userFromUrl = window.location.search.match(/user=([^&]+)/)?.[1];
@@ -737,7 +822,8 @@
             let currentUserProfilePic = 'https://via.placeholder.com/48';
 
             // Global variables
-            let reels = [];
+            let allReels = [];
+            let currentReels = [];
             let activeIndex = 0;
             let isAnimating = false;
             let allVideosSoundOn = true;
@@ -854,7 +940,7 @@
             // Real-time listener for reel likes (updates like count and icon for reels)
             reelDb.ref('likes').on('value', (snapshot) => {
                 const likesData = snapshot.val() || {};
-                reels.forEach(reel => {
+                currentReels.forEach(reel => {
                     const postLikes = likesData[reel.postId] || {};
                     const likedByUser = postLikes.users && postLikes.users[currentUser];
 
@@ -877,13 +963,20 @@
                 loader.style.display = 'flex';
                 currentUserName = await fetchUserName(cleanCurrentUser);
                 currentUserProfilePic = await fetchUserProfile(cleanCurrentUser);
+                
+                const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
+                allReels = Object.keys(postsData).map(key => {
+                    let post = JSON.parse(postsData[key]);
+                    return { id: key, ...post };
+                });
+                
                 await displayReels('snaps');
                 loader.style.display = 'none';
 
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('reply') === 'true' && urlParams.get('post')) {
                     const postIdFromUrl = urlParams.get('post');
-                    const postIndex = reels.findIndex(r => r.postId === postIdFromUrl);
+                    const postIndex = currentReels.findIndex(r => r.postId === postIdFromUrl);
                     if (postIndex !== -1) {
                         setActiveReel(postIndex);
                         openComments(postIdFromUrl);
@@ -891,95 +984,118 @@
                 }
             }
 
-            async function displayReels(mode) {
+            async function displayReels(mode, postIdToOpen = null) {
                 if(isAnimating) return;
                 isAnimating = true;
 
-                // Pause any playing video and clear the screen
-                if(reels[activeIndex] && reels[activeIndex].video) {
-                    reels[activeIndex].video.pause();
+                // Hide all main app views
+                app.style.display = 'none';
+                mySnapsGrid.style.display = 'none';
+                
+                if(currentReels[activeIndex] && currentReels[activeIndex].video) {
+                    currentReels[activeIndex].video.pause();
                 }
+
+                // Clear the content of all app views
                 while (app.firstChild) {
                     app.removeChild(app.firstChild);
                 }
-                reels = [];
+                while (mySnapsGrid.firstChild) {
+                    mySnapsGrid.removeChild(mySnapsGrid.firstChild);
+                }
+                
+                currentReels = [];
                 activeIndex = 0;
 
-                const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
+                let postsToDisplay = [];
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
 
-                let postIds = Object.keys(postsData);
-
-                if (mode === 'friends') {
+                if (mode === 'snaps') {
+                    app.style.display = 'block';
+                    postsToDisplay = shuffleArray(allReels);
+                } else if (mode === 'friends') {
+                    app.style.display = 'block';
                     const followingSnapshot = await followingDb.ref(cleanCurrentUser).once('value');
                     const followingUsers = Object.keys(followingSnapshot.val() || {});
-                    postIds = postIds.filter(id => {
-                        const post = JSON.parse(postsData[id]);
+                    postsToDisplay = allReels.filter(post => {
                         const cleanNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                         return followingUsers.includes(cleanNickname) || followingUsers.includes(`@${cleanNickname}`);
                     });
+                    postsToDisplay = shuffleArray(postsToDisplay);
+                } else if (mode === 'my-snaps') {
+                    // Filter posts for the current user
+                    postsToDisplay = allReels.filter(post => {
+                        const cleanNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
+                        return cleanNickname === cleanCurrentUser;
+                    });
+                    
+                    if(postIdToOpen) {
+                        // Open a specific snap in reel view
+                        app.style.display = 'block';
+                        const postToOpen = postsToDisplay.find(p => p.id === postIdToOpen);
+                        postsToDisplay = [postToOpen];
+                    } else {
+                        // Display the grid view
+                        mySnapsGrid.style.display = 'grid';
+                    }
                 }
-
-                postIds = shuffleArray(postIds);
-
-                const loadedReels = [];
-                for (const postId of postIds) {
-                    let post;
-                    try {
-                        post = JSON.parse(postsData[postId]);
-                    } catch (e) {
-                        console.error(`Error parsing JSON for reel ID ${postId}:`, e);
-                        continue;
+                
+                if (mode === 'snaps' || mode === 'friends' || postIdToOpen) {
+                    const loadedReels = [];
+                    for (const post of postsToDisplay) {
+                        const profilePicUrl = await fetchUserProfile(post.nickname);
+                        post.profile = profilePicUrl;
+                        const isFollowed = await isFollowing(post.nickname);
+                        const isLiked = likesData[post.id] && likesData[post.id].users && likesData[post.id].users[currentUser];
+                        loadedReels.push({ id: post.id, isFollowed, isLiked, ...post });
                     }
 
-                    const profilePicUrl = await fetchUserProfile(post.nickname);
-                    post.profile = profilePicUrl;
+                    loadedReels.forEach(post => {
+                        const newReel = createReel(post);
+                        app.appendChild(newReel.element);
+                        currentReels.push(newReel);
 
-                    const isFollowed = await isFollowing(post.nickname);
-                    const isLiked = likesData[postId] && likesData[postId].users && likesData[postId].users[currentUser];
+                        reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
+                            const count = likeSnap.val() || 0;
+                            newReel.likeCount.textContent = count;
+                        });
 
-                    loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
-                }
-
-                loadedReels.forEach(post => {
-                    const newReel = createReel(post);
-                    app.appendChild(newReel.element);
-                    reels.push(newReel);
-
-                    reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
-                        const count = likeSnap.val() || 0;
-                        newReel.likeCount.textContent = count;
-                    });
-
-                    commentsDb.ref(`comments/${post.id}`).on('value', async (snap) => {
-                        let totalComments = 0;
-                        const commentsData = snap.val();
-                        if (commentsData) {
-                            for (const commentId in commentsData) {
-                                totalComments++; // Count the main comment
-                                if (commentsData[commentId].replies) {
-                                    totalComments += Object.keys(commentsData[commentId].replies).length; // Add reply count
+                        commentsDb.ref(`comments/${post.id}`).on('value', async (snap) => {
+                            let totalComments = 0;
+                            const commentsData = snap.val();
+                            if (commentsData) {
+                                for (const commentId in commentsData) {
+                                    totalComments++;
+                                    if (commentsData[commentId].replies) {
+                                        totalComments += Object.keys(commentsData[commentId].replies).length;
+                                    }
                                 }
                             }
-                        }
-                        newReel.commentCountElement.textContent = totalComments;
+                            newReel.commentCountElement.textContent = totalComments;
+                        });
                     });
-                });
 
-                if (reels.length > 0) {
-                    activeIndex = 0;
-                    const activeReel = reels[activeIndex];
-                    activeReel.element.classList.add('active');
-                    activeReel.element.style.transform = 'translateY(0)';
-                    activeReel.element.style.opacity = '1';
+                    if (currentReels.length > 0) {
+                        activeIndex = 0;
+                        const activeReel = currentReels[activeIndex];
+                        activeReel.element.classList.add('active');
+                        activeReel.element.style.transform = 'translateY(0)';
+                        activeReel.element.style.opacity = '1';
+                        playActiveVideo(activeIndex);
+                        preloadVideos();
+                    }
 
-                    playActiveVideo(activeIndex);
-                    preloadVideos();
+                } else if (mode === 'my-snaps' && !postIdToOpen) {
+                    postsToDisplay.forEach(post => {
+                        const snapItem = createMySnapItem(post);
+                        mySnapsGrid.appendChild(snapItem);
+                    });
+                    mySnapsGrid.classList.add('active');
+                    app.classList.remove('active');
                 }
-
+                
                 isAnimating = false;
             }
-
 
             initializeApp();
 
@@ -987,13 +1103,22 @@
             snapsNav.addEventListener('click', () => {
                 snapsNav.classList.add('active');
                 friendsNav.classList.remove('active');
+                mySnapsNav.classList.remove('active');
                 displayReels('snaps');
             });
 
             friendsNav.addEventListener('click', () => {
                 friendsNav.classList.add('active');
                 snapsNav.classList.remove('active');
+                mySnapsNav.classList.remove('active');
                 displayReels('friends');
+            });
+
+            mySnapsNav.addEventListener('click', () => {
+                mySnapsNav.classList.add('active');
+                snapsNav.classList.remove('active');
+                friendsNav.classList.remove('active');
+                displayReels('my-snaps');
             });
 
 
@@ -1006,7 +1131,7 @@
                     userFollowStatusCache[user] = followingUsers.includes(user);
                 }
 
-                reels.forEach(reel => {
+                currentReels.forEach(reel => {
                     const cleanNickname = reel.userNickname.startsWith('@') ? reel.userNickname.substring(1) : reel.userNickname;
                     const followButton = reel.followButton;
                     if (followButton) {
@@ -1019,6 +1144,88 @@
                     }
                 });
             });
+            
+            // Function to create a my-snap grid item
+            function createMySnapItem(post) {
+                const item = document.createElement('div');
+                item.className = 'my-snap-item';
+                if (post.type && post.type.toLowerCase() === 'post') {
+                    item.classList.add('post');
+                }
+                
+                let mediaElement;
+                if (post.video) {
+                    mediaElement = document.createElement('video');
+                    mediaElement.src = post.video;
+                    mediaElement.loop = true;
+                    mediaElement.muted = true;
+                    mediaElement.playsInline = true;
+                    mediaElement.autoplay = true;
+                } else if (post.image) {
+                    mediaElement = document.createElement('img');
+                    mediaElement.src = post.image;
+                }
+                
+                if (mediaElement) {
+                    item.appendChild(mediaElement);
+                }
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'my-snap-overlay';
+                
+                const typeLabel = document.createElement('div');
+                typeLabel.className = 'my-snap-type';
+                typeLabel.textContent = post.type || 'SNAP';
+                item.appendChild(typeLabel);
+                
+                const text = document.createElement('div');
+                text.className = 'my-snap-text';
+                text.textContent = post.text;
+                overlay.appendChild(text);
+                
+                const info = document.createElement('div');
+                info.className = 'my-snap-info';
+                
+                // Get likes and comments count from Firebase
+                const likes = document.createElement('div');
+                likes.className = 'icon-text';
+                likes.innerHTML = `<span class="material-icons" style="color:#ff4d4d;">favorite</span><span>0</span>`;
+                info.appendChild(likes);
+
+                reelDb.ref(`likes/${post.id}/count`).on('value', (snapshot) => {
+                    const count = snapshot.val() || 0;
+                    likes.querySelector('span:last-child').textContent = count;
+                });
+                
+                const comments = document.createElement('div');
+                comments.className = 'icon-text';
+                comments.innerHTML = `<span class="material-icons">comment</span><span>0</span>`;
+                info.appendChild(comments);
+
+                commentsDb.ref(`comments/${post.id}`).on('value', (snapshot) => {
+                    let totalComments = 0;
+                    const commentsData = snapshot.val();
+                    if (commentsData) {
+                        for (const commentId in commentsData) {
+                            totalComments++;
+                            if (commentsData[commentId].replies) {
+                                totalComments += Object.keys(commentsData[commentId].replies).length;
+                            }
+                        }
+                    }
+                    comments.querySelector('span:last-child').textContent = totalComments;
+                });
+                
+                overlay.appendChild(info);
+                item.appendChild(overlay);
+                
+                item.addEventListener('click', () => {
+                    displayReels('my-snaps', post.id);
+                });
+                
+                return item;
+            }
+
 
             /**
              * Shows the sound indicator (volume on/off icon).
@@ -1035,8 +1242,8 @@
 
             /** Preloads videos for smoother playback. */
             function preloadVideos() {
-                for (let i = 0; i < reels.length; i++) {
-                    const video = reels[i].video;
+                for (let i = 0; i < currentReels.length; i++) {
+                    const video = currentReels[i].video;
                     video.preload = 'auto';
                 }
             }
@@ -1047,7 +1254,7 @@
              * @param {number} index - The index of the active reel.
              */
             function playActiveVideo(index) {
-                const reel = reels[index];
+                const reel = currentReels[index];
                 if (reel && reel.video) {
                     reel.video.addEventListener('loadeddata', () => {
                         reel.video.style.display = 'block';
@@ -1080,7 +1287,7 @@
              * @param {number} activeIndex - The index of the currently active reel.
              */
             function pauseInactiveVideos(activeIndex) {
-                reels.forEach((r, i) => {
+                currentReels.forEach((r, i) => {
                     if (i !== activeIndex && r.video && !r.video.paused) {
                         r.video.pause();
                         r.video.currentTime = 0;
@@ -1177,7 +1384,7 @@
 
                 video.addEventListener('click', () => {
                     allVideosSoundOn = !allVideosSoundOn;
-                    reels.forEach(r => {
+                    currentReels.forEach(r => {
                         r.video.muted = !allVideosSoundOn;
                     });
                     showSoundIndicator(!allVideosSoundOn);
@@ -1324,7 +1531,7 @@
              * @param {number} newIndex - The index of the reel to make active.
              */
             function setActiveReel(newIndex) {
-                if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= reels.length) return;
+                if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= currentReels.length) return;
 
                 isAnimating = true;
 
@@ -1333,8 +1540,8 @@
                     closeComments();
                 }
 
-                const currentReel = reels[activeIndex];
-                const nextReel = reels[newIndex];
+                const currentReel = currentReels[activeIndex];
+                const nextReel = currentReels[newIndex];
 
                 pauseInactiveVideos(newIndex);
 
@@ -1361,9 +1568,9 @@
              * @param {string} direction - 'up' or 'down'.
              */
             function handleScroll(direction) {
-                if (isAnimating) return;
+                if (isAnimating || app.style.display === 'none') return;
 
-                if (direction === 'down' && activeIndex < reels.length - 1) {
+                if (direction === 'down' && activeIndex < currentReels.length - 1) {
                     setActiveReel(activeIndex + 1);
                 } else if (direction === 'up' && activeIndex > 0) {
                     setActiveReel(activeIndex - 1);
