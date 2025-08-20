@@ -179,13 +179,13 @@
             } else if (data.video) {
                 const video = document.createElement("video");
                 video.className = "post-video";
-                video.src = (data.video || "").replace(/\\/g, '').trim();
                 video.controls = false;
                 video.autoplay = true;
                 video.loop = true;
                 video.muted = true;
                 video.playsinline = true;
-                video.preload = "auto";
+                video.preload = "none"; // Lazy loading here
+                video.dataset.src = (data.video || "").replace(/\\/g, '').trim(); // Use a data attribute for the source
                 video.addEventListener('loadedmetadata', () => refreshMasonry());
                 postEl.appendChild(video);
             }
@@ -325,6 +325,7 @@
                 });
             }
             refreshMasonry();
+            setupVideoObserver(); // Setup observer after rendering
         }
         
         // This function sets up LIVE listeners for all data sources after initial load.
@@ -455,43 +456,43 @@
             setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
         }
 
-        // --- Video Pre-load Optimization ---
-        let videosToPreload = [];
-        let videosLoadedCount = 0;
+        // --- Lazy Loading Video Functionality ---
+        let videoObserver;
 
-        function preloadVideos() {
-            if (videosToPreload.length === 0) {
-                console.log("Bütün videolar yükləndi.");
-                // Bütün videolar yükləndikdən sonra loader'ı gizlət
-                document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "block";
-                return;
+        function setupVideoObserver() {
+            if ('IntersectionObserver' in window) {
+                if (videoObserver) {
+                    videoObserver.disconnect();
+                }
+                videoObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const video = entry.target;
+                            const src = video.dataset.src;
+                            if (src && !video.src) {
+                                video.src = src;
+                                video.load();
+                                video.play();
+                            }
+                            observer.unobserve(video);
+                        }
+                    });
+                }, {
+                    rootMargin: '100px 0px', // Yükləməni bir qədər qabaqcadan başlatmaq üçün
+                    threshold: 0.1 // 10% görünəndə yüklə
+                });
+
+                document.querySelectorAll('.post-video').forEach(video => {
+                    videoObserver.observe(video);
+                });
             }
-
-            const videoUrl = videosToPreload.shift();
-            const video = document.createElement('video');
-            video.src = videoUrl;
-            video.preload = 'auto';
-
-            video.addEventListener('canplaythrough', () => {
-                videosLoadedCount++;
-                console.log(`Video yükləndi: ${videosLoadedCount}/${videosToPreload.length + videosLoadedCount}`);
-                preloadVideos();
-            });
-
-            video.addEventListener('error', () => {
-                console.warn(`Video yüklənərkən xəta baş verdi: ${videoUrl}`);
-                preloadVideos();
-            });
-
-            // Start loading
-            video.load();
         }
 
         // --- Initial Load Logic ---
         initializeFirebaseApps();
 
         if (showOnlyMyPosts) {
+            // Yalnız məlumatları oxuyun, videoları yox
             Promise.all([
                 postsDb.ref("posts").once("value"),
                 videosDb.ref("reels").once("value"),
@@ -532,17 +533,9 @@
 
                 renderAllPosts();
                 
-                // Collect all video URLs and start preloading
-                videosToPreload = Object.values(postDataCache)
-                    .filter(post => post.video)
-                    .map(post => post.video.replace(/\\/g, '').trim());
-                
-                if (videosToPreload.length > 0) {
-                    preloadVideos();
-                } else {
-                    document.getElementById("loader").style.display = "none";
-                    postsContainer.style.display = "block";
-                }
+                // Məlumat yüklənməsi bitən kimi loaderi gizlət
+                document.getElementById("loader").style.display = "none";
+                postsContainer.style.display = "block";
 
                 setupLiveListeners();
 
