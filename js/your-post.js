@@ -1,4 +1,4 @@
- // ---- Firebase apps configuration ----
+// ---- Firebase apps configuration ----
 
         // posts firebase config (pasyakaaz)
         const postsFirebaseConfig = {
@@ -139,9 +139,8 @@
                 video.loop = true;
                 video.muted = true;
                 video.playsinline = true; // For mobile compatibility
-                // Set preload to 'auto' to ensure full video data is downloaded
-                video.preload = "auto";
-                // Removed event listener for 'loadedmetadata' as pre-load handles this.
+                video.preload = "metadata";
+                // Removed event listener for 'loadedmetadata' to avoid multiple refreshMasonry calls
                 mediaContainer.appendChild(video);
 
                 const label = document.createElement("div");
@@ -360,39 +359,6 @@
             }, 20);
         }
 
-        // --- Video Pre-load Optimization ---
-        let videosToPreload = [];
-        let videosLoadedCount = 0;
-
-        function preloadVideos() {
-            if (videosToPreload.length === 0) {
-                // All videos have been processed, hide loader and show content
-                document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "block";
-                console.log("Bütün videolar yükləndi.");
-                return;
-            }
-
-            const videoUrl = videosToPreload.shift();
-            const video = document.createElement('video');
-            video.src = videoUrl;
-            video.preload = 'auto'; // Ensure full video data is downloaded
-
-            video.addEventListener('canplaythrough', () => {
-                videosLoadedCount++;
-                console.log(`Video yükləndi: ${videosLoadedCount}`);
-                preloadVideos(); // Process the next video
-            });
-
-            video.addEventListener('error', () => {
-                console.warn(`Video yüklənərkən xəta baş verdi: ${videoUrl}`);
-                preloadVideos(); // Skip this video and continue with the next
-            });
-
-            // Start loading
-            video.load();
-        }
-
         // --- Initial Load Logic ---
         // Always initialize Firebase apps first
         initializeFirebaseApps();
@@ -442,21 +408,10 @@
                 tickUsers = tickSnap.val() || {};
                 premiumUsers = premiumSnap.val() || {};
 
-                // Render content first
+                // Render content, hide loader, and show grid once all initial data is ready
                 renderAllPosts();
-                
-                // Collect all video URLs and start preloading
-                videosToPreload = Object.values(postDataCache)
-                    .filter(post => post.video)
-                    .map(post => post.video.replace(/\\/g, '').trim());
-
-                if (videosToPreload.length > 0) {
-                    preloadVideos();
-                } else {
-                    // If there are no videos, hide loader and show content immediately
-                    document.getElementById("loader").style.display = "none";
-                    postsContainer.style.display = "block";
-                }
+                document.getElementById("loader").style.display = "none";
+                postsContainer.style.display = "block";
 
                 // Now set up live listeners for continuous updates after initial load
                 setupLiveListeners();
