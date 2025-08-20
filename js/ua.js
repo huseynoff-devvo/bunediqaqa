@@ -1,0 +1,277 @@
+const firebaseConfigs = {
+        users: {
+            apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+            databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com"
+        },
+        ids: {
+            apiKey: "AIzaSyD0uiBSdiQC2bPQssIgQf4kvQmMHDUsO5c",
+            databaseURL: "https://pasyak-id-default-rtdb.firebaseio.com"
+        },
+        passwords: {
+            apiKey: "AIzaSyC8nJ6jro4wDfJXnleItvDinFVCuI0OAvs",
+            databaseURL: "https://pasyak-pass-default-rtdb.firebaseio.com"
+        },
+        banned: {
+            apiKey: "AIzaSyD_wWa67YMLQI_F0Jidp09Ds_rNB1XB4Cs",
+            databaseURL: "https://pasyak-grou-default-rtdb.firebaseio.com"
+        },
+        tick: {
+            apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
+            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com"
+        },
+        premium: {
+            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
+            databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com"
+        }
+    };
+
+    const apps = {
+        users: firebase.initializeApp(firebaseConfigs.users, "users"),
+        ids: firebase.initializeApp(firebaseConfigs.ids, "ids"),
+        passwords: firebase.initializeApp(firebaseConfigs.passwords, "passwords"),
+        banned: firebase.initializeApp(firebaseConfigs.banned, "banned"),
+        tick: firebase.initializeApp(firebaseConfigs.tick, "tick"),
+        premium: firebase.initializeApp(firebaseConfigs.premium, "premium")
+    };
+
+    const db = {
+        users: apps.users.database(),
+        ids: apps.ids.database(),
+        passwords: apps.passwords.database(),
+        banned: apps.banned.database(),
+        tick: apps.tick.database(),
+        premium: apps.premium.database()
+    };
+
+    let allUsers = [];
+    let bannedList = {};
+    let tickUsers = {};
+    let premiumUsers = {};
+    let initialLoadComplete = false;
+
+    function showToast(msg) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+
+    function showConfirm(msg, onYes) {
+        const box = document.createElement("div");
+        box.className = "confirm-box";
+        box.innerHTML = `<div>${msg}</div>
+            <div class="confirm-buttons">
+                <button class="btn-yes">Bəli</button>
+                <button class="btn-no">Xeyr</button>
+            </div>`;
+        document.body.appendChild(box);
+        box.querySelector(".btn-yes").onclick = () => {
+            onYes();
+            box.remove();
+        };
+        box.querySelector(".btn-no").onclick = () => box.remove();
+    }
+
+    function getStatusBadgeUrl(nickname) {
+        const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
+        const isTick = tickUsers[cleanNickname] === "+";
+        const isPremium = premiumUsers[cleanNickname] === "+";
+
+        if (isTick && isPremium) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+        } else if (isTick) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+        } else if (isPremium) {
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+        }
+        return null;
+    }
+
+    function renderUser(name, nick, img) {
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user';
+        const isBanned = bannedList[nick];
+        const statusBadgeUrl = getStatusBadgeUrl(nick);
+        const statusBadgeHtml = statusBadgeUrl ? `<img class="status-badge" src="${statusBadgeUrl}" alt="Status" />` : '';
+
+        userDiv.onclick = () => {
+            const url = new URL(window.location);
+            url.searchParams.set('other', nick);
+            history.pushState({}, '', url);
+        };
+
+        userDiv.innerHTML = `
+            <img class="profile-pic" src="${img.trim()}" alt="${nick}">
+            <div class="user-info">
+                <div class="username">
+                    ${name}
+                    ${statusBadgeHtml}
+                </div>
+                <div class="nickname">@${nick}</div>
+            </div>
+            <div class="actions" onclick="event.stopPropagation()">
+                <span class="material-icons ${isBanned ? 'blocked' : 'unblocked'}" onclick="toggleBlock(event, '${nick}')">${isBanned ? 'block' : 'lock_open'}</span>
+                <span class="material-icons" onclick="confirmDeleteUser(event, '${nick}')">delete</span>
+            </div>
+        `;
+        document.getElementById('userList').appendChild(userDiv);
+    }
+
+    function showLoading(state) {
+        document.getElementById('loadingSpinner').style.display = state ? 'flex' : 'none';
+    }
+
+    function showUserList(state) {
+        document.getElementById('userList').style.display = state ? 'block' : 'none';
+    }
+
+    function clearUserList() {
+        document.getElementById('userList').innerHTML = '';
+    }
+    
+    function displayFilteredUsers(keyword) {
+        const filtered = allUsers.filter(user =>
+            user.nick.toLowerCase().includes(keyword.toLowerCase()) ||
+            user.name.toLowerCase().includes(keyword.toLowerCase())
+        );
+        clearUserList();
+        filtered.forEach(user => {
+            renderUser(user.name, user.nick, user.img);
+        });
+    }
+
+    // A single render function that can be called after any data change
+    function render() {
+        if (initialLoadComplete) {
+            const currentSearchValue = document.getElementById("searchInput").value;
+            displayFilteredUsers(currentSearchValue);
+        }
+    }
+
+    async function getIdByNick(nick) {
+        const snapshot = await db.ids.ref("id_info").once("value");
+        const data = snapshot.val();
+        for (let id in data) {
+            const [savedNick] = JSON.parse(data[id]);
+            if (savedNick === nick) return id;
+        }
+        return null;
+    }
+
+    function confirmDeleteUser(e, nick) {
+        e.stopPropagation();
+        showConfirm(`${nick} istifadəçisi silinsin?`, () => deleteUser(nick));
+    }
+
+    async function deleteUser(nick) {
+        const userId = await getIdByNick(nick);
+        if (!userId) {
+            showToast("ID tapılmadı.");
+            return;
+        }
+
+        const ops = [
+            db.users.ref("Users/" + nick).remove(),
+            db.ids.ref("id_info/" + userId).remove(),
+            db.passwords.ref("passwords/" + nick).remove(),
+            db.banned.ref("banned/" + nick).remove(),
+            db.tick.ref("tick/" + nick).remove(),
+            db.premium.ref("premium/" + nick).remove(),
+        ];
+
+        try {
+            await Promise.all(ops);
+            showToast(`${nick} silindi`);
+        } catch (error) {
+            showToast(`Silinmə zamanı xəta baş verdi: ${error.message}`);
+        }
+    }
+
+    async function toggleBlock(e, nick) {
+        e.stopPropagation();
+        const isBanned = bannedList[nick];
+        if (isBanned) {
+            await db.banned.ref("banned/" + nick).remove();
+            showToast(`${nick} blokdan çıxarıldı`);
+        } else {
+            await db.banned.ref("banned/" + nick).set("+");
+            showToast(`${nick} bloklandı`);
+        }
+    }
+    
+    // Asynchronous function to fetch all initial data
+    async function loadInitialData() {
+        showLoading(true);
+
+        const usersPromise = db.users.ref("Users").once("value", snapshot => {
+            const data = snapshot.val();
+            allUsers = [];
+            for (let key in data) {
+                try {
+                    const [name, nick, img] = JSON.parse(data[key]);
+                    allUsers.push({ name, nick, img });
+                } catch (e) {
+                    console.error("İstifadəçi oxunmadı:", key);
+                }
+            }
+        });
+
+        const bannedPromise = db.banned.ref("banned").once("value", snapshot => {
+            bannedList = snapshot.val() || {};
+        });
+
+        const tickPromise = db.tick.ref("tick").once("value", snapshot => {
+            tickUsers = snapshot.val() || {};
+        });
+
+        const premiumPromise = db.premium.ref("premium").once("value", snapshot => {
+            premiumUsers = snapshot.val() || {};
+        });
+        
+        await Promise.all([usersPromise, bannedPromise, tickPromise, premiumPromise]);
+        
+        initialLoadComplete = true;
+        render(); // Initial render after all data is loaded
+
+        showLoading(false);
+        showUserList(true);
+    }
+    
+    // --- Real-time Listeners ---
+    // These listeners will update the corresponding global variable and re-render the list
+    db.users.ref("Users").on("value", snapshot => {
+        const data = snapshot.val();
+        allUsers = [];
+        for (let key in data) {
+            try {
+                const [name, nick, img] = JSON.parse(data[key]);
+                allUsers.push({ name, nick, img });
+            } catch (e) {
+                console.error("İstifadəçi oxunmadı:", key);
+            }
+        }
+        render();
+    });
+
+    db.banned.ref("banned").on("value", snapshot => {
+        bannedList = snapshot.val() || {};
+        render();
+    });
+
+    db.tick.ref("tick").on("value", snapshot => {
+        tickUsers = snapshot.val() || {};
+        render();
+    });
+
+    db.premium.ref("premium").on("value", snapshot => {
+        premiumUsers = snapshot.val() || {};
+        render();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", e => {
+        const value = e.target.value;
+        displayFilteredUsers(value);
+    });
+
+    document.addEventListener('DOMContentLoaded', loadInitialData);
