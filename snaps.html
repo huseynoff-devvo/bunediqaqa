@@ -25,7 +25,7 @@
         body {
             height: 100%;
             background: #121212FF;
-            overflow: auto; /* DƏYİŞİKLİK: 'hidden' 'auto' ilə əvəz edildi */
+            overflow: auto;
             font-family: Arial, sans-serif;
             color: white;
         }
@@ -51,6 +51,42 @@
             height: 40px;
             animation: spin 1s linear infinite;
         }
+        
+        #my-snaps-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+        
+        /* New Styles for No Snaps Message */
+        #no-snaps-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 1s ease-in-out forwards;
+            display: none;
+        }
+        
+        #no-snaps-message h2 {
+            font-size: 15px;
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+        
+        #no-snaps-message p {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -40%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
 
         @keyframes spin {
             0% {
@@ -62,7 +98,7 @@
         }
 
         #app {
-            height: 100%; /* DƏYİŞİKLİK: '100vh' '100%' ilə əvəz edildi */
+            height: 100%;
             width: 100vw;
             position: relative;
             overflow: hidden;
@@ -112,7 +148,7 @@
             top: 60px;
             left: 0;
             width: 100%;
-            height: calc(100% - 60px); /* Dəyişiklik: Yalnız bu elementi scrollable etmək üçün hündürlük hesablandı */
+            height: calc(100% - 60px);
             overflow-y: auto;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -137,7 +173,7 @@
         .my-snap-item {
             position: relative;
             width: 100%;
-            height: 300px; /* Adjust height as needed */
+            height: 300px;
             background: #2b2b2b;
             border-radius: 10px;
             overflow: hidden;
@@ -195,7 +231,6 @@
             font-size: 0.8rem;
             font-weight: bold;
         }
-
 
         .reel-loader {
             border: 4px solid rgba(255, 255, 255, 0.2);
@@ -350,7 +385,7 @@
         .tabs-container {
             display: flex;
             position: fixed;
-            top: 18px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             /* background-color: #333; */
@@ -670,7 +705,13 @@
         <div class="spinner"></div>
     </div>
     <div id="app"></div>
-    <div id="my-snaps-grid"></div>
+    <div id="my-snaps-grid">
+        <div id="my-snaps-loader" class="spinner"></div>
+        <div id="no-snaps-message">
+            <h2>Hələ heç bir snapınız yoxdur.</h2>
+            <p>Snap yaratmağa başlamaq üçün profilə keçin.</p>
+        </div>
+    </div>
 
     <div class="tabs-container">
         <button class="tab-button" id="my-snaps-nav">Snaplarım</button>
@@ -796,6 +837,8 @@
             // DOM elements
             const app = document.getElementById('app');
             const mySnapsGrid = document.getElementById('my-snaps-grid');
+            const mySnapsLoader = document.getElementById('my-snaps-loader');
+            const noSnapsMessage = document.getElementById('no-snaps-message');
             const loader = document.getElementById('loader');
             const soundIndicator = document.getElementById('sound-indicator');
             const soundIcon = soundIndicator.querySelector('span');
@@ -1000,9 +1043,12 @@
                 while (app.firstChild) {
                     app.removeChild(app.firstChild);
                 }
-                while (mySnapsGrid.firstChild) {
-                    mySnapsGrid.removeChild(mySnapsGrid.firstChild);
-                }
+                // Clear the content of the my-snaps grid, but keep loader and no-snaps message
+                const mySnapsItems = mySnapsGrid.querySelectorAll('.my-snap-item');
+                mySnapsItems.forEach(item => item.remove());
+
+                mySnapsLoader.style.display = 'none';
+                noSnapsMessage.style.display = 'none';
                 
                 currentReels = [];
                 activeIndex = 0;
@@ -1037,6 +1083,24 @@
                     } else {
                         // Display the grid view
                         mySnapsGrid.style.display = 'grid';
+                        mySnapsGrid.classList.add('active');
+                        app.classList.remove('active');
+
+                        if (postsToDisplay.length === 0) {
+                            mySnapsLoader.style.display = 'none';
+                            noSnapsMessage.style.display = 'block';
+                        } else {
+                            mySnapsLoader.style.display = 'block';
+                            noSnapsMessage.style.display = 'none';
+
+                            setTimeout(async () => {
+                                postsToDisplay.forEach(post => {
+                                    const snapItem = createMySnapItem(post);
+                                    mySnapsGrid.appendChild(snapItem);
+                                });
+                                mySnapsLoader.style.display = 'none';
+                            }, 500); // Simulate loading time
+                        }
                     }
                 }
                 
@@ -1085,13 +1149,6 @@
                         preloadVideos();
                     }
 
-                } else if (mode === 'my-snaps' && !postIdToOpen) {
-                    postsToDisplay.forEach(post => {
-                        const snapItem = createMySnapItem(post);
-                        mySnapsGrid.appendChild(snapItem);
-                    });
-                    mySnapsGrid.classList.add('active');
-                    app.classList.remove('active');
                 }
                 
                 isAnimating = false;
