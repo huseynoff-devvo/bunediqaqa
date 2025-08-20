@@ -1,0 +1,561 @@
+(function () {
+            // Firebase configuration for reels
+            const reelFirebaseConfig = {
+                apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
+                authDomain: "pasyak-reels.firebaseapp.com",
+                projectId: "pasyak-reels",
+                storageBucket: "pasyak-reels.firebasestorage.app",
+                messagingSenderId: "635054499590",
+                appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
+                measurementId: "G-FW0KJDLF4B"
+            };
+            const reelApp = firebase.initializeApp(reelFirebaseConfig, 'reelApp');
+            const reelDb = reelApp.database();
+
+            // Firebase configuration for user profiles
+            const userFirebaseConfig = {
+                apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+                authDomain: "pasyak-user.firebaseapp.com",
+                databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+                projectId: "pasyak-user",
+                storageBucket: "pasyak-user.firebasestorage.app",
+                messagingSenderId: "898141218588",
+                appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+            };
+            const userApp = firebase.initializeApp(userFirebaseConfig, 'userApp');
+            const userDb = userApp.database();
+
+            // Firebase configuration for follows
+            const followsFirebaseConfig = {
+                apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
+                authDomain: "pasyak-follows.firebaseapp.com",
+                databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
+                projectId: "pasyak-follows",
+                storageBucket: "pasyak-follows.firebasestorage.app",
+                messagingSenderId: "571115478758",
+                appId: "1:571115478758:web:9b45de3c9169083d9a2527",
+                measurementId: "G-KHDDTM6FC9"
+            };
+            const followsApp = firebase.initializeApp(followsFirebaseConfig, 'followsApp');
+            const followsDb = followsApp.database();
+
+            // Firebase configuration for following
+            const followingFirebaseConfig = {
+                apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
+                authDomain: "pasyak-following.firebaseapp.com",
+                databaseURL: "https://pasyak-following-default-rtdb.firebaseio.com",
+                projectId: "pasyak-following",
+                storageBucket: "pasyak-following.firebasestorage.app",
+                messagingSenderId: "538884111637",
+                appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
+            };
+            const followingApp = firebase.initializeApp(followingFirebaseConfig, 'followingApp');
+            const followingDb = followingApp.database();
+
+            // DOM elements
+            const app = document.getElementById('app');
+            const loader = document.getElementById('loader');
+            const soundIndicator = document.getElementById('sound-indicator');
+            const soundIcon = soundIndicator.querySelector('span');
+
+            // URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentUser = urlParams.get("user") || "anonim";
+            const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+
+            // Global variables
+            let reels = [];
+            let activeIndex = 0;
+            let isAnimating = false;
+            let allVideosSoundOn = true;
+            const fallbackVideo = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
+            let indicatorTimeout = null;
+            let touchStartY = null;
+
+            // Cache for user profiles and follow status
+            const userProfileCache = {};
+            const userFollowStatusCache = {};
+
+            // Function to fetch user profile from the user database
+            async function fetchUserProfile(username) {
+                const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
+                if (userProfileCache[cleanUsername]) {
+                    return userProfileCache[cleanUsername];
+                }
+                try {
+                    const snapshot = await userDb.ref(`Users/${cleanUsername}`).once('value');
+                    const profileData = snapshot.val();
+                    if (profileData) {
+                        const parsedData = JSON.parse(profileData);
+                        const profilePicUrl = parsedData[2].trim();
+                        userProfileCache[cleanUsername] = profilePicUrl;
+                        return profilePicUrl;
+                    }
+                } catch (e) {
+                    console.error(`Error fetching profile for user ${cleanUsername}:`, e);
+                }
+                return 'https://via.placeholder.com/48';
+            }
+
+            // Function to check if the current user is already following the reel user
+            async function isFollowing(reelUserNickname) {
+                const cleanReelUserNickname = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
+                const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+
+                if (cleanReelUserNickname === cleanCurrentUser) {
+                    return true;
+                }
+                if (userFollowStatusCache[cleanReelUserNickname] !== undefined) {
+                    return userFollowStatusCache[cleanReelUserNickname];
+                }
+                try {
+                    let snapshot = await followingDb.ref(cleanCurrentUser).child(cleanReelUserNickname).once('value');
+                    
+                    if (!snapshot.exists()) {
+                        snapshot = await followingDb.ref(cleanCurrentUser).child(`@${cleanReelUserNickname}`).once('value');
+                    }
+
+                    const isFollowed = snapshot.exists();
+                    userFollowStatusCache[cleanReelUserNickname] = isFollowed;
+                    return isFollowed;
+                } catch (e) {
+                    console.error("Error checking follow status:", e);
+                    return false;
+                }
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            reelDb.ref('likes').on('value', (snapshot) => {
+                const likesData = snapshot.val() || {};
+                reels.forEach(reel => {
+                    const postLikes = likesData[reel.postId] || {};
+                    const likedByUser = postLikes.users && postLikes.users[currentUser];
+
+                    if (likedByUser) {
+                        reel.likeIcon.classList.add('liked');
+                    } else {
+                        reel.likeIcon.classList.remove('liked');
+                    }
+
+                    const likeCount = postLikes.count || 0;
+                    reel.likeCount.textContent = likeCount;
+                });
+            });
+
+            // Verilənlərin yüklənməsini gözləyən əsas hissə
+            reelDb.ref('reels').once('value', async (snapshot) => {
+                const postsData = snapshot.val() || {};
+                const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
+                
+                let postIds = Object.keys(postsData);
+                postIds = shuffleArray(postIds);
+
+                const loadedReels = [];
+                for (const postId of postIds) {
+                    let post;
+                    try {
+                        post = JSON.parse(postsData[postId]);
+                    } catch (e) {
+                        console.error(`Error parsing JSON for reel ID ${postId}:`, e);
+                        continue;
+                    }
+
+                    const profilePicUrl = await fetchUserProfile(post.nickname);
+                    post.profile = profilePicUrl;
+                    
+                    const isFollowed = await isFollowing(post.nickname);
+                    const isLiked = likesData[postId] && likesData[postId].users && likesData[postId].users[currentUser];
+                    
+                    loadedReels.push({ id: postId, isFollowed, isLiked, ...post });
+                }
+                
+                while(app.firstChild) {
+                    app.removeChild(app.firstChild);
+                }
+                reels = [];
+
+                loadedReels.forEach(post => {
+                    const newReel = createReel(post);
+                    app.appendChild(newReel.element);
+                    reels.push(newReel);
+                    
+                    reelDb.ref(`likes/${post.id}/count`).once('value').then(likeSnap => {
+                        const count = likeSnap.val() || 0;
+                        newReel.likeCount.textContent = count;
+                    });
+                });
+
+                if (reels.length > 0) {
+                    activeIndex = 0;
+                    const activeReel = reels[activeIndex];
+                    activeReel.element.classList.add('active');
+                    activeReel.element.style.transform = 'translateY(0)';
+                    activeReel.element.style.opacity = '1';
+
+                    playActiveVideo(activeIndex);
+                    preloadVideos();
+                }
+
+                // Yükləməni gizlət, çünki verilənlər artıq gəlib.
+                loader.style.display = 'none';
+            });
+            
+            followingDb.ref(cleanCurrentUser).on('value', async (snapshot) => {
+                const followingData = snapshot.val() || {};
+                const followingUsers = Object.keys(followingData);
+                
+                for (const user in userFollowStatusCache) {
+                    userFollowStatusCache[user] = followingUsers.includes(user);
+                }
+                
+                reels.forEach(reel => {
+                    const cleanNickname = reel.userNickname.startsWith('@') ? reel.userNickname.substring(1) : reel.userNickname;
+                    const followButton = reel.followButton;
+                    if (followButton) {
+                        if (followingUsers.includes(cleanNickname) || followingUsers.includes(`@${cleanNickname}`)) {
+                            followButton.style.display = 'none';
+                        } else {
+                            followButton.style.display = 'block';
+                        }
+                    }
+                });
+            });
+
+            function showSoundIndicator(muted) {
+                clearTimeout(indicatorTimeout);
+                soundIcon.textContent = muted ? 'volume_off' : 'volume_up';
+                soundIndicator.classList.add('show');
+                indicatorTimeout = setTimeout(() => {
+                    soundIndicator.classList.remove('show');
+                }, 1000);
+            }
+            
+            function preloadVideos() {
+                for (let i = 0; i < reels.length; i++) {
+                    const video = reels[i].video;
+                    video.preload = 'auto'; // Tüm videoları otomatik önceden yükle
+                }
+            }
+
+            function playActiveVideo(index) {
+                const reel = reels[index];
+                if (reel && reel.video) {
+                    reel.video.addEventListener('loadeddata', () => {
+                        reel.video.style.display = 'block';
+                        if(reel.loader) reel.loader.style.display = 'none';
+                        
+                        // Sadece aktif videoyu oynat
+                        reel.video.muted = !allVideosSoundOn;
+                        reel.video.play().catch(e => {
+                            console.error("Video avtomatik başlamadı, səbəb: ", e);
+                            if (e.name === 'NotAllowedError') {
+                                reel.video.muted = true;
+                                reel.video.play().then(() => showSoundIndicator(true));
+                            }
+                        });
+                    }, { once: true });
+                    
+                    if (reel.video.readyState < 2) {
+                        reel.video.style.display = 'none';
+                        if(reel.loader) reel.loader.style.display = 'block';
+                    } else {
+                         // Eğer zaten yüklüyse hemen oynat
+                        reel.video.style.display = 'block';
+                        if(reel.loader) reel.loader.style.display = 'none';
+                        reel.video.muted = !allVideosSoundOn;
+                        reel.video.play();
+                    }
+                }
+            }
+
+            function pauseInactiveVideos(activeIndex) {
+                reels.forEach((r, i) => {
+                    if (i !== activeIndex && r.video && !r.video.paused) {
+                        r.video.pause();
+                        r.video.currentTime = 0;
+                        r.video.muted = true;
+                    }
+                });
+            }
+
+            function handleLikeClick(postId) {
+                const likeUserRef = reelDb.ref(`likes/${postId}/users/${currentUser}`);
+                const likeCountRef = reelDb.ref(`likes/${postId}/count`);
+
+                likeUserRef.once('value').then(snap => {
+                    if (snap.exists()) {
+                        likeUserRef.remove();
+                        likeCountRef.transaction(currentCount => (currentCount || 1) - 1);
+                    } else {
+                        likeUserRef.set(true);
+                        likeCountRef.transaction(currentCount => (currentCount || 0) + 1);
+                    }
+                }).catch(e => {
+                    console.error("Like əməliyyatı uğursuz oldu: ", e);
+                });
+            }
+
+            async function handleFollowClick(reelUserNickname) {
+                const followerUsername = cleanCurrentUser;
+                const followedUsername = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
+
+                if (followerUsername === followedUsername) {
+                    console.log("Kendi kendinizi takip edemezsiniz.");
+                    return;
+                }
+
+                try {
+                    const isFollowed = await isFollowing(followedUsername);
+                    if (!isFollowed) {
+                        const followsRef = followsDb.ref(followedUsername);
+                        const followerRef = followsRef.child(followerUsername);
+                        const followCountRef = followsRef.child('follow');
+
+                        const followingRef = followingDb.ref(followerUsername);
+                        const followedRef = followingRef.child(followedUsername);
+                        const followingCountRef = followingRef.child('following');
+                        
+                        await followerRef.set("+");
+                        await followCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+                        
+                        await followedRef.set("+");
+                        await followingCountRef.transaction(currentCount => (parseInt(currentCount) || 0) + 1);
+
+                        userFollowStatusCache[followedUsername] = true;
+                        
+                        const followButton = document.querySelector(`.follow-button[data-nickname="${reelUserNickname}"]`);
+                        if (followButton) followButton.style.display = 'none';
+
+                        console.log(`User ${followerUsername} is now following ${followedUsername}.`);
+                    } else {
+                        console.log(`User ${followerUsername} is already following ${followedUsername}. No action needed.`);
+                    }
+                } catch (e) {
+                    console.error("Follow operation failed:", e);
+                }
+            }
+            
+            function createReel(post) {
+                const reel = document.createElement('div');
+                reel.className = 'reel';
+                
+                const loader = document.createElement('div');
+                loader.className = 'reel-loader';
+                reel.appendChild(loader);
+
+                const video = document.createElement('video');
+                video.src = post.video && post.video.trim() ? post.video.trim() : fallbackVideo;
+                video.loop = true;
+                video.playsInline = true;
+                video.muted = !allVideosSoundOn;
+                video.preload = 'auto';
+                video.style.display = 'none';
+
+                video.onerror = () => {
+                    console.warn(`Video yüklənmədi: ${video.src}. Fallback tətbiq olunur.`);
+                    video.src = fallbackVideo;
+                    video.load();
+                };
+
+                video.addEventListener('click', () => {
+                    allVideosSoundOn = !allVideosSoundOn;
+                    reels.forEach(r => {
+                        r.video.muted = !allVideosSoundOn;
+                    });
+                    showSoundIndicator(!allVideosSoundOn);
+                });
+
+                reel.appendChild(video);
+
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+
+                const profileInfo = document.createElement('div');
+                profileInfo.className = 'profile-info';
+
+                const userInfo = document.createElement('div');
+                userInfo.className = 'user-info';
+                
+                const profilePic = document.createElement('img');
+                profilePic.className = 'profile-pic';
+                profilePic.src = post.profile || 'https://via.placeholder.com/48';
+
+                const userDetails = document.createElement('div');
+                userDetails.className = 'user-details';
+                const userid = document.createElement('div');
+                userid.className = 'userid';
+                userid.textContent = post.user;
+                const nickname = document.createElement('div');
+                nickname.className = 'nickname';
+                nickname.textContent = post.nickname;
+
+                userDetails.appendChild(userid);
+                userDetails.appendChild(nickname);
+                userInfo.appendChild(profilePic);
+                userInfo.appendChild(userDetails);
+
+                profileInfo.appendChild(userInfo);
+
+                const followButton = document.createElement('button');
+                followButton.className = 'follow-button';
+                followButton.textContent = 'Takib Et';
+                followButton.setAttribute('data-nickname', post.nickname);
+                
+                isFollowing(post.nickname).then(isFollowed => {
+                    const cleanPostNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
+                    if (cleanPostNickname === cleanCurrentUser || isFollowed) {
+                        followButton.style.display = 'none';
+                    } else {
+                        followButton.style.display = 'block';
+                    }
+                });
+
+                followButton.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFollowClick(post.nickname);
+                });
+
+                profileInfo.appendChild(followButton);
+
+                const text = document.createElement('div');
+                text.className = 'text';
+
+                // Video mətnini qısa və tam formatda saxlayın
+                const fullText = (post.text || '').replace(/#(\w+)/g, '<a href="#">#$1</a>');
+                const shortText = fullText.split(' ').slice(0, 3).join(' ') + '...';
+                
+                text.innerHTML = shortText;
+                let isExpanded = false;
+
+                text.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (fullText.split(' ').length > 3) {
+                        if (isExpanded) {
+                            text.innerHTML = shortText;
+                        } else {
+                            text.innerHTML = fullText;
+                        }
+                        isExpanded = !isExpanded;
+                    }
+                });
+
+                const time = document.createElement('div');
+                time.className = 'time';
+                time.textContent = post.time || '';
+
+                const likeSection = document.createElement('div');
+                likeSection.className = 'like-section';
+                const likeIcon = document.createElement('span');
+                likeIcon.className = 'material-icons like-icon';
+                likeIcon.textContent = 'favorite';
+                
+                if (post.isLiked) {
+                    likeIcon.classList.add('liked');
+                }
+
+                const likeCount = document.createElement('span');
+                likeCount.className = 'like-count';
+                likeCount.textContent = post.likesCount || 0;
+
+                likeSection.appendChild(likeIcon);
+                likeSection.appendChild(likeCount);
+
+                likeSection.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLikeClick(post.id);
+                });
+
+                overlay.appendChild(profileInfo);
+                overlay.appendChild(text);
+                overlay.appendChild(time);
+                overlay.appendChild(likeSection);
+
+                reel.appendChild(overlay);
+
+                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton, loader: loader };
+            }
+
+            function setActiveReel(newIndex) {
+                if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= reels.length) return;
+
+                isAnimating = true;
+
+                const currentReel = reels[activeIndex];
+                const nextReel = reels[newIndex];
+
+                pauseInactiveVideos(newIndex);
+
+                currentReel.element.style.transform = (newIndex > activeIndex) ? 'translateY(-100%)' : 'translateY(100%)';
+                currentReel.element.style.opacity = '0';
+                currentReel.element.style.zIndex = '1';
+                currentReel.element.classList.remove('active');
+
+                nextReel.element.style.transform = 'translateY(0)';
+                nextReel.element.style.opacity = '1';
+                nextReel.element.style.zIndex = '2';
+                nextReel.element.classList.add('active');
+
+                activeIndex = newIndex;
+
+                setTimeout(() => {
+                    isAnimating = false;
+                    playActiveVideo(activeIndex);
+                }, 500);
+            }
+
+            function handleScroll(direction) {
+                if (isAnimating) return;
+
+                if (direction === 'down' && activeIndex < reels.length - 1) {
+                    setActiveReel(activeIndex + 1);
+                } else if (direction === 'up' && activeIndex > 0) {
+                    setActiveReel(activeIndex - 1);
+                }
+            }
+
+            let wheelTimeout = null;
+            window.addEventListener('wheel', e => {
+                if (!isAnimating) {
+                    clearTimeout(wheelTimeout);
+                    wheelTimeout = setTimeout(() => {
+                        if (e.deltaY > 0) {
+                            handleScroll('down');
+                        } else if (e.deltaY < 0) {
+                            handleScroll('up');
+                        }
+                    }, 80);
+                }
+            });
+
+            app.addEventListener('touchstart', e => {
+                if (!isAnimating && e.touches.length === 1) {
+                    touchStartY = e.touches[0].clientY;
+                }
+            });
+
+            app.addEventListener('touchend', e => {
+                touchStartY = null;
+            });
+
+            app.addEventListener('touchmove', e => {
+                if (!isAnimating && touchStartY !== null) {
+                    const yDiff = touchStartY - e.touches[0].clientY;
+                    if (Math.abs(yDiff) > 50) {
+                        if (yDiff > 0) {
+                            handleScroll('down');
+                        } else if (yDiff < 0) {
+                            handleScroll('up');
+                        }
+                    }
+                }
+            });
+        })();
