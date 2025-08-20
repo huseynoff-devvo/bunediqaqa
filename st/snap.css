@@ -1,0 +1,274 @@
+* {
+            outline: none !important;
+            box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: #121212FF;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212FF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #app {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+            background: #121212FF;
+            scroll-behavior: smooth;
+            touch-action: none;
+        }
+
+        .reel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212FF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .reel.active {
+            opacity: 1;
+            transform: translateY(0);
+            z-index: 2;
+            pointer-events: auto;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #121212FF;
+            user-select: none;
+            cursor: pointer;
+            display: none;
+        }
+        
+        .reel-loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 30%, transparent 100%);
+            z-index: 3;
+            color: white;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            justify-content: space-between;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-pic {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            margin-right: 10px;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .userid {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+        }
+
+        .nickname {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .follow-button {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .follow-button:hover {
+            background-color: white;
+            color: black;
+        }
+
+        .text {
+            margin: 6px 0;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .text a {
+            color: #38b1f7;
+            text-decoration: none;
+        }
+
+        .time {
+            font-size: 0.75rem;
+            color: #777;
+        }
+
+        .like-section {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            width: fit-content;
+        }
+
+        .like-icon {
+            font-size: 28px;
+            margin-right: 8px;
+            color: white;
+            transition: color 0.3s;
+        }
+
+        .like-icon.liked {
+            color: #ff4d4d;
+        }
+
+        #sound-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #sound-indicator.show {
+            opacity: 1;
+        }
+
+        #sound-indicator .material-icons {
+            font-size: 32px;
+            color: white;
+        }
+
+        #snaps-title {
+            position: fixed;
+            top: 10px;
+            left: 20px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border-radius: 12px;
+        }
+
+        #snaps-a {
+            position: fixed;
+            top: 10px;
+            left: 85px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border-radius: 12px;
+        }
+
+        #snaps-p {
+            position: fixed;
+            top: 5px;
+            right: 5px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border-radius: 12px;
+        }
