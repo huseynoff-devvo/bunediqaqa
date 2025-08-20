@@ -384,7 +384,7 @@
                 video.loop = true;
                 video.muted = true;
                 video.playsinline = true;
-                video.preload = "metadata";
+                video.preload = "auto";
                 video.addEventListener('loadedmetadata', () => refreshMasonry());
                 postEl.appendChild(video);
             }
@@ -513,7 +513,6 @@
                 return b.localeCompare(a);
             });
 
-            // Only show "no posts" message if myPosts=true AND there are no posts after filtering
             if (postIds.length === 0 && showOnlyMyPosts) {
                  noPostsMessage.style.display = "flex";
             } else {
@@ -655,22 +654,52 @@
             setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
         }
 
+        // --- Video Pre-load Optimization ---
+        let videosToPreload = [];
+        let videosLoadedCount = 0;
+
+        function preloadVideos() {
+            if (videosToPreload.length === 0) {
+                console.log("Bütün videolar yükləndi.");
+                // Bütün videolar yükləndikdən sonra loader'ı gizlət
+                document.getElementById("loader").style.display = "none";
+                postsContainer.style.display = "block";
+                return;
+            }
+
+            const videoUrl = videosToPreload.shift();
+            const video = document.createElement('video');
+            video.src = videoUrl;
+            video.preload = 'auto';
+
+            video.addEventListener('canplaythrough', () => {
+                videosLoadedCount++;
+                console.log(`Video yükləndi: ${videosLoadedCount}/${videosToPreload.length + videosLoadedCount}`);
+                preloadVideos();
+            });
+
+            video.addEventListener('error', () => {
+                console.warn(`Video yüklənərkən xəta baş verdi: ${videoUrl}`);
+                preloadVideos();
+            });
+
+            // Start loading
+            video.load();
+        }
+
         // --- Initial Load Logic ---
-        // Always initialize Firebase apps first
         initializeFirebaseApps();
 
         if (showOnlyMyPosts) {
-            // Fetch all initial data using .once()
             Promise.all([
                 postsDb.ref("posts").once("value"),
                 videosDb.ref("reels").once("value"),
                 commentsDb.ref("comments").once("value"),
-                postsDb.ref("likes").once("value"), // Fetch initial likes for posts
-                videosDb.ref("likes").once("value"), // Fetch initial likes for reels
+                postsDb.ref("likes").once("value"),
+                videosDb.ref("likes").once("value"),
                 tickDb.ref("tick").once("value"),
                 premiumDb.ref("premium").once("value")
             ]).then(([postsSnap, reelsSnap, commentsSnap, postLikesSnap, reelLikesSnap, tickSnap, premiumSnap]) => {
-                // Populate postDataCache with initial content
                 postDataCache = {};
                 postsSnap.forEach(snap => {
                     try {
@@ -685,30 +714,35 @@
                      } catch (e) { console.warn("videosDb (initial): Video yüklənərkən xəta:", snap.key, e); }
                 });
 
-                // Populate commentCountCache
                 commentCountCache = {};
                 commentsSnap.forEach(snap => {
                     const commentsForPost = snap.val();
                     if (commentsForPost) { commentCountCache[snap.key] = Object.keys(commentsForPost).length; }
                 });
 
-                // Populate likeCache
                 likeCache = {};
                 const allPostLikes = postLikesSnap.val() || {};
                 Object.keys(allPostLikes).forEach(postId => { likeCache[postId] = allPostLikes[postId]; });
                 const allReelLikes = reelLikesSnap.val() || {};
                 Object.keys(allReelLikes).forEach(postId => { likeCache[postId] = allReelLikes[postId]; });
 
-                // Populate tick and premium users
                 tickUsers = tickSnap.val() || {};
                 premiumUsers = premiumSnap.val() || {};
 
-                // Render content, hide loader, and show grid once all initial data is ready
                 renderAllPosts();
-                document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "block";
+                
+                // Collect all video URLs and start preloading
+                videosToPreload = Object.values(postDataCache)
+                    .filter(post => post.video)
+                    .map(post => post.video.replace(/\\/g, '').trim());
+                
+                if (videosToPreload.length > 0) {
+                    preloadVideos();
+                } else {
+                    document.getElementById("loader").style.display = "none";
+                    postsContainer.style.display = "block";
+                }
 
-                // Now set up live listeners for continuous updates
                 setupLiveListeners();
 
             }).catch(error => {
@@ -720,7 +754,6 @@
             });
 
         } else {
-            // If myPosts=true is not in URL, hide loader and all content immediately.
             document.getElementById("loader").style.display = "none";
             postsContainer.style.display = "none";
             noPostsMessage.style.display = "none";
