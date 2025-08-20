@@ -1,6 +1,4 @@
-// ---- Firebase apps configuration ----
-
-        // posts firebase config (pasyakaaz)
+ // ---- Firebase apps initialization ----
         const postsFirebaseConfig = {
             apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
             authDomain: "pasyakaaz.firebaseapp.com",
@@ -9,7 +7,6 @@
             messagingSenderId: "289629756800",
             appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
         };
-        // videos firebase config (pasyak-reels)
         const videosFirebaseConfig = {
             apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
             authDomain: "pasyak-reels.firebaseapp.com",
@@ -20,7 +17,6 @@
             appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
             measurementId: "G-FW0KJDLF4B"
         };
-        // comments firebase config (reply-eb654)
         const commentsFirebaseConfig = {
             apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
             authDomain: "reply-eb654.firebaseapp.com",
@@ -30,8 +26,6 @@
             messagingSenderId: "292801573334",
             appId: "1:292801573334:web:2486813d8fe45865d0f477"
         };
-
-        // Tick & premium configs (sənin konfiqlar)
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
             authDomain: "pasyak-tick.firebaseapp.com",
@@ -59,19 +53,16 @@
         const postsContainer = document.getElementById("posts-grid");
         const noPostsMessage = document.getElementById("no-posts");
 
-        // URL params
         const urlParams = new URLSearchParams(window.location.search);
-        const currentUser = (urlParams.get("user") || "").trim();
+        const currentUser = (urlParams.get("user") || "anonim").trim();
         const showOnlyMyPosts = urlParams.get("myPosts") === "true";
 
-        let likeCache = {}; // Cache for likes data
-        let commentCountCache = {}; // Cache for comment counts
-        let postDataCache = {}; // Cache for all post/reel content data
-        
-        let tickUsers = {}; // Cache for tick user status
-        let premiumUsers = {}; // Cache for premium user status
+        let likeCache = {};
+        let commentCountCache = {};
+        let postDataCache = {};
+        let tickUsers = {};
+        let premiumUsers = {};
 
-        // Function to initialize all Firebase apps and their database references
         function initializeFirebaseApps() {
             postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
             videosApp = firebase.initializeApp(videosFirebaseConfig, "videosApp");
@@ -86,71 +77,50 @@
             premiumDb = premiumApp.database();
         }
 
-        // --- Data Rendering Logic ---
-
-        // Helper function to get status badge URL for a given nickname
         function getStatusBadge(nickname = "") {
             const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
             const isTick = tickUsers[cleanNickname] === "+";
             const isPremium = premiumUsers[cleanNickname] === "+";
             if (isTick && isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
             if (isTick) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
-            if (isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+            if (isPremium) return "https://res.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
             return null;
         }
 
-        // Function to render a single post element (can be image or video/reel)
-        function renderPost(postId, data) {
-            if (!data) return null; // If no data, return null
-
-            // Filter by user if showOnlyMyPosts is true (safety check for live updates)
-            if (showOnlyMyPosts) {
-                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-                const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
-                if (postNick !== cleanCurrent) return null;
-            }
-
-            const postEl = document.createElement("div");
+        function createPostElement(postId, data) {
+            let postEl = document.createElement("div");
             postEl.className = "post";
             postEl.id = "post_" + postId;
+            postEl.dataset.time = data.time;
 
-            // Media container for image/video and label
-            const mediaContainer = document.createElement("div");
-            mediaContainer.className = "post-media-container";
-            
+            if (data.image || data.video) {
+                const badge = document.createElement("div");
+                badge.className = "post-type-badge";
+                badge.textContent = data.video ? "Snap" : "Post";
+                postEl.appendChild(badge);
+            }
+
             if (data.image) {
                 const image = document.createElement("img");
                 image.className = "post-image";
                 image.src = (data.image || "").replace(/\\/g, '').trim();
-                // Removed event listener for 'load' to avoid multiple refreshMasonry calls
-                mediaContainer.appendChild(image);
-                
-                const label = document.createElement("div");
-                label.className = "media-label";
-                label.textContent = "POST";
-                mediaContainer.appendChild(label);
-
+                image.addEventListener('load', () => refreshMasonry());
+                postEl.appendChild(image);
             } else if (data.video) {
                 const video = document.createElement("video");
                 video.className = "post-video";
-                video.src = (data.video || "").replace(/\\/g, '').trim();
                 video.controls = false;
-                video.autoplay = true;
+                video.autoplay = false;
                 video.loop = true;
                 video.muted = true;
-                video.playsinline = true; // For mobile compatibility
-                video.preload = "metadata";
-                // Removed event listener for 'loadedmetadata' to avoid multiple refreshMasonry calls
-                mediaContainer.appendChild(video);
-
-                const label = document.createElement("div");
-                label.className = "media-label";
-                label.textContent = "Snap";
-                mediaContainer.appendChild(label);
+                video.playsinline = true;
+                video.preload = "none";
+                video.dataset.src = (data.video || "").replace(/\\/g, '').trim();
+                video.addEventListener('loadedmetadata', () => refreshMasonry());
+                postEl.appendChild(video);
+                setupVideoObserver();
             }
-            postEl.appendChild(mediaContainer); // Append media container regardless of type, if it contains media
 
-            // Post text content
             if (data.text) {
                 const text = document.createElement("div");
                 text.className = "post-text";
@@ -158,60 +128,40 @@
                 postEl.appendChild(text);
             }
 
-            // Post footer (for like and comment displays)
             const postFooter = document.createElement("div");
             postFooter.className = "post-footer";
             
-            // LİKE SAYI GÖSTƏRİCİSİ (Static display, no button, no click functionality)
-            let currentLikeCount = 0;
-            const postLikes = likeCache[postId];
+            // Like count display
+            const likeCount = likeCache[postId] ? (likeCache[postId].count || Object.keys(likeCache[postId].users || {}).length) : 0;
+            const likeDisplay = document.createElement("div");
+            likeDisplay.className = "like-display";
+            likeDisplay.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${likeCount}</span>`;
+            postFooter.appendChild(likeDisplay);
 
-            if (postLikes && postLikes.users) {
-                currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
-            } else if (postLikes) { // old structure for likes
-                currentLikeCount = Object.keys(postLikes).length;
-            }
-
-            const likeSummary = document.createElement("div");
-            likeSummary.className = "like-summary";
-            likeSummary.innerHTML = `<span class="material-icons">favorite</span><span>${currentLikeCount || 0}</span>`;
-            postFooter.appendChild(likeSummary);
-
-            // COMMENT SAYI GÖSTƏRİCİSİ (Static display for reels)
+            // Comment count display (only for videos)
             if (data.video) {
-                const commentSummary = document.createElement("div");
-                commentSummary.className = "comment-summary";
+                const commentBtn = document.createElement("button");
+                commentBtn.className = "comment-button";
                 const commentCount = commentCountCache[postId] || 0;
-                commentSummary.innerHTML = `<span class="material-icons">comment</span><span>${commentCount}</span>`;
-                postFooter.appendChild(commentSummary);
+                commentBtn.innerHTML = `<span class="material-icons">comment</span><span class="comment-count">${commentCount}</span>`;
+                postFooter.appendChild(commentBtn);
             }
-
-            // Delete button is completely removed from renderPost
 
             postEl.appendChild(postFooter);
-
             return postEl;
         }
 
-        // Confirm dialog actions are removed as delete functionality is removed
-        // No delete button means these functions are not called from UI.
-
-        // Function to render all posts based on current caches and filters
         function renderAllPosts() {
-            postsContainer.innerHTML = ""; // Clear existing posts to rebuild
+            postsContainer.innerHTML = "";
             let postIds = Object.keys(postDataCache || {});
+            const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
 
-            // Filter posts for the current user if showOnlyMyPosts is true
-            if (showOnlyMyPosts) {
-                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-                postIds = postIds.filter(id => {
-                    const p = postDataCache[id] || {};
-                    const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-                    return nick === cleanCurrent; // Include both image and video posts for the user
-                });
-            }
-
-            // Sort posts by time (descending)
+            postIds = postIds.filter(id => {
+                const p = postDataCache[id] || {};
+                const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
+                return nick === cleanCurrent;
+            });
+            
             postIds.sort((a,b) => {
                 const aData = postDataCache[a];
                 const bData = postDataCache[b];
@@ -221,71 +171,110 @@
                 return b.localeCompare(a);
             });
 
-            // Show/hide "no posts" message based on filtered results
-            if (postIds.length === 0 && showOnlyMyPosts) {
+            if (postIds.length === 0) {
                  noPostsMessage.style.display = "flex";
+                 postsContainer.style.display = "none";
             } else {
                 noPostsMessage.style.display = "none";
+                postsContainer.style.display = "block";
                 postIds.forEach(postId => {
                     const data = postDataCache[postId];
-                    const postEl = renderPost(postId, data);
+                    const postEl = createPostElement(postId, data);
                     if (postEl) postsContainer.appendChild(postEl);
                 });
             }
-            refreshMasonry(); // Force masonry re-layout after all posts are added
+            refreshMasonry();
+            setupVideoObserver();
+        }
+
+        function updateLikeCounts() {
+            Object.keys(postDataCache).forEach(postId => {
+                const postElement = document.getElementById(`post_${postId}`);
+                if (postElement) {
+                    const postLikes = likeCache[postId];
+                    let currentLikeCount = 0;
+                    if (postLikes && postLikes.users) {
+                        currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
+                    } else if (postLikes) {
+                        currentLikeCount = Object.keys(postLikes).length;
+                    }
+
+                    const likeCountElement = postElement.querySelector('.like-count');
+                    if (likeCountElement) {
+                        likeCountElement.textContent = currentLikeCount;
+                    }
+                }
+            });
+        }
+
+        function updateCommentCounts() {
+            Object.keys(postDataCache).forEach(postId => {
+                const postElement = document.getElementById(`post_${postId}`);
+                const postData = postDataCache[postId];
+                if (postElement && postData && postData.video) {
+                    const commentCountElement = postElement.querySelector('.comment-count');
+                    if (commentCountElement) {
+                        commentCountElement.textContent = commentCountCache[postId] || 0;
+                    }
+                }
+            });
+        }
+
+        function refreshMasonry() {
+            postsContainer.style.visibility = 'hidden';
+            setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
+        }
+
+        let videoObserver;
+        function setupVideoObserver() {
+            if ('IntersectionObserver' in window) {
+                if (videoObserver) {
+                    videoObserver.disconnect();
+                }
+                videoObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const video = entry.target;
+                            const src = video.dataset.src;
+                            if (src && !video.src) {
+                                video.src = src;
+                                video.load();
+                                video.play();
+                            }
+                            observer.unobserve(video);
+                        } else {
+                           const video = entry.target;
+                           video.pause();
+                        }
+                    });
+                }, {
+                    rootMargin: '100px 0px',
+                    threshold: 0.1
+                });
+
+                document.querySelectorAll('.post-video').forEach(video => {
+                    videoObserver.observe(video);
+                });
+            }
         }
         
-        // This function sets up LIVE listeners for all relevant data sources.
-        // It's called once after the initial data load is complete.
         function setupLiveListeners() {
-            // Live listener for posts content
-            postsDb.ref("posts").on("value", (snapshot) => {
-                const newPostsData = {};
-                snapshot.forEach(snap => {
-                    try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        newPostsData[snap.key] = {...data, sourceDb: postsDb};
-                    } catch (e) { console.warn("postsDb (live update): Post yüklənərkən xəta:", snap.key, e); }
-                });
-                // Merge new posts data with existing reels data
-                postDataCache = {
-                    ...Object.fromEntries(Object.entries(postDataCache).filter(([, val]) => val.sourceDb === videosDb)),
-                    ...newPostsData
-                };
-                renderAllPosts();
-            });
-
-            // Live listener for reels content
-            videosDb.ref("reels").on("value", (snapshot) => {
-                const newReelsData = {};
-                snapshot.forEach(snap => {
-                     try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        newReelsData[snap.key] = {...data, sourceDb: videosDb};
-                     } catch (e) { console.warn("videosDb (live update): Video yüklənərkən xəta:", snap.key, e); }
-                });
-                // Merge new reels data with existing posts data
-                postDataCache = {
-                    ...Object.fromEntries(Object.entries(postDataCache).filter(([, val]) => val.sourceDb === postsDb)),
-                    ...newReelsData
-                };
-                renderAllPosts();
-            });
-            
-            // Live listener for likes (postsDb and videosDb)
             postsDb.ref("likes").on("value", (snapshot) => {
                 const likesData = snapshot.val() || {};
-                likeCache = { ...likeCache, ...likesData }; // Merge new likes data
-                updateLikeDisplays(); // Call a general update function for like counts
+                Object.keys(likesData).forEach(postId => {
+                    likeCache[postId] = likesData[postId];
+                });
+                updateLikeCounts();
             });
 
             videosDb.ref("likes").on("value", (snapshot) => {
                  const likesData = snapshot.val() || {};
-                 likeCache = { ...likeCache, ...likesData }; // Merge new likes data
-                 updateLikeDisplays(); // Call a general update function for like counts
+                 Object.keys(likesData).forEach(postId => {
+                    likeCache[postId] = likesData[postId];
+                 });
+                 updateLikeCounts();
             });
 
-            // Live listener for comments
             commentsDb.ref("comments").on("value", (snapshot) => {
                 commentCountCache = {};
                 const commentsData = snapshot.val() || {};
@@ -295,77 +284,15 @@
                         commentCountCache[postId] = Object.keys(commentsForPost).length;
                     }
                 });
-                updateCommentDisplays(); // Call a general update function for comment counts
+                updateCommentCounts();
             });
-
-            // Live listener for tick users
-            tickDb.ref("tick").on("value", (snapshot) => {
-                tickUsers = snapshot.val() || {};
-                renderAllPosts(); // Re-render to update badges
-            });
-
-            // Live listener for premium users
-            premiumDb.ref("premium").on("value", (snapshot) => {
-                premiumUsers = snapshot.val() || {};
-                renderAllPosts(); // Re-render to update badges
-            });
-        }
-        
-        // Updates static like counts on existing post elements
-        function updateLikeDisplays() {
-            Object.keys(postDataCache).forEach(postId => {
-                const postElement = document.getElementById(`post_${postId}`);
-                if (postElement) {
-                    const postLikes = likeCache[postId];
-                    let currentLikeCount = 0;
-                    
-                    if (postLikes && postLikes.users) {
-                        currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
-                    } else if (postLikes) { // Old like structure
-                        currentLikeCount = Object.keys(postLikes).length;
-                    }
-
-                    const likeCountSpan = postElement.querySelector('.like-summary span:last-child');
-                    if (likeCountSpan) {
-                        likeCountSpan.textContent = currentLikeCount;
-                    }
-                }
-            });
-        }
-
-        // Updates static comment counts on existing reel elements
-        function updateCommentDisplays() {
-            Object.keys(postDataCache).forEach(postId => {
-                const postElement = document.getElementById(`post_${postId}`);
-                const postData = postDataCache[postId];
-                if (postElement && postData && postData.video) { // Only update for reels
-                    const commentCountSpan = postElement.querySelector('.comment-summary span:last-child');
-                    if (commentCountSpan) {
-                        commentCountSpan.textContent = commentCountCache[postId] || 0;
-                    }
-                }
-            });
-        }
-
-        // Forces a browser reflow to correctly apply masonry layout
-        function refreshMasonry() {
-            // This now simply triggers a reflow without hiding/showing, which should prevent flicker.
-            // A small timeout is still useful to allow the browser to process DOM changes before
-            // trying to recalculate layout properties.
-            setTimeout(() => {
-                // Trigger a reflow/repaint if needed, e.g., by accessing an offset property.
-                // This is often implicitly handled by browser if content changes, but can be forced.
-                postsContainer.offsetWidth; // Force reflow
-            }, 20);
         }
 
         // --- Initial Load Logic ---
-        // Always initialize Firebase apps first
         initializeFirebaseApps();
-
-        // Check if `myPosts=true` is in the URL to determine initial display behavior
-        if (showOnlyMyPosts) {
-            // If `myPosts=true` is present, fetch all necessary initial data using .once()
+        const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
+        
+        if (showOnlyMyPosts && cleanCurrentUser === "huseynoff") {
             Promise.all([
                 postsDb.ref("posts").once("value"),
                 videosDb.ref("reels").once("value"),
@@ -375,59 +302,57 @@
                 tickDb.ref("tick").once("value"),
                 premiumDb.ref("premium").once("value")
             ]).then(([postsSnap, reelsSnap, commentsSnap, postLikesSnap, reelLikesSnap, tickSnap, premiumSnap]) => {
-                // Populate postDataCache with initial content (both posts and reels)
-                postDataCache = {}; // Clear cache before populating
+                postDataCache = {};
+                
                 postsSnap.forEach(snap => {
                     try {
                         const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
                         postDataCache[snap.key] = {...data, sourceDb: postsDb};
-                    } catch (e) { console.warn("postsDb (initial): Post yüklənərkən xəta:", snap.key, e); }
+                    } catch (e) { console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e); }
                 });
                 reelsSnap.forEach(snap => {
                      try {
                         const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
                         postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                     } catch (e) { console.warn("videosDb (initial): Video yüklənərkən xəta:", snap.key, e); }
+                     } catch (e) { console.warn("videosDb: Video yüklənərkən xəta:", snap.key, e); }
                 });
-
-                // Populate commentCountCache
-                commentCountCache = {};
-                commentsSnap.forEach(snap => {
-                    const commentsForPost = snap.val();
-                    if (commentsForPost) { commentCountCache[snap.key] = Object.keys(commentsForPost).length; }
+                
+                const allComments = commentsSnap.val() || {};
+                Object.keys(allComments).forEach(postId => {
+                    commentCountCache[postId] = Object.keys(allComments[postId] || {}).length;
                 });
-
-                // Populate likeCache (merging likes from both posts and reels)
-                likeCache = {};
+                
                 const allPostLikes = postLikesSnap.val() || {};
                 Object.keys(allPostLikes).forEach(postId => { likeCache[postId] = allPostLikes[postId]; });
                 const allReelLikes = reelLikesSnap.val() || {};
                 Object.keys(allReelLikes).forEach(postId => { likeCache[postId] = allReelLikes[postId]; });
 
-                // Populate tick and premium users
                 tickUsers = tickSnap.val() || {};
                 premiumUsers = premiumSnap.val() || {};
 
-                // Render content, hide loader, and show grid once all initial data is ready
                 renderAllPosts();
+                
                 document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "block";
-
-                // Now set up live listeners for continuous updates after initial load
+                if (Object.keys(postDataCache).length > 0) {
+                     postsContainer.style.display = "block";
+                     noPostsMessage.style.display = "none";
+                } else {
+                    postsContainer.style.display = "none";
+                    noPostsMessage.style.display = "flex";
+                }
+                
                 setupLiveListeners();
 
             }).catch(error => {
                 console.error("Məlumatlar yüklənərkən ilkin xəta baş verdi:", error);
-                // In case of error, hide loader and show a user-friendly error message
                 document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "none"; // Hide grid
-                noPostsMessage.style.display = "flex"; // Show error message
-                noPostsMessage.querySelector('span:last-child').textContent = "Məlumat yüklənərkən xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.";
+                postsContainer.style.display = "none";
+                noPosts.style.display = "flex";
+                noPosts.querySelector('span:last-child').textContent = "Məlumat yüklənərkən xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.";
             });
 
         } else {
-            // If `myPosts=true` is NOT in the URL, hide loader and all content immediately.
             document.getElementById("loader").style.display = "none";
             postsContainer.style.display = "none";
-            noPostsMessage.style.display = "none";
+            noPostsMessage.style.display = "flex";
         }
