@@ -1,6 +1,4 @@
-// ---- Firebase apps initialization ----
-
-        // posts firebase config (pasyakaaz)
+ // ---- Firebase apps initialization ----
         const postsFirebaseConfig = {
             apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
             authDomain: "pasyakaaz.firebaseapp.com",
@@ -9,7 +7,6 @@
             messagingSenderId: "289629756800",
             appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
         };
-        // videos firebase config (pasyak-reels)
         const videosFirebaseConfig = {
             apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
             authDomain: "pasyak-reels.firebaseapp.com",
@@ -20,7 +17,6 @@
             appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
             measurementId: "G-FW0KJDLF4B"
         };
-        // comments firebase config (reply-eb654)
         const commentsFirebaseConfig = {
             apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
             authDomain: "reply-eb654.firebaseapp.com",
@@ -30,11 +26,6 @@
             messagingSenderId: "292801573334",
             appId: "1:292801573334:web:2486813d8fe45865d0f477"
         };
-
-        let postsApp, videosApp, commentsApp;
-        let postsDb, videosDb, commentsDb;
-
-        // Tick & premium configs (sənin konfiqlar)
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
             authDomain: "pasyak-tick.firebaseapp.com",
@@ -56,13 +47,12 @@
             measurementId: "G-QDTFGFYXKK"
         };
 
-        let tickApp, premiumApp;
-        let tickDb, premiumDb;
+        let postsApp, videosApp, commentsApp, tickApp, premiumApp;
+        let postsDb, videosDb, commentsDb, tickDb, premiumDb;
 
         const postsContainer = document.getElementById("posts-grid");
         const noPostsMessage = document.getElementById("no-posts");
 
-        // URL params
         const urlParams = new URLSearchParams(window.location.search);
         const currentUser = (urlParams.get("user") || "anonim").trim();
         const showOnlyMyPosts = urlParams.get("myPosts") === "true";
@@ -71,7 +61,6 @@
         let commentCountCache = {};
         let postDataCache = {};
         let deletePostId = null;
-
         let tickUsers = {};
         let premiumUsers = {};
 
@@ -89,8 +78,6 @@
             premiumDb = premiumApp.database();
         }
 
-        // --- Data Loading and Rendering Logic ---
-
         function getStatusBadge(nickname = "") {
             const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
             const isTick = tickUsers[cleanNickname] === "+";
@@ -103,8 +90,6 @@
 
         function renderPost(postId, data) {
             if (!data) return null;
-            // Filter by user if showOnlyMyPosts is true.
-            // This filter handles cases where live updates bring data not belonging to the current user.
             if (showOnlyMyPosts) {
                 const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
                 const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
@@ -124,18 +109,14 @@
 
             const header = document.createElement("div");
             header.className = "post-header";
-
             const img = document.createElement("img");
             img.className = "profile-pic";
             img.src = data.profile || "https://via.placeholder.com/36?text=?";
-
             const userBox = document.createElement("div");
             userBox.className = "username-box";
-
             const userId = document.createElement("div");
             userId.className = "userid";
             userId.textContent = data.user || "Anonim";
-
             const statusBadgeUrl = getStatusBadge(data.nickname || "");
             if (statusBadgeUrl) {
                 const statusBadgeImg = document.createElement("img");
@@ -143,17 +124,14 @@
                 statusBadgeImg.src = statusBadgeUrl;
                 userId.appendChild(statusBadgeImg);
             }
-
             const nickname = document.createElement("div");
             nickname.className = "nickname";
             const displayNickname = (data.nickname || "").startsWith('@') ? data.nickname : `@${(data.nickname || "").replace(/^@/, '')}`;
             nickname.textContent = displayNickname;
-
             userBox.appendChild(userId);
             userBox.appendChild(nickname);
             header.appendChild(img);
             header.appendChild(userBox);
-
             const cleanNickname = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
             const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
             if (cleanNickname && cleanNickname === cleanCurrentUser) {
@@ -167,7 +145,6 @@
                 });
                 header.appendChild(deleteBtn);
             }
-
             postEl.appendChild(header);
 
             if (data.image) {
@@ -184,8 +161,8 @@
                 video.loop = true;
                 video.muted = true;
                 video.playsinline = true;
-                video.preload = "none"; // Lazy loading here
-                video.dataset.src = (data.video || "").replace(/\\/g, '').trim(); // Use a data attribute for the source
+                video.preload = "none";
+                video.dataset.src = (data.video || "").replace(/\\/g, '').trim();
                 video.addEventListener('loadedmetadata', () => refreshMasonry());
                 postEl.appendChild(video);
             }
@@ -203,7 +180,6 @@
             let currentLikeCount = 0;
             let isLikedByUser = false;
             const postLikes = likeCache[postId];
-
             if (postLikes && postLikes.users) {
                 currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
                 isLikedByUser = postLikes.users[currentUser];
@@ -215,35 +191,27 @@
             const likeBtn = document.createElement("button");
             likeBtn.className = "like-button";
             if (isLikedByUser) likeBtn.classList.add("liked");
-
             likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${currentLikeCount || 0}</span>`;
-
             likeBtn.addEventListener("click", () => {
                 const likesRef = data.sourceDb.ref(`likes/${postId}`);
-
                 likesRef.once("value").then(snap => {
                     const currentLikesData = snap.val();
-                    let newLikeCount;
                     if (currentLikesData && currentLikesData.users && currentLikesData.users[currentUser]) {
                         likesRef.child(`users/${currentUser}`).remove();
-                        newLikeCount = (currentLikesData.count || 0) - 1;
-                        likesRef.child("count").set(newLikeCount);
+                        likesRef.child("count").transaction(currentCount => (currentCount || 0) - 1);
                     } else if (currentLikesData && currentLikesData[currentUser]) {
                         likesRef.child(currentUser).remove();
                     } else {
                         if (currentLikesData && currentLikesData.users) {
                              likesRef.child(`users/${currentUser}`).set(true);
-                             newLikeCount = (currentLikesData.count || 0) + 1;
-                             likesRef.child("count").set(newLikeCount);
+                             likesRef.child("count").transaction(currentCount => (currentCount || 0) + 1);
                         } else {
                             likesRef.child(currentUser).set(true);
                         }
                     }
                 });
             });
-
             postFooter.appendChild(likeBtn);
-
             if (data.video) {
                 const commentBtn = document.createElement("button");
                 commentBtn.className = "comment-button";
@@ -251,7 +219,6 @@
                 commentBtn.innerHTML = `<span class="material-icons">comment</span><span class="comment-count">${commentCount}</span>`;
                 postFooter.appendChild(commentBtn);
             }
-
             if (cleanNickname && cleanNickname === cleanCurrentUser) {
                 const deleteBtn = document.createElement("button");
                 deleteBtn.className = "delete-button material-icons";
@@ -263,13 +230,10 @@
                 });
                 postFooter.appendChild(deleteBtn);
             }
-
             postEl.appendChild(postFooter);
-
             return postEl;
         }
 
-        // --- Confirmation Dialog Actions ---
         document.getElementById("confirmYes").addEventListener("click", () => {
             if (deletePostId) {
                 const post = postDataCache[deletePostId];
@@ -285,26 +249,27 @@
                 }
                 document.getElementById("confirmDialog").style.display = "none";
                 deletePostId = null;
+                // Yeniləməni tetiklə
+                renderAllPosts();
             }
         });
+
         document.getElementById("confirmNo").addEventListener("click", () => {
             document.getElementById("confirmDialog").style.display = "none";
             deletePostId = null;
         });
 
         function renderAllPosts() {
-            postsContainer.innerHTML = ""; // Clear existing posts to rebuild
+            postsContainer.innerHTML = "";
             let postIds = Object.keys(postDataCache || {});
+            const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
 
-            if (showOnlyMyPosts) {
-                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-                postIds = postIds.filter(id => {
-                    const p = postDataCache[id] || {};
-                    const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-                    return nick === cleanCurrent;
-                });
-            }
-
+            postIds = postIds.filter(id => {
+                const p = postDataCache[id] || {};
+                const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
+                return nick === cleanCurrent;
+            });
+            
             postIds.sort((a,b) => {
                 const aData = postDataCache[a];
                 const bData = postDataCache[b];
@@ -314,10 +279,12 @@
                 return b.localeCompare(a);
             });
 
-            if (postIds.length === 0 && showOnlyMyPosts) {
+            if (postIds.length === 0) {
                  noPostsMessage.style.display = "flex";
+                 postsContainer.style.display = "none";
             } else {
                 noPostsMessage.style.display = "none";
+                postsContainer.style.display = "block";
                 postIds.forEach(postId => {
                     const data = postDataCache[postId];
                     const postEl = renderPost(postId, data);
@@ -325,87 +292,9 @@
                 });
             }
             refreshMasonry();
-            setupVideoObserver(); // Setup observer after rendering
+            setupVideoObserver();
         }
-        
-        // This function sets up LIVE listeners for all data sources after initial load.
-        function setupLiveListeners() {
-            // Live listener for posts content
-            postsDb.ref("posts").on("value", (snapshot) => {
-                // Update postDataCache for posts, preserving reels data
-                const currentReels = Object.fromEntries(
-                    Object.entries(postDataCache).filter(([, val]) => val.sourceDb === videosDb)
-                );
-                postDataCache = currentReels; // Start with reels data
-                snapshot.forEach(snap => {
-                    try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: postsDb};
-                    } catch (e) { console.warn("postsDb (live update): Post yüklənərkən xəta:", snap.key, e); }
-                });
-                renderAllPosts();
-            });
 
-            // Live listener for reels content
-            videosDb.ref("reels").on("value", (snapshot) => {
-                // Update postDataCache for reels, preserving posts data
-                const currentPosts = Object.fromEntries(
-                    Object.entries(postDataCache).filter(([, val]) => val.sourceDb === postsDb)
-                );
-                postDataCache = currentPosts; // Start with posts data
-                snapshot.forEach(snap => {
-                     try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                     } catch (e) { console.warn("videosDb (live update): Video yüklənərkən xəta:", snap.key, e); }
-                });
-                renderAllPosts();
-            });
-            
-            // Live listener for likes (postsDb)
-            postsDb.ref("likes").on("value", (snapshot) => {
-                const likesData = snapshot.val() || {};
-                Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                });
-                updateLikeCounts();
-            });
-
-            // Live listener for likes (videosDb)
-            videosDb.ref("likes").on("value", (snapshot) => {
-                 const likesData = snapshot.val() || {};
-                 Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                 });
-                 updateLikeCounts();
-            });
-
-            // Live listener for comments
-            commentsDb.ref("comments").on("value", (snapshot) => {
-                commentCountCache = {};
-                const commentsData = snapshot.val() || {};
-                Object.keys(commentsData).forEach(postId => {
-                    const commentsForPost = commentsData[postId];
-                    if (commentsForPost) {
-                        commentCountCache[postId] = Object.keys(commentsForPost).length;
-                    }
-                });
-                updateCommentCounts();
-            });
-
-            // Live listener for tick users
-            tickDb.ref("tick").on("value", (snapshot) => {
-                tickUsers = snapshot.val() || {};
-                renderAllPosts(); // Re-render to update badges
-            });
-
-            // Live listener for premium users
-            premiumDb.ref("premium").on("value", (snapshot) => {
-                premiumUsers = snapshot.val() || {};
-                renderAllPosts(); // Re-render to update badges
-            });
-        }
-        
         function updateLikeCounts() {
             Object.keys(postDataCache).forEach(postId => {
                 const postElement = document.getElementById(`post_${postId}`);
@@ -456,9 +345,7 @@
             setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
         }
 
-        // --- Lazy Loading Video Functionality ---
         let videoObserver;
-
         function setupVideoObserver() {
             if ('IntersectionObserver' in window) {
                 if (videoObserver) {
@@ -478,8 +365,8 @@
                         }
                     });
                 }, {
-                    rootMargin: '100px 0px', // Yükləməni bir qədər qabaqcadan başlatmaq üçün
-                    threshold: 0.1 // 10% görünəndə yüklə
+                    rootMargin: '100px 0px',
+                    threshold: 0.1
                 });
 
                 document.querySelectorAll('.post-video').forEach(video => {
@@ -487,12 +374,41 @@
                 });
             }
         }
+        
+        function setupLiveListeners() {
+            postsDb.ref("likes").on("value", (snapshot) => {
+                const likesData = snapshot.val() || {};
+                Object.keys(likesData).forEach(postId => {
+                    likeCache[postId] = likesData[postId];
+                });
+                updateLikeCounts();
+            });
+
+            videosDb.ref("likes").on("value", (snapshot) => {
+                 const likesData = snapshot.val() || {};
+                 Object.keys(likesData).forEach(postId => {
+                    likeCache[postId] = likesData[postId];
+                 });
+                 updateLikeCounts();
+            });
+
+            commentsDb.ref("comments").on("value", (snapshot) => {
+                commentCountCache = {};
+                const commentsData = snapshot.val() || {};
+                Object.keys(commentsData).forEach(postId => {
+                    const commentsForPost = commentsData[postId];
+                    if (commentsForPost) {
+                        commentCountCache[postId] = Object.keys(commentsForPost).length;
+                    }
+                });
+                updateCommentCounts();
+            });
+        }
 
         // --- Initial Load Logic ---
         initializeFirebaseApps();
 
         if (showOnlyMyPosts) {
-            // Yalnız məlumatları oxuyun, videoları yox
             Promise.all([
                 postsDb.ref("posts").once("value"),
                 videosDb.ref("reels").once("value"),
@@ -507,13 +423,13 @@
                     try {
                         const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
                         postDataCache[snap.key] = {...data, sourceDb: postsDb};
-                    } catch (e) { console.warn("postsDb (initial): Post yüklənərkən xəta:", snap.key, e); }
+                    } catch (e) { console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e); }
                 });
                 reelsSnap.forEach(snap => {
                      try {
                         const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
                         postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                     } catch (e) { console.warn("videosDb (initial): Video yüklənərkən xəta:", snap.key, e); }
+                     } catch (e) { console.warn("videosDb: Video yüklənərkən xəta:", snap.key, e); }
                 });
 
                 commentCountCache = {};
@@ -533,22 +449,19 @@
 
                 renderAllPosts();
                 
-                // Məlumat yüklənməsi bitən kimi loaderi gizlət
                 document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "block";
-
-                setupLiveListeners();
+                setupLiveListeners(); // Canlı dinləyiciləri aktivləşdir
 
             }).catch(error => {
-                console.error("Məlumatlar yüklənərkən ilkin xəta baş verdi:", error);
+                console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
                 document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "none"; // Hide grid
-                noPostsMessage.style.display = "flex"; // Show error message if data load fails
+                postsContainer.style.display = "none";
+                noPostsMessage.style.display = "flex";
                 noPostsMessage.querySelector('span:last-child').textContent = "Məlumat yüklənərkən xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.";
             });
 
         } else {
             document.getElementById("loader").style.display = "none";
             postsContainer.style.display = "none";
-            noPostsMessage.style.display = "none";
+            noPostsMessage.style.display = "flex";
         }
