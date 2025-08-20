@@ -73,13 +73,13 @@
         }
         
         #no-snaps-message h2 {
-            font-size: 15px;
+            font-size: 1.5rem;
             margin-bottom: 10px;
             color: #ddd;
         }
         
         #no-snaps-message p {
-            font-size: 12px;
+            font-size: 1rem;
             color: #aaa;
         }
 
@@ -230,6 +230,15 @@
             border-radius: 5px;
             font-size: 0.8rem;
             font-weight: bold;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .reel-loader {
@@ -419,7 +428,7 @@
             z-index: 10;
             color: rgba(255, 255, 255, 0.8);
             font-weight: 700;
-            font-size: 15px;
+            font-size: 25px; /* İkon üçün ölçünü artırdım */
             letter-spacing: 1px;
             padding: 5px 12px;
             border-radius: 12px;
@@ -719,7 +728,6 @@
         <button class="tab-button" id="friends-nav">Dostlar</button>
     </div>
 
-    <div id="snaps-p">^_^</div>
     <div id="sound-indicator"><span class="material-icons">volume_up</span></div>
 
     <div id="comments-container" class="comments-container">
@@ -1093,13 +1101,12 @@
                             mySnapsLoader.style.display = 'block';
                             noSnapsMessage.style.display = 'none';
 
-                            setTimeout(async () => {
-                                postsToDisplay.forEach(post => {
-                                    const snapItem = createMySnapItem(post);
-                                    mySnapsGrid.appendChild(snapItem);
-                                });
-                                mySnapsLoader.style.display = 'none';
-                            }, 500); // Simulate loading time
+                            // Loop through the posts and create grid items directly
+                            postsToDisplay.forEach(post => {
+                                const snapItem = createMySnapItem(post);
+                                mySnapsGrid.appendChild(snapItem);
+                            });
+                            mySnapsLoader.style.display = 'none';
                         }
                     }
                 }
