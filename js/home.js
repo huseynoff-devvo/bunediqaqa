@@ -59,7 +59,7 @@
             authDomain: "pasyak-premium.firebaseapp.com",
             databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
             projectId: "pasyak-premium",
-            storageBucket: "pasyak-premium.firebasestorage.app",
+            storageBucket: "pasyak-premium.appspot.com",
             messagingSenderId: "662922654975",
             appId: "1:662922654975:web:54b78968d4cccba65f88ca",
             measurementId: "G-QDTGFYXKK"
@@ -138,7 +138,9 @@
                 
                 // If comment param is in URL, open comment overlay
                 if (urlParams.get('comment') === 'true' && urlParams.get('postId')) {
-                    openCommentOverlay(urlParams.get('postId'));
+                    // We need to set activeCommentPostId internally, even if not in URL
+                    activeCommentPostId = urlParams.get('postId');
+                    openCommentOverlay(activeCommentPostId);
                 }
             }
         }
@@ -550,7 +552,7 @@
                 img.src = getProfilePic(nickname);
                 img.alt = nickname + " story";
                 img.onerror = function() {
-                    this.src = "https://placehold.co/60x60/333333/FFFFFF?text=�";
+                    this.src = "https://placehold.co/60x60/333333/FFFFFF?text=📸";
                 };
                 
                 const usernameDiv = document.createElement("div");
@@ -1429,12 +1431,16 @@
         // currentUserCommentPic.src = getProfilePic(currentUser.replace('@', '')); 
 
         function openCommentOverlay(postId) {
-            activeCommentPostId = postId;
-            // Update URL
+            activeCommentPostId = postId; // Internal tracking of the postId
+            
+            // Update URL to only add &comment=true
             const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('comment', 'true');
-            currentUrl.searchParams.set('postId', postId);
-            history.pushState(null, '', currentUrl.href);
+            const newSearchParams = new URLSearchParams(currentUrl.search);
+            newSearchParams.set('comment', 'true');
+            newSearchParams.delete('postId'); // Ensure postId is removed if it was there before
+
+            const newUrl = currentUrl.origin + currentUrl.pathname + '?' + newSearchParams.toString();
+            history.pushState(null, '', newUrl);
 
             commentOverlay.style.display = 'flex';
             // Trigger animation
@@ -1449,21 +1455,26 @@
             commentInput.placeholder = 'Şərh yazın...'; // Reset placeholder
             sendCommentButton.disabled = true; // Disable send button initially
 
-            renderComments(postId);
+            // Render comments using the internally tracked activeCommentPostId
+            renderComments(activeCommentPostId);
         }
 
         function closeCommentOverlay() {
             commentOverlay.classList.remove('visible');
-            // Remove from URL
+            
+            // Remove 'comment' and 'postId' from URL
             const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.delete('comment');
-            currentUrl.searchParams.delete('postId');
-            history.pushState(null, '', currentUrl.href);
+            const newSearchParams = new URLSearchParams(currentUrl.search);
+            newSearchParams.delete('comment');
+            newSearchParams.delete('postId'); // Also ensure postId is removed if any old URL still has it
+
+            const newUrl = currentUrl.origin + currentUrl.pathname + '?' + newSearchParams.toString();
+            history.pushState(null, '', newUrl);
 
             setTimeout(() => {
                 commentOverlay.style.display = 'none';
                 document.body.style.overflow = 'auto'; // Re-enable body scroll
-                activeCommentPostId = null;
+                activeCommentPostId = null; // Reset internal postId tracking
                 replyingToCommentId = null;
                 replyingToCommentAuthor = null;
                 commentInput.value = '';
@@ -1474,6 +1485,11 @@
 
         function renderComments(postId) {
             commentsList.innerHTML = '';
+            if (!postId) {
+                // If no postId is active, clear the comments list and return
+                console.warn("Şərhləri göstərmək üçün aktiv post ID yoxdur.");
+                return;
+            }
             const commentsForPost = commentsCache[postId] || {};
             
             // Sort comments by timestamp
@@ -1669,10 +1685,15 @@
         window.addEventListener('popstate', () => {
             const currentUrlParams = new URLSearchParams(window.location.search);
             const isCommentOpenInUrl = currentUrlParams.get('comment') === 'true';
-            const postIdInUrl = currentUrlParams.get('postId');
+            // postIdInUrl is no longer used for opening, as per your request
+            // const postIdInUrl = currentUrlParams.get('postId'); 
 
-            if (isCommentOpenInUrl && postIdInUrl && !commentOverlay.classList.contains('visible')) {
-                openCommentOverlay(postIdInUrl);
+            if (isCommentOpenInUrl && !commentOverlay.classList.contains('visible')) {
+                // If comment param is present, try to open.
+                // activeCommentPostId will remain whatever it was set to by clicking a post's comment button.
+                // If a user navigates to a URL with only `?comment=true` and no previous postId was set, 
+                // the comments list will be empty as renderComments checks for activeCommentPostId.
+                openCommentOverlay(activeCommentPostId); 
             } else if (!isCommentOpenInUrl && commentOverlay.classList.contains('visible')) {
                 closeCommentOverlay();
             }
