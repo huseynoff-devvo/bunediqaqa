@@ -98,7 +98,7 @@
             text-transform: uppercase;
         }
 
-        .post-header { display:none; }
+        .post-header { display:none; } /* Reverted to none as before */
 
         .post-text {
             margin:8px 6px;
@@ -113,10 +113,12 @@
             border-radius: 8px;
             display: block;
             object-fit: cover;
+            max-height: 400px;
+            min-height: 100px;
         }
 
         .post-video {
-            max-height: 400px;
+            background: #000;
         }
 
         .post-footer {
@@ -128,11 +130,16 @@
 
         .like-button, .comment-button {
             background: none; border: none;
-            color: white; cursor: pointer;
+            color: white; /* Default color for comment button */
+            cursor: pointer;
             display:flex; align-items:center;
             gap:6px;
             user-select:none; transition: color .2s;
             font-size:0.88rem;
+        }
+        .comment-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
         }
         .like-button.liked { color: #ff4d4d; }
         .like-button .material-icons, .comment-button .material-icons { font-size:1.2rem; }
