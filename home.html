@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-       <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/home.css">
+    <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/home.css">
 </head>
 <body>
     <div id="loader">
@@ -22,7 +22,7 @@
         <div class="story-progress-bar"></div>
         <div class="story-controls">
             <div class="story-header">
-                <img class="story-profile-pic" src="" alt="Profile Picture">
+                <img class="story-profile-pic" src="" alt="Profil Şəkli">
                 <span class="username"></span>
                 <span class="time"></span>
                 <span class="material-icons delete-btn" style="display: none;">delete</span>
@@ -56,6 +56,14 @@
         <div id="story-loading-indicator" class="spinner"></div>
     </div>
     <div id="stories-container"></div>
+
+    <!-- YENİ: Post Naviqasiya Zolağı -->
+    <div id="post-navigation-bar">
+        <button id="my-posts-button">Postlarım</button>
+        <button id="all-posts-button" class="active">Postlar</button>
+        <!-- "Dostlar" düyməsi silindi -->
+    </div>
+
     <div id="posts"></div>
 
     <div class="confirm-dialog" id="confirmDialog">
@@ -66,17 +74,16 @@
         </div>
     </div>
 
-    <!-- Comment Overlay -->
+    <!-- Şərh Overlay -->
     <div id="comment-overlay">
         <div class="comment-header">
             <span class="material-icons" onclick="closeCommentOverlay();">close</span>
             <h2>Şərhlər</h2>
         </div>
         <div id="comments-list">
-            <!-- Comments will be loaded here -->
+            <!-- Şərhlər buraya yüklənəcək -->
         </div>
         <div class="comment-input-area">
-            <!-- Removed profile picture from here -->
             <input type="text" id="comment-input" placeholder="Şərh yazın..." />
             <button id="send-comment-button" class="material-icons" disabled>send</button>
         </div>
