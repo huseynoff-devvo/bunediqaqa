@@ -60,6 +60,7 @@
             display: flex;
             align-items: center;
             margin-bottom: 10px;
+            position: relative; /* Takip et düyməsi üçün mövqeləndirmə */
         }
 
         .profile-pic {
@@ -731,22 +732,22 @@
         /* --- New/Modified Reply Styles --- */
         .reply-item {
             display: flex;
-            margin-top: 10px; /* Space between replies */
+            margin-top: 10px; /* Cavablar arasında boşluq */
             align-items: flex-start;
         }
 
         .reply-item .profile-pic {
-            width: 28px; /* Smaller profile pic for replies */
+            width: 28px; /* Cavablar üçün daha kiçik profil şəkli */
             height: 28px;
             border-radius: 50%;
             object-fit: cover;
             margin-right: 8px;
-            border: 1px solid #444; /* Slightly different border for distinction */
+            border: 1px solid #444; /* Fərqlilik üçün bir qədər fərqli sərhəd */
         }
 
         .reply-content {
             flex-grow: 1;
-            background: #333; /* Slightly darker background for replies */
+            background: #333; /* Cavablar üçün bir qədər tünd fon */
             padding: 8px 10px;
             border-radius: 12px;
             position: relative;
@@ -760,26 +761,26 @@
 
         .reply-author {
             font-weight: bold;
-            font-size: 0.85rem; /* Smaller font for reply author */
+            font-size: 0.85rem; /* Cavab müəllifi üçün daha kiçik şrift */
             margin-right: 6px;
             cursor: pointer;
         }
 
         .reply-time {
-            font-size: 0.65rem; /* Smaller font for reply time */
+            font-size: 0.65rem; /* Cavab zamanı üçün daha kiçik şrift */
             color: #999;
         }
 
         .reply-text {
-            font-size: 0.85rem; /* Smaller font for reply text */
+            font-size: 0.85rem; /* Cavab mətni üçün daha kiçik şrift */
             line-height: 1.2;
         }
 
         .reply-section {
             margin-top: 10px;
-            margin-left: 20px; /* Indent replies */
+            margin-left: 20px; /* Cavabları içəriyə çək */
             padding-left: 10px;
-            border-left: 2px solid #333; /* Visual indicator for replies */
+            border-left: 2px solid #333; /* Cavablar üçün vizual göstərici */
         }
         
         .reply-toggle {
@@ -835,4 +836,68 @@
         .comment-input-area button:disabled {
             color: #777;
             cursor: not-allowed;
+        }
+
+        /* Follow Button Styles */
+        .follow-button {
+            margin-left: auto; /* Sağ tərəfə hizala */
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            user-select: none;
+        }
+
+        .follow-button.follow {
+            background-color: #4a90e2; /* Mavi rəng */
+            color: white;
+        }
+
+        .follow-button.unfollow {
+            background-color: #333; /* Boz rəng */
+            color: #ccc;
+            border: 1px solid #555;
+        }
+
+        /* Post Navigation Bar Styles */
+        #post-navigation-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            background: #1e1e1e;
+            /* Removed position: sticky */
+            top: 85px; 
+            z-index: 999; 
+            border-bottom: 1px solid #333;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            gap: 5px; /* Düymələr arasında boşluq əlavə et */
+        }
+
+        #post-navigation-bar button {
+            flex: 1; /* Yeri bərabər payla */
+            background: #282828;
+            color: #aaa;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            user-select: none;
+            white-space: nowrap; /* Mətnin sətirdən aşağı düşməsinin qarşısını al */
+        }
+
+        #post-navigation-bar button.active {
+            background-color: #4a90e2; /* Aktiv düymə rəngi */
+            color: white;
+        }
+
+        #post-navigation-bar button:hover:not(.active) {
+            background-color: #383838;
+            color: #ddd;
         }
