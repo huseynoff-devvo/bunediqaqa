@@ -1,15 +1,15 @@
-// Firebase configuration for posts and likes (from pasyakaaz project)
+// Postlar və bəyənmələr üçün Firebase konfiqurasiyası (pasyakaaz proyektindən)
         const postsFirebaseConfig = {
             apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YFfx46B_as2w",
             authDomain: "pasyakaaz.firebaseapp.com",
-            databaseURL: "https://pasyakaaz-default-rtdb.firebaseio.com", // Corrected databaseURL
+            databaseURL: "https://pasyakaaz-default-rtdb.firebaseio.com", // Düzəldilmiş databaseURL
             projectId: "pasyakaaz",
             storageBucket: "pasyakaaz.appspot.com",
             messagingSenderId: "289629756800",
             appId:  "1:289629756800:web:f7a6f00fcce2b1eb28b565"
         };
 
-        // Firebase configuration for comments and comment likes (from gonline-1880b project)
+        // Şərhlər və şərh bəyənmələri üçün Firebase konfiqurasiyası (gonline-1880b proyektindən)
         const commentsFirebaseConfig = {
             apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
             authDomain: "gonline-1880b.firebaseapp.com",
@@ -20,12 +20,12 @@
             appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
         };
 
-        // Initialize separate Firebase apps
+        // Ayrı Firebase tətbiqlərini ilkinləşdir
         const postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
         const commentsApp = firebase.initializeApp(commentsFirebaseConfig, "commentsApp");
 
-        const db = postsApp.database(); // This will be used for posts and likes
-        const commentsDb = commentsApp.database(); // This will be used for comments and comment likes
+        const db = postsApp.database(); // Bu, postlar və bəyənmələr üçün istifadə ediləcək
+        const commentsDb = commentsApp.database(); // Bu, şərhlər və şərh bəyənmələri üçün istifadə ediləcək
 
         const postsContainer = document.getElementById("posts");
         const urlParams = new URLSearchParams(window.location.search);
@@ -38,7 +38,7 @@
         let commentsCache = {};
         let commentLikesCache = {};
         let deletePostId = null;
-        let dataLoaded = { posts: false, likes: false, tick: false, premium: false, users: false, following: false, stories: false, storyLikes: false, storyReadStatusFromFirebase: false, storyViews: false, comments: false, commentLikes: false };
+        let dataLoaded = { posts: false, likes: false, tick: false, premium: false, users: false, following: false, stories: false, storyLikes: false, storyReadStatusFromFirebase: false, storyViews: false, comments: false, commentLikes: false, userFollows: false, userFollowing: false };
         let initialLoadDone = false;
         let activeCommentPostId = null;
         let replyingToCommentId = null;
@@ -75,6 +75,18 @@
             appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
         };
         
+        // Yeni Firebase konfiqurasiyaları
+        const followsFirebaseConfig = {
+            apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
+            authDomain: "pasyak-follows.firebaseapp.com",
+            databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
+            projectId: "pasyak-follows",
+            storageBucket: "pasyak-follows.firebasestorage.app",
+            messagingSenderId: "571115478758",
+            appId: "1:571115478758:web:9b45de3c9169083d9a2527",
+            measurementId: "G-KHDDTM6FC9"
+        };
+        
         const followingFirebaseConfig = {
             apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
             authDomain: "pasyak-following.firebaseapp.com",
@@ -84,7 +96,7 @@
             messagingSenderId: "538884111637",
             appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
         };
-        
+
         const gonlineFirebaseConfig = {
             apiKey: "AIzaSyBbLAI5r4b97OdNzNE230mMN0QhLBaJY2A",
             authDomain: "haha-e8466.firebaseapp.com",
@@ -99,19 +111,24 @@
         const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
         const premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
         const userApp = firebase.initializeApp(userFirebaseConfig, "userApp");
+        // Yeni Firebase tətbiqlərinin ilkinləşdirilməsi
+        const followsApp = firebase.initializeApp(followsFirebaseConfig, "followsApp");
         const followingApp = firebase.initializeApp(followingFirebaseConfig, "followingApp");
         const gonlineApp = firebase.initializeApp(gonlineFirebaseConfig, "gonlineApp");
 
         const tickDb = tickApp.database();
         const premiumDb = premiumApp.database();
         const userDb = userApp.database();
-        const followingDb = followingApp.database();
+        const followsDb = followsApp.database(); // Follows databazası
+        const followingDb = followingApp.database(); // Following databazası
         const gonlineDb = gonlineApp.database();
 
         let tickUsers = {};
         let premiumUsers = {};
         let allUsers = {};
-        let followingUsers = [];
+        let followingUsersStories = []; // Storylərdə istifadə olunan followingUsers adını dəyişdiririk
+        let userFollows = {}; // İstifadəçinin kim tərəfindən follow edildiyi
+        let userFollowing = {}; // İstifadəçinin kimləri follow etdiyi
         let allStories = { images: {}, videos: {} };
         let activeStory = null;
         let activeStoryIndex = 0;
@@ -127,18 +144,25 @@
         let isPaused = false;
         let lastTouchTime = 0;
 
+        // YENİ: Cari post filtrini izləmək üçün qlobal dəyişən
+        let currentPostFilter = 'all'; // 'all', 'mine', 'friends'
+
         function hideLoaderIfReady() {
-            if (Object.values(dataLoaded).every(status => status)) {
+            // Yükləyiciyi gizlətmədən əvvəl əsas məlumatların yüklənib-yüklənmədiyini yoxla
+            // İlkin göstərmə üçün postlar, bəyənmələr, istifadəçilər və izləmə məlumatları lazımdır
+            if (dataLoaded.posts && dataLoaded.likes && dataLoaded.users && dataLoaded.userFollowing) {
                 const loader = document.getElementById("loader");
                 loader.style.opacity = 0;
                 setTimeout(() => {
                     loader.style.display = "none";
                     document.getElementById("posts").style.display = "block";
+                    // Yalnız bütün lazımi məlumatlar yükləndikdən sonra filter tətbiq et
+                    filterPosts(currentPostFilter); 
                 }, 500);
                 
-                // If comment param is in URL, open comment overlay
+                // URL-də şərh parametri varsa, şərh overlayını aç
                 if (urlParams.get('comment') === 'true' && urlParams.get('postId')) {
-                    // We need to set activeCommentPostId internally, even if not in URL
+                    // Biz activeCommentPostId-ni daxili olaraq təyin etməliyik, hətta URL-də olmasa belə
                     activeCommentPostId = urlParams.get('postId');
                     openCommentOverlay(activeCommentPostId);
                 }
@@ -166,10 +190,10 @@
                     const userData = JSON.parse(allUsers[cleanNickname]);
                     return userData[1];
                 } catch(e) {
-                    console.error(`Failed to parse user data for ${cleanNickname}`);
+                    console.error(`İstifadəçi məlumatları '${cleanNickname}' üçün parsing edilərkən xəta baş verdi`);
                 }
             }
-            // Fallback for current user if their data isn't in allUsers yet
+            // Cari istifadəçi üçün məlumatları hələ allUsers-də yoxdursa ehtiyat planı
             if (cleanNickname === currentUser.replace('@', '')) {
                 return currentUserName;
             }
@@ -183,10 +207,10 @@
                     const userData = JSON.parse(allUsers[cleanNickname]);
                     return userData[2];
                 } catch(e) {
-                    console.error(`Failed to parse user data for ${cleanNickname}`);
+                    console.error(`İstifadəçi məlumatları '${cleanNickname}' üçün parsing edilərkən xəta baş verdi`);
                 }
             }
-            // Fallback for current user if their data isn't in allUsers yet
+            // Cari istifadəçi üçün məlumatları hələ allUsers-də yoxdursa ehtiyat planı
             if (cleanNickname === currentUser.replace('@', '') && currentUserProfilePic) {
                 return currentUserProfilePic;
             }
@@ -199,7 +223,7 @@
             const seconds = Math.floor((now - date) / 1000);
             const minutes = Math.floor(seconds / 60);
             const hours = Math.floor(minutes / 60);
-            const days = Math.floor(minutes / (60 * 24)); // Corrected days calculation
+            const days = Math.floor(minutes / (60 * 24)); // Düzəldilmiş gün hesablaması
             const months = Math.floor(days / 30);
             const years = Math.floor(months / 12);
 
@@ -210,7 +234,6 @@
             if (minutes > 0) return `${minutes} dəq əvvəl`;
             return `${seconds} san əvvəl`;
         }
-
 
         function renderPost(postId, data) {
             const postLikes = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
@@ -226,7 +249,7 @@
             const img = document.createElement("img");
             img.className = "profile-pic";
             img.src = getProfilePic(data.nickname);
-            img.alt = data.nickname + " profile picture";
+            img.alt = data.nickname + " profil şəkli";
 
             const userBox = document.createElement("div");
             userBox.className = "username-box";
@@ -240,7 +263,7 @@
                 const statusBadgeImg = document.createElement("img");
                 statusBadgeImg.className = "status-badge";
                 statusBadgeImg.src = statusBadgeUrl;
-                statusBadgeImg.alt = "Status badge";
+                statusBadgeImg.alt = "Status nişanı";
                 userNameDiv.appendChild(statusBadgeImg);
             }
 
@@ -261,6 +284,29 @@
             header.appendChild(img);
             header.appendChild(userBox);
 
+            // Takib etmə düyməsi
+            const cleanPostOwnerNickname = data.nickname.replace('@', '');
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+            if (cleanPostOwnerNickname !== cleanCurrentUserNickname) {
+                const followButton = document.createElement('button');
+                followButton.className = 'follow-button';
+                followButton.id = `follow-button-${cleanPostOwnerNickname}`;
+                
+                // Cari istifadəçinin bu post sahibini takib edib-etmədiyini yoxla
+                const isFollowing = userFollowing[cleanCurrentUserNickname] && userFollowing[cleanCurrentUserNickname][`@${cleanPostOwnerNickname}`] === '"+"';
+                
+                if (isFollowing) {
+                    followButton.classList.add('unfollow');
+                    followButton.textContent = 'İzlədiyin';
+                } else {
+                    followButton.classList.add('follow');
+                    followButton.textContent = 'Takib et';
+                }
+
+                followButton.addEventListener('click', () => toggleFollow(cleanPostOwnerNickname));
+                header.appendChild(followButton);
+            }
+
             postEl.appendChild(header);
 
             if (data.text) {
@@ -274,7 +320,7 @@
                 const image = document.createElement("img");
                 image.className = "post-image";
                 image.src = data.image.replace(/\\/g, '').trim();
-                image.alt = "Post image";
+                image.alt = "Post şəkli";
                 postEl.appendChild(image);
             }
 
@@ -290,7 +336,7 @@
             `;
             likeBtn.addEventListener("click", (event) => {
                 event.stopPropagation();
-                const likeRef = db.ref(`likes/${postId}/${currentUser}`); // Use 'db' for post likes
+                const likeRef = db.ref(`likes/${postId}/${currentUser}`); // Post bəyənmələri üçün 'db' istifadə et
                 likeRef.once("value").then(snap => {
                     const isCurrentlyLiked = snap.exists();
                     if (isCurrentlyLiked) {
@@ -302,7 +348,7 @@
             });
             footer.appendChild(likeBtn);
 
-            // Comment Button
+            // Şərh Düyməsi
             const commentCount = commentsCache[postId] ? Object.keys(commentsCache[postId]).length : 0;
             const commentBtn = document.createElement("button");
             commentBtn.className = "comment-button";
@@ -381,9 +427,9 @@
 
         document.getElementById("confirmYes").onclick = () => {
             if (deletePostId) {
-                db.ref("posts/" + deletePostId).remove(); // Use 'db' for post deletion
-                db.ref("likes/" + deletePostId).remove(); // Use 'db' for post likes deletion
-                commentsDb.ref("comments/" + deletePostId).remove(); // Use 'commentsDb' for comments deletion
+                db.ref("posts/" + deletePostId).remove(); // Post silinməsi üçün 'db' istifadə et
+                db.ref("likes/" + deletePostId).remove(); // Post bəyənmələrinin silinməsi üçün 'db' istifadə et
+                commentsDb.ref("comments/" + deletePostId).remove(); // Şərhlərin silinməsi üçün 'commentsDb' istifadə et
                 document.getElementById("confirmDialog").style.display = "none";
                 deletePostId = null;
             }
@@ -455,7 +501,7 @@
         }
         
         function updateProfileInFirebase(nickname, newProfilePicUrl) {
-            // Update profile in posts Firebase
+            // Profil Firebase postlarında yenilə
             db.ref("posts").once("value", (snapshot) => {
                 snapshot.forEach((childSnapshot) => {
                     const postId = childSnapshot.key;
@@ -470,15 +516,15 @@
                         if (postData.profile !== newProfilePicUrl) {
                             postData.profile = newProfilePicUrl;
                             db.ref("posts/" + postId).set(JSON.stringify(postData)).then(() => {
-                                console.log(`Post ${postId} for user ${nickname} updated.`);
+                                console.log(`Post ${postId} istifadəçi ${nickname} üçün yeniləndi.`);
                             }).catch(error => {
-                                console.error(`Error updating profile pic for post ${postId}:`, error);
+                                console.error(`Post ${postId} üçün profil şəkli yenilənərkən xəta:`, error);
                             });
                         }
                     }
                 });
             });
-            // Also update comments with new profile pic in comments Firebase
+            // Həmçinin Firebase şərhlərində yeni profil şəkli ilə şərhləri yenilə
             commentsDb.ref("comments").once("value", (snapshot) => {
                 snapshot.forEach((postCommentsSnapshot) => {
                     const postId = postCommentsSnapshot.key;
@@ -488,22 +534,22 @@
                         if (commentData.nickname.replace('@', '') === nickname.replace('@', '')) {
                             if (commentData.profilePic !== newProfilePicUrl) {
                                 commentsDb.ref(`comments/${postId}/${commentId}/profilePic`).set(newProfilePicUrl).then(() => {
-                                    console.log(`Comment ${commentId} for user ${nickname} updated with new profile pic.`);
+                                    console.log(`Şərh ${commentId} istifadəçi ${nickname} üçün yeni profil şəkli ilə yeniləndi.`);
                                 }).catch(error => {
-                                    console.error(`Error updating profile pic for comment ${commentId}:`, error);
+                                    console.error(`Şərh ${commentId} üçün profil şəkli yenilənərkən xəta:`, error);
                                 });
                             }
                         }
-                        // Check replies
+                        // Cavabları yoxla
                         if (commentData.replies) {
                             for (const replyId in commentData.replies) {
                                 const replyData = commentData.replies[replyId];
                                 if (replyData.nickname.replace('@', '') === nickname.replace('@', '')) {
                                     if (replyData.profilePic !== newProfilePicUrl) {
                                         commentsDb.ref(`comments/${postId}/${commentId}/replies/${replyId}/profilePic`).set(newProfilePicUrl).then(() => {
-                                            console.log(`Reply ${replyId} for user ${nickname} updated with new profile pic.`);
+                                            console.log(`Cavab ${replyId} istifadəçi ${nickname} üçün yeni profil şəkli ilə yeniləndi.`);
                                         }).catch(error => {
-                                            console.error(`Error updating profile pic for reply ${replyId}:`, error);
+                                            console.error(`Cavab ${replyId} üçün profil şəkli yenilənərkən xəta:`, error);
                                         });
                                     }
                                 }
@@ -529,7 +575,7 @@
                 allStoryUsers.add(ownNickname);
             }
             
-            followingUsers.forEach(user => allStoryUsers.add(user.replace('@', '')));
+            followingUsersStories.forEach(user => allStoryUsers.add(user.replace('@', '')));
             
             const allStoryUsernames = new Set([...Object.keys(allStories.images), ...Object.keys(allStories.videos)]);
             allStoryUsernames.forEach(username => allStoryUsers.add(username));
@@ -673,7 +719,7 @@
             
             if (listContainer.classList.contains('show')) {
                 listContainer.classList.remove('show');
-                resumeStory(); // Resume story after closing list
+                resumeStory(); // Siyahı bağlandıqdan sonra story-ni davam etdir
             } else {
                 listContainer.innerHTML = `<h4>Bəyənənlər</h4>`;
                 const users = Object.keys(likes);
@@ -682,7 +728,7 @@
                         const userDiv = document.createElement('div');
                         userDiv.className = 'liked-user-item';
                         userDiv.innerHTML = `
-                            <img src="${getProfilePic(user)}" alt="${user} profile picture" />
+                            <img src="${getProfilePic(user)}" alt="${user} profil şəkli" />
                             <span>${getUserName(user)}</span>
                         `;
                         userDiv.onclick = () => {
@@ -709,7 +755,7 @@
 
             if (listContainer.classList.contains('show')) {
                 listContainer.classList.remove('show');
-                resumeStory(); // Resume story after closing list
+                resumeStory(); // Siyahı bağlandıqdan sonra story-ni davam etdir
             } else {
                 listContainer.innerHTML = `<h4>Baxışlar</h4>`;
                 const users = Object.keys(views);
@@ -718,7 +764,7 @@
                         const userDiv = document.createElement('div');
                         userDiv.className = 'viewed-user-item';
                         userDiv.innerHTML = `
-                            <img src="${getProfilePic(user)}" alt="${user} profile picture" />
+                            <img src="${getProfilePic(user)}" alt="${user} profil şəkli" />
                             <span>${getUserName(user)}</span>
                         `;
                         userDiv.onclick = () => {
@@ -834,7 +880,7 @@
                 }
             });
 
-            // Add event listeners for tap/click gestures
+            // Tap/klik jestləri üçün hadisə dinləyiciləri əlavə et
             let touchStartX = 0;
             let longPressTimer;
 
@@ -842,7 +888,7 @@
                 e.preventDefault();
                 touchStartX = (e.touches ? e.touches[0] : e).clientX;
                 lastTouchTime = Date.now();
-                longPressTimer = setTimeout(pauseStory, 300); // Hold for 300ms to pause
+                longPressTimer = setTimeout(pauseStory, 300); // 300ms saxlamaq üçün fasilə
             };
             
             mediaContainer.onmouseup = mediaContainer.ontouchend = (e) => {
@@ -852,20 +898,20 @@
                 const screenWidth = window.innerWidth;
                 
                 if (touchEndTime - lastTouchTime < 300) {
-                    // Tap/short press
+                    // Tap/qısa basma
                     if (touchEndX < screenWidth / 2) {
                         prevStory();
                     } else {
                         nextStory();
                     }
                 } else if (isPaused) {
-                    // Resume if previously paused by long press
+                    // Əvvəllər uzun basma ilə dayandırılıbsa davam et
                     resumeStory();
                 }
             };
             
             mediaContainer.onmousemove = mediaContainer.ontouchmove = (e) => {
-                // If a significant move happens, cancel the long press
+                // Əhəmiyyətli bir hərəkət baş verərsə, uzun basmanı ləğv et
                 const currentX = (e.touches ? e.touches[0] : e).clientX;
                 if (Math.abs(currentX - touchStartX) > 10) {
                     clearTimeout(longPressTimer);
@@ -876,7 +922,7 @@
                 const img = document.createElement("img");
                 img.src = story.image;
                 img.onerror = function() {
-                    console.error("Failed to load story image:", this.src);
+                    console.error("Story şəkli yüklənərkən xəta:", this.src);
                     nextStory();
                 };
                 img.style.maxWidth = '100%';
@@ -939,7 +985,7 @@
 
                 video.onended = nextStory;
                 video.onerror = function() {
-                    console.error("Failed to load story video:", this.src);
+                    console.error("Story videosu yüklənərkən xəta:", this.src);
                     nextStory();
                 };
             }
@@ -1109,10 +1155,10 @@
 
             gonlineDb.ref(`storyReadStatus/${cleanCurrentUser}/${cleanNickname}`).set(true)
                 .then(() => {
-                    console.log(`Story from ${nickname} marked as read by ${currentUser}.`);
+                    console.log(`Story '${nickname}' istifadəçisi tərəfindən '${currentUser}' tərəfindən oxunmuş olaraq qeyd edildi.`);
                 })
                 .catch(error => {
-                    console.error("Error marking story as read in Firebase:", error);
+                    console.error("Story oxunmuş olaraq qeyd edilərkən Firebase-də xəta:", error);
                 });
             
             firebaseStoryReadStatus[cleanNickname] = true;
@@ -1195,13 +1241,16 @@
             allUsers = snapshot.val() || {};
             dataLoaded.users = true;
             renderStories();
+            // YENİ: İstifadəçi məlumatları (adlar/şəkillər üçün) dəyişdikdə postları yenidən filtr et
+            filterPosts(currentPostFilter); 
             hideLoaderIfReady();
         });
         
+        // Storylər üçün izlənilən istifadəçilər (followingDb istifadə edərək)
         followingDb.ref(currentUser.replace('@', '')).on("value", (snapshot) => {
             const data = snapshot.val() || {};
             const keys = Object.keys(data).filter(key => data[key] === "+" || data[key] === '"+"');
-            followingUsers = keys.map(key => key.startsWith('@') ? key : `@${key}`);
+            followingUsersStories = keys.map(key => key.startsWith('@') ? key : `@${key}`); // Ad dəyişdirildi
             dataLoaded.following = true;
             renderStories();
             hideLoaderIfReady();
@@ -1217,7 +1266,7 @@
                     if (!stories[nickname]) stories[nickname] = [];
                     stories[nickname].push({...post, storyId: child.key, timestamp: postTime});
                 } catch(e) {
-                    console.error("Story (posts) məlumatı oxunarkən xəta:", e);
+                    console.error("Story (postlar) məlumatı oxunarkən xəta:", e);
                 }
             });
             allStories.images = stories;
@@ -1255,14 +1304,14 @@
                     if (nickname === cleanCurrentUser) {
                         gonlineDb.ref(`storyReadStatus/${cleanCurrentUser}/${cleanCurrentUser}`).remove()
                             .then(() => {
-                                console.log(`Own story read status reset for ${cleanCurrentUser}.`);
+                                console.log(`Öz story oxuma statusu '${cleanCurrentUser}' üçün sıfırlandı.`);
                             })
                             .catch(error => {
-                                console.error("Error resetting own story read status:", error);
+                                console.error("Öz story oxuma statusu sıfırlanarkən xəta:", error);
                             });
                     }
                 } catch (e) {
-                    console.error("Error parsing new story data from posts (child_added):", e);
+                    console.error("Postlardan yeni story məlumatı parsing edilərkən xəta (child_added):", e);
                 }
             }
         });
@@ -1277,44 +1326,42 @@
                     if (nickname === cleanCurrentUser) {
                         gonlineDb.ref(`storyReadStatus/${cleanCurrentUser}/${cleanCurrentUser}`).remove()
                             .then(() => {
-                                console.log(`Own story read status reset for ${cleanCurrentUser}.`);
+                                console.log(`Öz story oxuma statusu '${cleanCurrentUser}' üçün sıfırlandı.`);
                             })
                             .catch(error => {
-                                console.error("Error resetting own story read status:", error);
+                                console.error("Öz story oxuma statusu sıfırlanarkən xəta:", error);
                             });
                     }
                 } catch (e) {
-                    console.error("Error parsing new story data from snap (child_added):", e);
+                    console.error("Snapdan yeni story məlumatı parsing edilərkən xəta (child_added):", e);
                 }
             }
         });
 
 
-        db.ref("likes").on("value", (likesSnap) => { // Use 'db' for post likes
+        db.ref("likes").on("value", (likesSnap) => { // Post bəyənmələri üçün 'db' istifadə et
             likeCache = likesSnap.val() || {};
             dataLoaded.likes = true;
-            for (const postId in postCache) {
-                updateLikeInfo(postId);
-            }
+            // YENİ: Bəyənmə saylarını yeniləmək üçün postları yenidən filtr et
+            filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
 
-        // Listener for comments (using commentsDb)
+        // Şərhlər üçün dinləyici (commentsDb istifadə edərək)
         commentsDb.ref("comments").on("value", (snapshot) => {
             commentsCache = snapshot.val() || {};
             dataLoaded.comments = true;
-            // Update comment counts on posts
-            for (const postId in postCache) {
-                updateCommentCount(postId);
-            }
-            // If the comment overlay is open for a post, re-render its comments
+            // Postlardakı şərh saylarını yenilə
+            // YENİ: Şərh saylarını yeniləmək üçün postları yenidən filtr et
+            filterPosts(currentPostFilter);
+            // Şərh overlayı bir post üçün açıqdırsa, onun şərhlərini yenidən render et
             if (activeCommentPostId) {
                 renderComments(activeCommentPostId);
             }
             hideLoaderIfReady();
         });
 
-        // Listener for comment likes (using commentsDb)
+        // Şərh bəyənmələri üçün dinləyici (commentsDb istifadə edərək)
         commentsDb.ref("commentLikes").on("value", (snapshot) => {
             commentLikesCache = snapshot.val() || {};
             dataLoaded.commentLikes = true;
@@ -1327,63 +1374,63 @@
         tickDb.ref("tick").on("value", (snapshot) => {
             tickUsers = snapshot.val() || {};
             dataLoaded.tick = true;
-            for (const postId in postCache) {
-                const existingPostEl = document.getElementById(`post_${postId}`);
-                if (existingPostEl) {
-                    const postData = postCache[postId];
-                    const newHeader = renderPost(postId, postData).querySelector('.post-header');
-                    existingPostEl.querySelector('.post-header').replaceWith(newHeader);
-                }
-            }
+            // YENİ: Tick statusunu yeniləmək üçün postları yenidən filtr et
+            filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
 
         premiumDb.ref("premium").on("value", (snapshot) => {
             premiumUsers = snapshot.val() || {};
             dataLoaded.premium = true;
-            for (const postId in postCache) {
-                const existingPostEl = document.getElementById(`post_${postId}`);
-                if (existingPostEl) {
-                    const postData = postCache[postId];
-                    const newHeader = renderPost(postId, postData).querySelector('.post-header');
-                    existingPostEl.querySelector('.post-header').replaceWith(newHeader);
-                }
-            }
+            // YENİ: Premium statusunu yeniləmək üçün postları yenidən filtr et
+            filterPosts(currentPostFilter);
+            hideLoaderIfReady();
+        });
+
+        // FOLLOWS DATABAZASINA QULAQ ASIR (Kim məni takib edir)
+        followsDb.ref().on("value", (snapshot) => {
+            userFollows = snapshot.val() || {};
+            dataLoaded.userFollows = true;
+            // Takip statusları dəyişdikdə postları yenidən render etmək üçün
+            // YENİ: İzləmə statusu dəyişdikdə postları yenidən filtr et
+            filterPosts(currentPostFilter);
+            hideLoaderIfReady();
+        });
+
+        // FOLLOWING DATABAZASINA QULAQ ASIR (Mən kimləri takib edirəm)
+        followingDb.ref().on("value", (snapshot) => {
+            userFollowing = snapshot.val() || {};
+            dataLoaded.userFollowing = true;
+            // Takip statusları dəyişdikdə postları yenidən render etmək üçün
+            // YENİ: İzləmə statusu dəyişdikdə postları yenidən filtr et
+            filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
         
-        db.ref("posts").once("value").then(snapshot => { // Use 'db' for initial posts load
+        // Postların ilkin yüklənməsi
+        db.ref("posts").once("value").then(snapshot => { // Postların ilkin yüklənməsi üçün 'db' istifadə et
             const allPosts = snapshot.val() || {};
-            const postDataArray = [];
             for (const postId in allPosts) {
                 try {
                     const postData = JSON.parse(allPosts[postId]);
-                    postCache[postId] = postData;
-                    postDataArray.push({ id: postId, data: postData });
+                    postCache[postId] = { id: postId, data: postData }; // Orijinal formatı saxla
                 } catch (e) {
                     console.error("İlk post məlumatı oxunarkən xəta:", e);
                 }
             }
-            
-            const shuffledPosts = postDataArray.sort(() => 0.5 - Math.random());
-            
-            postsContainer.innerHTML = "";
-            shuffledPosts.forEach(post => {
-                postsContainer.appendChild(renderPost(post.id, post.data));
-            });
             dataLoaded.posts = true;
             initialLoadDone = true;
             hideLoaderIfReady();
 
-            db.ref("posts").on("child_added", (snap) => { // Use 'db' for child_added on posts
+            db.ref("posts").on("child_added", (snap) => { // Postlarda child_added üçün 'db' istifadə et
                 if (initialLoadDone) {
                     const postId = snap.key;
                     if (!postCache[postId]) {
                         try {
                             const postData = JSON.parse(snap.val());
-                            postCache[postId] = postData;
-                            const newPostEl = renderPost(postId, postData);
-                            postsContainer.prepend(newPostEl);
+                            postCache[postId] = { id: postId, data: postData }; // Orijinal formatı saxla
+                            // YENİ: Yeni post əlavə edildikdə postları yenidən filtr et
+                            filterPosts(currentPostFilter);
                         } catch (e) {
                             console.error("Yeni post əlavə edilərkən xəta:", postId, e);
                         }
@@ -1391,26 +1438,23 @@
                 }
             });
 
-            db.ref("posts").on("child_changed", (snap) => { // Use 'db' for child_changed on posts
+            db.ref("posts").on("child_changed", (snap) => { // Postlarda child_changed üçün 'db' istifadə et
                 const postId = snap.key;
                 try {
                     const postData = JSON.parse(snap.val());
-                    postCache[postId] = postData;
-                    const existingPostEl = document.getElementById("post_" + postId);
-                    if (existingPostEl) {
-                        const newPostEl = renderPost(postId, postData);
-                        postsContainer.replaceChild(newPostEl, existingPostEl);
-                    }
+                    postCache[postId] = { id: postId, data: postData }; // Orijinal formatı saxla
+                    // YENİ: Post dəyişdirildikdə postları yenidən filtr et
+                    filterPosts(currentPostFilter);
                 } catch (e) {
                     console.error("Post dəyişdirilərkən xəta:", postId, e);
                 }
             });
 
-            db.ref("posts").on("child_removed", (snap) => { // Use 'db' for child_removed on posts
+            db.ref("posts").on("child_removed", (snap) => { // Postlarda child_removed üçün 'db' istifadə et
                 const postId = snap.key;
                 delete postCache[postId];
-                const el = document.getElementById("post_" + postId);
-                if (el) el.remove();
+                // YENİ: Post silindikdə postları yenidən filtr et
+                filterPosts(currentPostFilter);
             });
 
         }).catch(error => {
@@ -1420,61 +1464,118 @@
             hideLoaderIfReady();
         });
 
-        // Comment functionality
+        // YENİ: Postları filtrləmək və göstərmək üçün funksiya
+        function filterPosts(filterType) {
+            currentPostFilter = filterType; // Qlobal filter statusunu yenilə
+
+            const allFilterButtons = document.querySelectorAll('#post-navigation-bar button');
+            allFilterButtons.forEach(button => button.classList.remove('active'));
+
+            if (filterType === 'mine') {
+                document.getElementById('my-posts-button').classList.add('active');
+            } else if (filterType === 'all') {
+                document.getElementById('all-posts-button').classList.add('active');
+            } 
+            // "friends" filtri silindi
+
+            postsContainer.innerHTML = ''; // Cari postları təmizlə
+            let filteredPostsArray = [];
+
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+            const myFollowing = userFollowing[cleanCurrentUserNickname] || {};
+
+            for (const postId in postCache) {
+                const post = postCache[postId];
+                const cleanPostOwnerNickname = post.data.nickname.replace('@', '');
+
+                let shouldAdd = false;
+                if (filterType === 'all') {
+                    shouldAdd = true;
+                } else if (filterType === 'mine') {
+                    shouldAdd = (cleanPostOwnerNickname === cleanCurrentUserNickname);
+                } else if (filterType === 'friends') {
+                    // Cari istifadəçinin post sahibini izləyib-izləmədiyini yoxla
+                    shouldAdd = myFollowing[`@${cleanPostOwnerNickname}`] === '+' || myFollowing[cleanPostOwnerNickname] === '+';
+                }
+
+                if (shouldAdd) {
+                    filteredPostsArray.push(post);
+                }
+            }
+
+            // Postları zaman damğasına görə azalan qaydada sırala (ən yenisi birinci)
+            filteredPostsArray.sort((a, b) => {
+                const timeA = new Date(a.data.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
+                const timeB = new Date(b.data.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
+                return timeB - timeA;
+            });
+
+            filteredPostsArray.forEach(post => {
+                postsContainer.appendChild(renderPost(post.id, post.data));
+            });
+        }
+
+        // Yeni naviqasiya düymələrinə hadisə dinləyiciləri əlavə et
+        document.getElementById('my-posts-button').addEventListener('click', () => filterPosts('mine'));
+        document.getElementById('all-posts-button').addEventListener('click', () => filterPosts('all'));
+        // document.getElementById('friends-posts-button').addEventListener('click', () => filterPosts('friends')); // "Dostlar" düyməsi silindi
+
+
+        // Şərh funksionalı
         const commentOverlay = document.getElementById('comment-overlay');
         const commentsList = document.getElementById('comments-list');
         const commentInput = document.getElementById('comment-input');
         const sendCommentButton = document.getElementById('send-comment-button');
-        // const currentUserCommentPic = document.getElementById('current-user-comment-pic'); // Removed this element
+        // const currentUserCommentPic = document.getElementById('current-user-comment-pic'); // Bu element silindi
 
-        // No longer needed since the profile picture element is removed from HTML
+        // Profil şəkli elementi HTML-dən silindiyi üçün artıq lazım deyil
         // currentUserCommentPic.src = getProfilePic(currentUser.replace('@', '')); 
 
         function openCommentOverlay(postId) {
-            activeCommentPostId = postId; // Internal tracking of the postId
+            activeCommentPostId = postId; // Post ID-sinin daxili izlənməsi
             
-            // Update URL to only add &comment=true
+            // URL-i yalnız &comment=true əlavə etmək üçün yenilə
             const currentUrl = new URL(window.location.href);
             const newSearchParams = new URLSearchParams(currentUrl.search);
             newSearchParams.set('comment', 'true');
-            newSearchParams.delete('postId'); // Ensure postId is removed if it was there before
+            newSearchParams.delete('postId'); // Əvvəllər orada idisə, postId-nin silindiyinə əmin ol
 
             const newUrl = currentUrl.origin + currentUrl.pathname + '?' + newSearchParams.toString();
             history.pushState(null, '', newUrl);
 
             commentOverlay.style.display = 'flex';
-            // Trigger animation
+            // Animasiyanı işə sal
             requestAnimationFrame(() => {
                 commentOverlay.classList.add('visible');
-                document.body.style.overflow = 'hidden'; // Prevent body scroll when overlay is open
+                document.body.style.overflow = 'hidden'; // Overlay açıq olduqda body-nin scroll-unu dayandır
             });
             
-            commentInput.value = ''; // Clear input field
-            replyingToCommentId = null; // Reset reply state
+            commentInput.value = ''; // Giriş sahəsini təmizlə
+            replyingToCommentId = null; // Cavab statusunu sıfırla
             replyingToCommentAuthor = null;
-            commentInput.placeholder = 'Şərh yazın...'; // Reset placeholder
-            sendCommentButton.disabled = true; // Disable send button initially
+            commentInput.placeholder = 'Şərh yazın...'; // Placeholder-i sıfırla
+            sendCommentButton.disabled = true; // Göndər düyməsini əvvəlcədən deaktiv et
 
-            // Render comments using the internally tracked activeCommentPostId
+            // Daxili olaraq izlənilən activeCommentPostId istifadə edərək şərhləri render et
             renderComments(activeCommentPostId);
         }
 
         function closeCommentOverlay() {
             commentOverlay.classList.remove('visible');
             
-            // Remove 'comment' and 'postId' from URL
+            // URL-dən 'comment' və 'postId' sil
             const currentUrl = new URL(window.location.href);
             const newSearchParams = new URLSearchParams(currentUrl.search);
             newSearchParams.delete('comment');
-            newSearchParams.delete('postId'); // Also ensure postId is removed if any old URL still has it
+            newSearchParams.delete('postId'); // Həmçinin hər hansı köhnə URL-də varsa, postId-nin silindiyinə əmin ol
 
             const newUrl = currentUrl.origin + currentUrl.pathname + '?' + newSearchParams.toString();
             history.pushState(null, '', newUrl);
 
             setTimeout(() => {
                 commentOverlay.style.display = 'none';
-                document.body.style.overflow = 'auto'; // Re-enable body scroll
-                activeCommentPostId = null; // Reset internal postId tracking
+                document.body.style.overflow = 'auto'; // Body-nin scroll-unu yenidən aktiv et
+                activeCommentPostId = null; // Daxili postId izlənməsini sıfırla
                 replyingToCommentId = null;
                 replyingToCommentAuthor = null;
                 commentInput.value = '';
@@ -1486,13 +1587,13 @@
         function renderComments(postId) {
             commentsList.innerHTML = '';
             if (!postId) {
-                // If no postId is active, clear the comments list and return
+                // Aktiv postId yoxdursa, şərhlər siyahısını təmizlə və geri dön
                 console.warn("Şərhləri göstərmək üçün aktiv post ID yoxdur.");
                 return;
             }
             const commentsForPost = commentsCache[postId] || {};
             
-            // Sort comments by timestamp
+            // Şərhləri zaman damğasına görə sırala
             const sortedCommentIds = Object.keys(commentsForPost).sort((a, b) => {
                 return commentsForPost[a].timestamp - commentsForPost[b].timestamp;
             });
@@ -1501,7 +1602,7 @@
                 const commentData = commentsForPost[commentId];
                 commentsList.appendChild(createCommentElement(postId, commentId, commentData));
             });
-            commentsList.scrollTop = commentsList.scrollHeight; // Scroll to bottom
+            commentsList.scrollTop = commentsList.scrollHeight; // Ən aşağıya sürüşdür
         }
 
         function createCommentElement(postId, commentId, commentData, isReply = false, parentCommentId = null) {
@@ -1512,7 +1613,7 @@
             const profilePic = document.createElement('img');
             profilePic.className = 'profile-pic';
             profilePic.src = getProfilePic(commentData.nickname);
-            profilePic.alt = commentData.nickname + ' profile picture';
+            profilePic.alt = commentData.nickname + ' profil şəkli';
             profilePic.onclick = () => window.location.href = `?other_user=${commentData.nickname}`;
 
             const contentContainer = document.createElement('div');
@@ -1536,7 +1637,7 @@
             const text = document.createElement('div');
             text.className = isReply ? 'reply-text' : 'comment-text';
             
-            // If it's a reply and has a replyToNickname, format the text
+            // Cavabdırsa və replyToNickname varsa, mətni formatla
             if (commentData.replyToNickname) {
                 const replySpan = document.createElement('span');
                 replySpan.style.color = '#4a90e2';
@@ -1555,7 +1656,7 @@
             const actions = document.createElement('div');
             actions.className = 'comment-actions';
 
-            // Like button for comments - ONLY show for top-level comments (not replies)
+            // Şərhlər üçün bəyənmə düyməsi - YALNIZ üst səviyyə şərhlər üçün göstər (cavablar üçün yox)
             if (!isReply) {
                 const likeCommentButton = document.createElement('span');
                 likeCommentButton.className = 'like-comment-button';
@@ -1573,8 +1674,8 @@
                 actions.appendChild(likeCommentButton);
             }
 
-            // Reply button
-            if (!isReply) { // Only show reply button for top-level comments
+            // Cavab düyməsi
+            if (!isReply) { // Yalnız üst səviyyə şərhlər üçün cavab düyməsini göstər
                 const replyButton = document.createElement('span');
                 replyButton.className = 'reply-button';
                 replyButton.textContent = 'Cavab ver';
@@ -1592,7 +1693,7 @@
             wrapperElement.appendChild(profilePic);
             wrapperElement.appendChild(contentContainer);
 
-            // Replies section (only for top-level comments)
+            // Cavablar bölməsi (yalnız üst səviyyə şərhlər üçün)
             if (!isReply) {
                 const replies = commentData.replies || {};
                 const sortedReplyIds = Object.keys(replies).sort((a, b) => {
@@ -1617,11 +1718,11 @@
 
                     const replySection = document.createElement('div');
                     replySection.className = 'reply-section';
-                    replySection.style.display = 'none'; // Hidden by default
+                    replySection.style.display = 'none'; // Varsayılan olaraq gizli
                     
                     sortedReplyIds.forEach(replyId => {
                         const replyData = replies[replyId];
-                        // Pass isReply = true when creating reply elements
+                        // Cavab elementləri yaradarkən isReply = true keçir
                         replySection.appendChild(createCommentElement(postId, replyId, replyData, true, commentId));
                     });
                     contentContainer.appendChild(replySection);
@@ -1654,12 +1755,12 @@
             };
 
             if (replyingToCommentId && replyingToCommentAuthor) {
-                // It's a reply
+                // Bu bir cavabdır
                 newComment.replyToNickname = replyingToCommentAuthor;
-                commentsDb.ref(`comments/${activeCommentPostId}/${replyingToCommentId}/replies`).push(newComment); // Use 'commentsDb' for replies
+                commentsDb.ref(`comments/${activeCommentPostId}/${replyingToCommentId}/replies`).push(newComment); // Cavablar üçün 'commentsDb' istifadə et
             } else {
-                // It's a new top-level comment
-                commentsDb.ref(`comments/${activeCommentPostId}`).push(newComment); // Use 'commentsDb' for new comments
+                // Bu yeni üst səviyyə şərhidir
+                commentsDb.ref(`comments/${activeCommentPostId}`).push(newComment); // Yeni şərhlər üçün 'commentsDb' istifadə et
             }
 
             commentInput.value = '';
@@ -1670,7 +1771,7 @@
         });
 
         function toggleCommentLike(commentId) {
-            const likeRef = commentsDb.ref(`commentLikes/${commentId}/${currentUser}`); // Use 'commentsDb' for comment likes
+            const likeRef = commentsDb.ref(`commentLikes/${commentId}/${currentUser}`); // Şərh bəyənmələri üçün 'commentsDb' istifadə et
             likeRef.once('value').then(snap => {
                 const isCurrentlyLiked = snap.exists();
                 if (isCurrentlyLiked) {
@@ -1681,20 +1782,67 @@
             });
         }
         
-        // Handle URL changes to open/close comment overlay
+        // Şərh overlayını açmaq/bağlamaq üçün URL dəyişikliklərini idarə et
         window.addEventListener('popstate', () => {
             const currentUrlParams = new URLSearchParams(window.location.search);
             const isCommentOpenInUrl = currentUrlParams.get('comment') === 'true';
-            // postIdInUrl is no longer used for opening, as per your request
+            // postIdInUrl artıq açılış üçün istifadə edilmir, sizin tələbinizə uyğun olaraq
             // const postIdInUrl = currentUrlParams.get('postId'); 
 
             if (isCommentOpenInUrl && !commentOverlay.classList.contains('visible')) {
-                // If comment param is present, try to open.
-                // activeCommentPostId will remain whatever it was set to by clicking a post's comment button.
-                // If a user navigates to a URL with only `?comment=true` and no previous postId was set, 
-                // the comments list will be empty as renderComments checks for activeCommentPostId.
+                // Şərh parametri varsa, açmağa çalışın.
+                // activeCommentPostId postun şərh düyməsinə basmaqla nə təyin edilibsə, o qalacaq.
+                // Əgər istifadəçi yalnız `?comment=true` olan bir URL-ə keçərsə və əvvəlki postId təyin edilməyibsə, 
+                // renderComments activeCommentPostId-ni yoxladığı üçün şərhlər siyahısı boş olacaq.
                 openCommentOverlay(activeCommentPostId); 
             } else if (!isCommentOpenInUrl && commentOverlay.classList.contains('visible')) {
                 closeCommentOverlay();
             }
         });
+
+        // Yeni Takib etmə funksiyaları
+        async function toggleFollow(targetNickname) {
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+            const cleanTargetNickname = targetNickname.replace('@', '');
+
+            // Mən bu istifadəçini takib edirəm? (Following database)
+            const myFollowingRef = followingDb.ref(`${cleanCurrentUserNickname}/@${cleanTargetNickname}`);
+            const myFollowingSnap = await myFollowingRef.once('value');
+            const isFollowing = myFollowingSnap.exists() && myFollowingSnap.val() === '"+"';
+
+            // Bu istifadəçini takib edən mənəm? (Follows database)
+            const targetFollowsRef = followsDb.ref(`${cleanTargetNickname}/@${cleanCurrentUserNickname}`);
+            const targetFollowsSnap = await targetFollowsRef.once('value');
+            const isFollowedByMe = targetFollowsSnap.exists() && targetFollowsSnap.val() === '"+"';
+
+            // Following sayğacı
+            const myFollowingCountRef = followingDb.ref(`${cleanCurrentUserNickname}/following`);
+            // Follow sayğacı
+            const targetFollowCountRef = followsDb.ref(`${cleanTargetNickname}/follow`);
+
+            if (isFollowing || isFollowedByMe) {
+                // Takibdən çıx
+                await myFollowingRef.remove();
+                await targetFollowsRef.remove();
+
+                // Sayğacları azalt
+                myFollowingCountRef.transaction((currentCount) => {
+                    return (currentCount || 0) - 1;
+                });
+                targetFollowCountRef.transaction((currentCount) => {
+                    return (currentCount || 0) - 1;
+                });
+            } else {
+                // Takib et
+                await myFollowingRef.set('"+"');
+                await targetFollowsRef.set('"+"');
+
+                // Sayğacları artır
+                myFollowingCountRef.transaction((currentCount) => {
+                    return (currentCount || 0) + 1;
+                });
+                targetFollowCountRef.transaction((currentCount) => {
+                    return (currentCount || 0) + 1;
+                });
+            }
+        }
