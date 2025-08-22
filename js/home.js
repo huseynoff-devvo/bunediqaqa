@@ -20,7 +20,7 @@
             appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
         };
 
-        // Ayrı Firebase tətbiqlərini ilkinləşdir
+        // Ayrı Firebase tətbiplərini ilkinləşdir
         const postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
         const commentsApp = firebase.initializeApp(commentsFirebaseConfig, "commentsApp");
 
@@ -1503,12 +1503,13 @@
                 }
             }
 
-            // Postları zaman damğasına görə azalan qaydada sırala (ən yenisi birinci)
-            filteredPostsArray.sort((a, b) => {
-                const timeA = new Date(a.data.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
-                const timeB = new Date(b.data.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
-                return timeB - timeA;
-            });
+            // --- Dəyişiklik burada başlayır: Postları təsadüfi sırala ---
+            // Fisher-Yates (Knuth) shuffle alqoritmi
+            for (let i = filteredPostsArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filteredPostsArray[i], filteredPostsArray[j]] = [filteredPostsArray[j], filteredPostsArray[i]];
+            }
+            // --- Dəyişiklik burada bitir ---
 
             filteredPostsArray.forEach(post => {
                 postsContainer.appendChild(renderPost(post.id, post.data));
