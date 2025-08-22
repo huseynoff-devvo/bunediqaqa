@@ -528,9 +528,9 @@
 
         } else {
             document.getElementById("loader").style.display = "none";
-            postsContainer.style.display = "none";
-            noPostsMessage.style.display = "flex";
-            noPostsMessage.querySelector('span:last-child').textContent = "Profil səhifəsini görmək üçün `?myPosts=true` parametri istifadə olunmalıdır.";
+            // postsContainer.style.display = "none";
+            // noPostsMessage.style.display = "flex";
+            // noPostsMessage.querySelector('span:last-child').textContent = "Profil səhifəsini görmək üçün `?myPosts=true` parametri istifadə olunmalıdır.";
         }
 
         // Comment functionality
