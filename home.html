@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/home.css">
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="color:white; margin-top: 15px;"></p>
+    </div>
+
+    <div id="story-viewer">
+        <div id="story-media-container"></div>
+        <span class="material-icons close-story-button" onclick="closeStoryViewer();">close</span>
+        <span class="material-icons pause-story-button" onclick="togglePauseStory();">pause_circle_filled</span>
+        <div class="story-progress-bar"></div>
+        <div class="story-controls">
+            <div class="story-header">
+                <img class="story-profile-pic" src="" alt="Profile Picture">
+                <span class="username"></span>
+                <span class="time"></span>
+                <span class="material-icons delete-btn" style="display: none;">delete</span>
+            </div>
+            <div style="flex-grow: 1;"></div>
+            <div class="story-footer">
+                <div class="story-stats" style="display: none;">
+                    <div class="story-stats-item" onclick="toggleStoryViewsList()">
+                        <span class="material-icons">visibility</span>
+                        <span class="count view-count">0</span>
+                    </div>
+                    <div class="story-stats-item" onclick="toggleStoryLikesList()">
+                        <span class="material-icons">favorite</span>
+                        <span class="count like-count">0</span>
+                    </div>
+                </div>
+                <div class="story-likes-list-container" id="story-likes-list-container">
+                    <h4>Bəyənənlər</h4>
+                </div>
+                <div class="story-views-list-container" id="story-views-list-container">
+                     <h4>Baxışlar</h4>
+                </div>
+                <div class="story-footer-bottom">
+                    <span class="story-text"></span>
+                    <div class="story-actions">
+                         <button class="story-like-button material-icons" onclick="toggleStoryLike(event);">favorite_border</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="story-loading-indicator" class="spinner"></div>
+    </div>
+    <div id="stories-container"></div>
+    <div id="posts"></div>
+
+    <div class="confirm-dialog" id="confirmDialog">
+        <div>Bu postu silmək istəyirsiniz?</div>
+        <div style="margin-top: 10px;">
+            <button class="yes" id="confirmYes">Bəli</button>
+            <button class="no" id="confirmNo">Xəyr</button>
+        </div>
+    </div>
+
+    <!-- Comment Overlay -->
+    <div id="comment-overlay">
+        <div class="comment-header">
+            <span class="material-icons" onclick="closeCommentOverlay();">close</span>
+            <h2>Şərhlər</h2>
+        </div>
+        <div id="comments-list">
+            <!-- Comments will be loaded here -->
+        </div>
+        <div class="comment-input-area">
+            <!-- Removed profile picture from here -->
+            <input type="text" id="comment-input" placeholder="Şərh yazın..." />
+            <button id="send-comment-button" class="material-icons" disabled>send</button>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://huseynoff-devvo.github.io/bunediqaqa/js/home.js"></script>
+</body>
+</html>
