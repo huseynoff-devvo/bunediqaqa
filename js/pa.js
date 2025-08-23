@@ -33,11 +33,10 @@
   const errorMessage = document.getElementById("errorMessage");
 
   // Kətanın və pikselin vəziyyət dəyişənləri
-  // URL-dən koordinatları oxuyun və ya varsayılan dəyərləri istifadə edin
-  const urlParams = new URLSearchParams(window.location.search);
-  let scale = parseFloat(urlParams.get('s')) || 20; // Başlanğıc miqyas
-  let panX = parseFloat(urlParams.get('x')) || innerWidth / 2; // Başlanğıc üfüqi sürüşmə
-  let panY = parseFloat(urlParams.get('y')) || innerHeight / 2; // Başlanğıc şaquli sürüşmə
+  // URL-dən koordinatları oxuyan hissələr silindi. Varsayılan dəyərlər istifadə olunur.
+  let scale = 20; // Başlanğıc miqyas
+  let panX = innerWidth / 2; // Başlanğıc üfüqi sürüşmə
+  let panY = innerHeight / 2; // Başlanğıc şaquli sürüşmə
 
   let currentColor = "#000000"; // Cari seçilmiş rəng
   let selectedBaseColor = null; // Əsas palitradan seçilmiş rəngi izləmək üçün
@@ -46,7 +45,6 @@
   let animationOffset = 0; // Önizləmə animasiyasının ofseti
   let animationDir = 1; // Önizləmə animasiyasının istiqaməti
   const pixelData = {}; // Bütün piksellərin saxlandığı obyekt
-  // cooldownDuration və cooldownEnd dəyişənləri və onların istifadəsi ləğv edildi.
   let lastTouchDist = null; // Son toxunma məsafəsi (zoom üçün)
   let currentTouchMode = null; // Cari toxunma rejimi (pan/zoom)
 
@@ -99,13 +97,10 @@
     return shades;
   }
 
-  // URL-i yeniləmək funksiyası
+  // URL-i yeniləmək funksiyası (boşaldılıb ki, koordinatlar qeyd edilməsin)
   function updateURL() {
-    const params = new URLSearchParams();
-    params.set('x', panX.toFixed(2));
-    params.set('y', panY.toFixed(2));
-    params.set('s', scale.toFixed(2));
-    window.history.pushState(null, '', `?${params.toString()}`);
+    // URL-ə koordinatlar əlavə edilmir.
+    // window.history.pushState(null, '', window.location.pathname); // Yalnız yol hissəsini saxla
   }
 
   // Pan hüdudlarını tətbiq edən funksiya
@@ -129,22 +124,8 @@
   function applyPanLimits() {
     panX = clampPan(panX, canvas.width, WORLD_MIN_X, WORLD_MAX_X, scale);
     panY = clampPan(panY, canvas.height, WORLD_MIN_Y, WORLD_MAX_Y, scale);
-    updateURL();
+    updateURL(); // URL-i yenilə (artıq koordinatları qeyd etmir)
   }
-
-  // Soyuma müddətini Firebase-dən almaq - bu hissə artıq istifadə edilmir
-  // onValue(ref(db, 'settings/pixelCooldownMs'), snap => {
-  //   if (snap.exists()) {
-  //     const val = Number(snap.val());
-  //     if (!isNaN(val) && val > 0) {
-  //       cooldownDuration = val;
-  //       if (Date.now() < cooldownEnd) {
-  //         cooldownEnd = Date.now() + cooldownDuration;
-  //         localStorage.setItem('pixelCooldown', cooldownEnd);
-  //       }
-  //     }
-  //   }
-  // });
 
   // Rəng palitrasının tərifi (yenilənmiş)
   const colors = [
@@ -161,7 +142,6 @@
     d.style.backgroundColor = c;
     d.dataset.color = c;
     d.onclick = () => {
-      // Cooldown yoxlaması ləğv edildi
       selectedBaseColor = c; // Ana palitradan seçilmiş rəng
       currentColor = c; // Cari piksel rəngi ana rəng olaraq təyin edilir
       updateSelectedColor();
@@ -183,7 +163,6 @@
       d.style.backgroundColor = shade;
       d.dataset.color = shade;
       d.onclick = () => {
-        // Cooldown yoxlaması ləğv edildi
         currentColor = shade; // Cari piksel rəngini ton olaraq təyin et
         updateSelectedColor(); // Seçimi yenilə
       };
@@ -240,7 +219,7 @@
     }
 
     // Əgər önizləmə pikseli varsa
-    if (previewPixel) { // Cooldown yoxlaması ləğv edildi
+    if (previewPixel) {
       const { x, y, color } = previewPixel;
       animationOffset += animationDir * 0.2; // Animasiya ofsetini yenilə
       if (animationOffset > 4 || animationOffset < -4) animationDir *= -1; // Animasiya istiqamətini dəyiş
@@ -261,29 +240,9 @@
   // Animasiya dövrü
   function animate() {
     draw(); // Kətanı çək
-    // updateCooldownUI çağırışı ləğv edildi
     requestAnimationFrame(animate); // Növbəti kadrı tələb et
   }
   animate(); // Animasiyanı başlat
-
-  // Zamanı formatlama funksiyası (MM:SS) - artıq istifadə edilmir
-  // function formatTime(s) {
-  //   const m = Math.floor(s / 60); // Dəqiqəni hesabla
-  //   return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`; // Formatlanmış zamanı qaytar
-  // }
-
-  // Soyuma UI-nı yeniləmək funksiyası - artıq istifadə edilmir
-  // function updateCooldownUI() {
-  //   const diff = Math.floor((cooldownEnd - Date.now()) / 1000); // Qalan soyuma müddətini saniyə ilə hesabla
-  //   if (diff > 0) {
-  //     countdownEl.style.display = 'block'; // Geri sayımı göstər
-  //     countdownEl.textContent = formatTime(diff); // Geri sayımı yenilə
-  //   } else {
-  //     countdownEl.style.display = 'none'; // Geri sayımı gizlət
-  //     cooldownEnd = 0; // Soyuma müddətini sıfırla
-  //     localStorage.removeItem('pixelCooldown'); // Yerli yaddaşdan sil
-  //   }
-  // }
 
   // Kətan koordinatlarını almaq funksiyası
   function getCanvasCoords(cx, cy) {
@@ -295,7 +254,6 @@
 
   // Piksel yerləşdirmək funksiyası
   function placePixel(x, y) {
-    // Cooldown yoxlaması ləğv edildi
     // Kətan hüdudlarını yoxlayın
     if (x < WORLD_MIN_X || x > WORLD_MAX_X || y < WORLD_MIN_Y || y > WORLD_MAX_Y) {
       showError("Xəta: Kənar hüdudlar xaricində piksel yerləşdirə bilməzsiniz!");
@@ -304,7 +262,6 @@
 
     pixelData[`${x},${y}`] = currentColor; // Piksel məlumatını yenilə
     set(ref(db, `pixels/${x}_${y}`), currentColor); // Firebase-ə pikseli yaz
-    // cooldownEnd və localStorage.setItem('pixelCooldown', cooldownEnd) ləğv edildi
     previewPixel = null; // Önizləmə pikselini sıfırla
   }
 
@@ -330,7 +287,7 @@
       else previewPixel = { x, y, color: currentColor };
     }
     drag = false; // Sürükləməni sıfırla
-    updateURL(); // URL-i yenilə
+    updateURL(); // URL-i yenilə (artıq koordinatları qeyd etmir)
   });
 
   // Zoom funksiyası
@@ -349,7 +306,7 @@
     panY = cy - wy * scale;
 
     applyPanLimits(); // Pan hüdudlarını tətbiq et
-    updateURL(); // URL-i yenilə
+    updateURL(); // URL-i yenilə (artıq koordinatları qeyd etmir)
   }
 
   // Scroll hadisəsi (zoom üçün)
@@ -406,7 +363,7 @@
     }
     lastTouchDist = null; // Son toxunma məsafəsini sıfırla
     currentTouchMode = null; // Cari toxunma rejimini sıfırla
-    updateURL(); // URL-i yenilə
+    updateURL(); // URL-i yenilə (artıq koordinatları qeyd etmir)
   });
 
   // Firebase-dən pikselləri yükləmək və yeniləmək
@@ -436,7 +393,7 @@
     palette.style.display = "flex";
     zoomUI.style.display = "flex";
     applyPanLimits(); // İlkin yükləmədə pan hüdudlarını tətbiq edin
-    updateURL(); // İlkin yükləmədə URL-i yeniləyin
+    updateURL(); // İlkin yükləmədə URL-i yeniləyin (artıq koordinatları qeyd etmir)
   });
 
   // Pəncərənin ölçüsünü dəyişdirmək funksiyası
@@ -444,15 +401,12 @@
     canvas.width = window.innerWidth; // Kətanın enini pəncərənin eninə bərabərləşdir
     canvas.height = window.innerHeight; // Kətanın hündürlüyünü pəncərənin hündürlüyünə bərabərləşdir
     // panX və panY dəyərlərini yenidən hesablayın (mərkəzləşdirmə üçün)
-    // URL-dən oxunan dəyərlər varsa, onları saxlayın, yoxsa pəncərənin mərkəzinə qoyun
-    const initialPanX = parseFloat(urlParams.get('x'));
-    const initialPanY = parseFloat(urlParams.get('y'));
-
-    panX = isNaN(initialPanX) ? window.innerWidth / 2 : initialPanX;
-    panY = isNaN(initialPanY) ? window.innerHeight / 2 : initialPanY;
+    // URL-dən oxunan dəyərlər silindiyi üçün, həmişə pəncərənin mərkəzinə qoyulur
+    panX = window.innerWidth / 2;
+    panY = window.innerHeight / 2;
     
     applyPanLimits(); // Pan hüdudlarını tətbiq et
-    updateURL(); // URL-i yenilə
+    updateURL(); // URL-i yenilə (artıq koordinatları qeyd etmir)
     draw(); // Kətanı yenidən çək
   }
   window.addEventListener('resize', resize); // Pəncərə ölçüsü dəyişdikdə resize funksiyasını çağır
