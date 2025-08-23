@@ -43,6 +43,8 @@
         let activeCommentPostId = null;
         let replyingToCommentId = null;
         let replyingToCommentAuthor = null;
+        // Postların sıralamasını qeyd etmək üçün dəyişən
+        let postOrder = [];
 
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkh6zNGtoUMTXJ3jNTfuHoG",
@@ -77,7 +79,7 @@
         
         // Yeni Firebase konfiqurasiyaları
         const followsFirebaseConfig = {
-            apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
+            apiKey: "AIzaSyAZbtUw8id4yyZqrXtsf2FwuZmJ02qxit8",
             authDomain: "pasyak-follows.firebaseapp.com",
             databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
             projectId: "pasyak-follows",
@@ -121,7 +123,7 @@
         const userDb = userApp.database();
         const followsDb = followsApp.database(); // Follows databazası
         const followingDb = followingApp.database(); // Following databazası
-        const gonlineDb = gonlineApp.database();
+        const gonlineDb = gonlineApp.database(); // Gonline databazası stories üçün
 
         let tickUsers = {};
         let premiumUsers = {};
@@ -144,7 +146,7 @@
         let isPaused = false;
         let lastTouchTime = 0;
 
-        // YENİ: Cari post filtrini izləmək üçün qlobal dəyişən
+        // Cari post filtrini izləmək üçün qlobal dəyişən
         let currentPostFilter = 'all'; // 'all', 'mine', 'friends'
 
         function hideLoaderIfReady() {
@@ -427,9 +429,12 @@
 
         document.getElementById("confirmYes").onclick = () => {
             if (deletePostId) {
-                db.ref("posts/" + deletePostId).remove(); // Post silinməsi üçün 'db' istifadə et
-                db.ref("likes/" + deletePostId).remove(); // Post bəyənmələrinin silinməsi üçün 'db' istifadə et
-                commentsDb.ref("comments/" + deletePostId).remove(); // Şərhlərin silinməsi üçün 'commentsDb' istifadə et
+                // Post silinməsi üçün 'db' istifadə et
+                db.ref("posts/" + deletePostId).remove(); 
+                // Post bəyənmələrinin silinməsi üçün 'db' istifadə et
+                db.ref("likes/" + deletePostId).remove(); 
+                // Şərhlərin silinməsi üçün 'commentsDb' istifadə et
+                commentsDb.ref("comments/" + deletePostId).remove(); 
                 document.getElementById("confirmDialog").style.display = "none";
                 deletePostId = null;
             }
@@ -651,7 +656,12 @@
         
         function showStoryViewer(nickname) {
             currentStoryUser = nickname;
-            const storiesForUser = (allStories.images[nickname] || []).concat(allStories.videos[nickname] || []).sort((a,b) => b.timestamp - a.timestamp);
+            // Dəyişiklik: storiesForUser massivindəki hər bir story-nin Firebase yolunu qeyd etmək üçün
+            // `isImage` və `isVideo` xüsusiyyətlərini də istifadə edirik.
+            const storiesForUser = (allStories.images[nickname] || []).map(s => ({...s, type: 'posts'}))
+                                    .concat((allStories.videos[nickname] || []).map(s => ({...s, type: 'snap'})))
+                                    .sort((a,b) => b.timestamp - a.timestamp);
+
             if (storiesForUser.length === 0) {
                 closeStoryViewer();
                 return;
@@ -675,11 +685,29 @@
             storyDeleteBtn.onclick = () => {
                 if (currentStoryUser && activeStory && activeStory[activeStoryIndex]) {
                     const story = activeStory[activeStoryIndex];
-                    const storyType = story.image ? 'posts' : 'snap';
-                    gonlineDb.ref(`${storyType}/${story.storyId}`).remove();
-                    gonlineDb.ref(`storyViews/${story.storyId}`).remove();
-                    gonlineDb.ref(`likes/${story.storyId}`).remove();
-                    closeStoryViewer();
+                    // Dəyişiklik: Story-nin tipini `story.type` xüsusiyyətindən alın
+                    const storyTypePath = story.type; 
+                    
+                    console.log(`Story silinir: Path = ${storyTypePath}/${story.storyId}`); // Debugging üçün
+                    gonlineDb.ref(`${storyTypePath}/${story.storyId}`).remove()
+                        .then(() => {
+                            console.log(`Story '${story.storyId}' silindi.`);
+                            // Story silindikdən sonra əlaqədar bəyənmə və baxışları da sil
+                            gonlineDb.ref(`storyViews/${story.storyId}`).remove();
+                            gonlineDb.ref(`likes/${story.storyId}`).remove();
+                            // Həmçinin, `storyReadStatus`-u da sıfırla, əgər öz story-sidirsə
+                            const cleanCurrentUser = currentUser.replace('@', '');
+                            if (currentStoryUser.replace('@', '') === cleanCurrentUser) {
+                                gonlineDb.ref(`storyReadStatus/${cleanCurrentUser}/${cleanCurrentUser}`).remove();
+                            }
+                            // Story silindikdən sonra görüntüləyicini bağla
+                            closeStoryViewer();
+                            // Storyləri yenidən render et ki, silinmiş story aradan qalxsın
+                            renderStories();
+                        })
+                        .catch(error => {
+                            console.error("Story silinərkən xəta:", error); // Error handling
+                        });
                 }
             };
 
@@ -955,7 +983,7 @@
                 
                 video.style.maxWidth = '100%';
                 video.style.maxHeight = '100%';
-                video.style.objectFit = 'contain';
+                video.objectFit = 'contain';
                 
                 mediaContainer.appendChild(video);
                 currentStoryElement = video;
@@ -1241,7 +1269,7 @@
             allUsers = snapshot.val() || {};
             dataLoaded.users = true;
             renderStories();
-            // YENİ: İstifadəçi məlumatları (adlar/şəkillər üçün) dəyişdikdə postları yenidən filtr et
+            // İstifadəçi məlumatları (adlar/şəkillər üçün) dəyişdikdə postları yenidən filtr et
             filterPosts(currentPostFilter); 
             hideLoaderIfReady();
         });
@@ -1264,7 +1292,7 @@
                     const postTime = new Date(post.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
                     const nickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (!stories[nickname]) stories[nickname] = [];
-                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime});
+                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime, isImage: true}); // isImage xüsusiyyəti əlavə edildi
                 } catch(e) {
                     console.error("Story (postlar) məlumatı oxunarkən xəta:", e);
                 }
@@ -1283,7 +1311,7 @@
                     const postTime = new Date(post.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
                     const nickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (!stories[nickname]) stories[nickname] = [];
-                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime});
+                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime, isVideo: true}); // isVideo xüsusiyyəti əlavə edildi
                 } catch(e) {
                     console.error("Story (snap) məlumatı oxunarkən xəta:", e);
                 }
@@ -1338,11 +1366,41 @@
             }
         });
 
+        // Child removed listener for stories (posts branch)
+        gonlineDb.ref("posts").on("child_removed", (snap) => {
+            if (initialLoadDone) {
+                const storyId = snap.key;
+                // Remove the story from allStories.images cache
+                for (const nickname in allStories.images) {
+                    allStories.images[nickname] = allStories.images[nickname].filter(story => story.storyId !== storyId);
+                    if (allStories.images[nickname].length === 0) {
+                        delete allStories.images[nickname];
+                    }
+                }
+                renderStories(); // Re-render stories to reflect the deletion
+            }
+        });
+
+        // Child removed listener for stories (snap branch)
+        gonlineDb.ref("snap").on("child_removed", (snap) => {
+            if (initialLoadDone) {
+                const storyId = snap.key;
+                // Remove the story from allStories.videos cache
+                for (const nickname in allStories.videos) {
+                    allStories.videos[nickname] = allStories.videos[nickname].filter(story => story.storyId !== storyId);
+                    if (allStories.videos[nickname].length === 0) {
+                        delete allStories.videos[nickname];
+                    }
+                }
+                renderStories(); // Re-render stories to reflect the deletion
+            }
+        });
+
 
         db.ref("likes").on("value", (likesSnap) => { // Post bəyənmələri üçün 'db' istifadə et
             likeCache = likesSnap.val() || {};
             dataLoaded.likes = true;
-            // YENİ: Bəyənmə saylarını yeniləmək üçün postları yenidən filtr et
+            // Bəyənmə saylarını yeniləmək üçün postları yenidən filtr et
             filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
@@ -1352,8 +1410,7 @@
             commentsCache = snapshot.val() || {};
             dataLoaded.comments = true;
             // Postlardakı şərh saylarını yenilə
-            // YENİ: Şərh saylarını yeniləmək üçün postları yenidən filtr et
-            filterPosts(currentPostFilter);
+            // Şərhlər post sıralamasına təsir etməməlidir
             // Şərh overlayı bir post üçün açıqdırsa, onun şərhlərini yenidən render et
             if (activeCommentPostId) {
                 renderComments(activeCommentPostId);
@@ -1374,7 +1431,7 @@
         tickDb.ref("tick").on("value", (snapshot) => {
             tickUsers = snapshot.val() || {};
             dataLoaded.tick = true;
-            // YENİ: Tick statusunu yeniləmək üçün postları yenidən filtr et
+            // Tick statusunu yeniləmək üçün postları yenidən filtr et
             filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
@@ -1382,7 +1439,7 @@
         premiumDb.ref("premium").on("value", (snapshot) => {
             premiumUsers = snapshot.val() || {};
             dataLoaded.premium = true;
-            // YENİ: Premium statusunu yeniləmək üçün postları yenidən filtr et
+            // Premium statusunu yeniləmək üçün postları yenidən filtr et
             filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
@@ -1392,7 +1449,7 @@
             userFollows = snapshot.val() || {};
             dataLoaded.userFollows = true;
             // Takip statusları dəyişdikdə postları yenidən render etmək üçün
-            // YENİ: İzləmə statusu dəyişdikdə postları yenidən filtr et
+            // İzləmə statusu dəyişdikdə postları yenidən filtr et
             filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
@@ -1402,7 +1459,7 @@
             userFollowing = snapshot.val() || {};
             dataLoaded.userFollowing = true;
             // Takip statusları dəyişdikdə postları yenidən render etmək üçün
-            // YENİ: İzləmə statusu dəyişdikdə postları yenidən filtr et
+            // İzləmə statusu dəyişdikdə postları yenidən filtr et
             filterPosts(currentPostFilter);
             hideLoaderIfReady();
         });
@@ -1429,8 +1486,8 @@
                         try {
                             const postData = JSON.parse(snap.val());
                             postCache[postId] = { id: postId, data: postData }; // Orijinal formatı saxla
-                            // YENİ: Yeni post əlavə edildikdə postları yenidən filtr et
-                            filterPosts(currentPostFilter);
+                            // Yeni post əlavə edildikdə postları yenidən filtr et
+                            filterPosts(currentPostFilter, true); // Yeni postlar üçün random sırala
                         } catch (e) {
                             console.error("Yeni post əlavə edilərkən xəta:", postId, e);
                         }
@@ -1443,8 +1500,10 @@
                 try {
                     const postData = JSON.parse(snap.val());
                     postCache[postId] = { id: postId, data: postData }; // Orijinal formatı saxla
-                    // YENİ: Post dəyişdirildikdə postları yenidən filtr et
-                    filterPosts(currentPostFilter);
+                    // Post dəyişdirildikdə postları yenidən filtr et
+                    // Değişiklikler yorum sayısını etkileyebilir, ancak post sırasını etkilememeli.
+                    // Bu yüzden `shouldRandomize = false` olarak geçiyoruz.
+                    filterPosts(currentPostFilter, false); 
                 } catch (e) {
                     console.error("Post dəyişdirilərkən xəta:", postId, e);
                 }
@@ -1453,7 +1512,7 @@
             db.ref("posts").on("child_removed", (snap) => { // Postlarda child_removed üçün 'db' istifadə et
                 const postId = snap.key;
                 delete postCache[postId];
-                // YENİ: Post silindikdə postları yenidən filtr et
+                // Post silindikdə postları yenidən filtr et
                 filterPosts(currentPostFilter);
             });
 
@@ -1464,8 +1523,8 @@
             hideLoaderIfReady();
         });
 
-        // YENİ: Postları filtrləmək və göstərmək üçün funksiya
-        function filterPosts(filterType) {
+        // Postları filtrləmək və göstərmək üçün funksiya
+        function filterPosts(filterType, shouldRandomize = false) {
             currentPostFilter = filterType; // Qlobal filter statusunu yenilə
 
             const allFilterButtons = document.querySelectorAll('#post-navigation-bar button');
@@ -1478,7 +1537,6 @@
             } 
             // "friends" filtri silindi
 
-            postsContainer.innerHTML = ''; // Cari postları təmizlə
             let filteredPostsArray = [];
 
             const cleanCurrentUserNickname = currentUser.replace('@', '');
@@ -1504,21 +1562,48 @@
             }
 
             // --- Dəyişiklik burada başlayır: Postları təsadüfi sırala ---
-            // Fisher-Yates (Knuth) shuffle alqoritmi
-            for (let i = filteredPostsArray.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [filteredPostsArray[i], filteredPostsArray[j]] = [filteredPostsArray[j], filteredPostsArray[i]];
+            // Şərhlər əlavə edildikdə post sıralamasını dəyişməmək üçün əlavə məntiq
+            if (shouldRandomize || postOrder.length === 0 || filterType !== currentPostFilter) {
+                 // Yalnız ilkin yükləmədə və ya yeni bir post əlavə edildikdə random sırala
+                 // və ya filter növü dəyişdikdə
+                for (let i = filteredPostsArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [filteredPostsArray[i], filteredPostsArray[j]] = [filteredPostsArray[j], filteredPostsArray[i]];
+                }
+                postOrder = filteredPostsArray.map(post => post.id); // Yeni sıralamanı saxla
+            } else {
+                // Əks halda, əvvəlki sıralamanı qoruyun, lakin silinmiş postları təmizləyin
+                const newFilteredPosts = [];
+                const currentPostIds = new Set(filteredPostsArray.map(p => p.id));
+                postOrder = postOrder.filter(id => currentPostIds.has(id));
+
+                postOrder.forEach(id => {
+                    const post = filteredPostsArray.find(p => p.id === id);
+                    if (post) {
+                        newFilteredPosts.push(post);
+                    }
+                });
+                // Yeni əlavə olunmuş postları mövcud sıralamanın sonuna əlavə et
+                filteredPostsArray.forEach(post => {
+                    if (!postOrder.includes(post.id)) {
+                        newFilteredPosts.push(post);
+                    }
+                }
+                );
+                filteredPostsArray = newFilteredPosts;
+                postOrder = filteredPostsArray.map(post => post.id); // Yenilənmiş sıralamanı saxla
             }
             // --- Dəyişiklik burada bitir ---
-
+            
+            postsContainer.innerHTML = ''; // Cari postları təmizlə
             filteredPostsArray.forEach(post => {
                 postsContainer.appendChild(renderPost(post.id, post.data));
             });
         }
 
         // Yeni naviqasiya düymələrinə hadisə dinləyiciləri əlavə et
-        document.getElementById('my-posts-button').addEventListener('click', () => filterPosts('mine'));
-        document.getElementById('all-posts-button').addEventListener('click', () => filterPosts('all'));
+        document.getElementById('my-posts-button').addEventListener('click', () => filterPosts('mine', true)); // Hər dəfə kliklənəndə random sırala
+        document.getElementById('all-posts-button').addEventListener('click', () => filterPosts('all', true)); // Hər dəfə kliklənəndə random sırala
         // document.getElementById('friends-posts-button').addEventListener('click', () => filterPosts('friends')); // "Dostlar" düyməsi silindi
 
 
@@ -1830,7 +1915,8 @@
                 myFollowingCountRef.transaction((currentCount) => {
                     return (currentCount || 0) - 1;
                 });
-                targetFollowCountRef.transaction((currentCount) => {
+                // Düzəldilmişdir: unfollow edildikdə targetFollowCountRef də azalmalıdır
+                targetFollowCountRef.transaction((currentCount) => { 
                     return (currentCount || 0) - 1;
                 });
             } else {
