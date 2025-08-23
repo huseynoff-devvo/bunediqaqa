@@ -867,11 +867,9 @@
             display: flex;
             justify-content: space-around;
             padding: 10px 5px;
-            background: #1e1e1e;
             /* Removed position: sticky */
             top: 85px; 
             z-index: 999; 
-            border-bottom: 1px solid #333;
             margin-bottom: 10px;
             border-radius: 8px;
             gap: 5px; /* Düymələr arasında boşluq əlavə et */
