@@ -1,12 +1,6 @@
-html {
-      color-scheme: light;
-    }
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #fff;
+html, body {
+      margin: 0; padding: 0; height: 100%;
+      overflow: hidden; background: #fff;
       font-family: Arial, sans-serif;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
