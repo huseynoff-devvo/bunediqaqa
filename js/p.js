@@ -1,7 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-  const app = initializeApp({
+  // Firebase konfiqurasiyası
+  const firebaseConfig = {
     apiKey: "AIzaSyBERAe8FhHLfhVukrC35eb-Vp7cuXqww0E",
     authDomain: "pasyak-pixels.firebaseapp.com",
     databaseURL: "https://pasyak-pixels-default-rtdb.firebaseio.com",
@@ -9,7 +10,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     storageBucket: "pasyak-pixels.firebasestorage.app",
     messagingSenderId: "974471457881",
     appId: "1:974471457881:web:ef3380c071516000fad548"
-  });
+  };
+
+  const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
   const canvas = document.getElementById("canvas");
@@ -24,20 +27,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   const maintenanceMsg = document.getElementById("maintenanceMsg");
   const errorMessage = document.getElementById("errorMessage");
 
-  let scale = 20, panX = innerWidth/2, panY = innerHeight/2;
+  let scale = 20, panX = innerWidth / 2, panY = innerHeight / 2;
   let currentColor = "#000000", previewPixel = null;
   let animationAngle = 0, animationOffset = 0, animationDir = 1;
-  const pixelData = {};
-  let cooldownDuration = 30000;
-  let cooldownEnd = Number(localStorage.getItem('pixelCooldown')) || 0;
+  const pixelData = {}; // Bütün piksellərin saxlanıldığı obyekt
+  let cooldownDuration = 30000; // Piksel yerləşdirmə üçün soyuma müddəti
+  let cooldownEnd = Number(localStorage.getItem('pixelCooldown')) || 0; // Soyuma müddətinin bitmə vaxtı
   let lastTouchDist = null;
   let currentTouchMode = null;
 
+  // Soyuma müddətini Firebase-dən almaq
   onValue(ref(db, 'settings/pixelCooldownMs'), snap => {
     if (snap.exists()) {
       const val = Number(snap.val());
       if (!isNaN(val) && val > 0) {
         cooldownDuration = val;
+        // Əgər aktiv soyuma müddəti varsa, onu yeniləyin
         if (Date.now() < cooldownEnd) {
           cooldownEnd = Date.now() + cooldownDuration;
           localStorage.setItem('pixelCooldown', cooldownEnd);
@@ -46,6 +51,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
   });
 
+  // Rəng palitrasının tərifi
   const colors = ['#FFFFFF','#E4E4E4','#888888','#000000','#FFA7D1','#E50000','#E59500','#9E6941','#E5D900','#94E044','#02BE01','#00D3DD','#0083C7','#0000EA','#CF6EE4','#820080'];
   colors.forEach(c => {
     const d = document.createElement("div");
@@ -53,8 +59,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     d.style.backgroundColor = c;
     d.dataset.color = c;
     d.onclick = () => {
+      // Soyuma müddəti aktivdirsə, xəta göstərin
       if (Date.now() < cooldownEnd) {
-        showError("#error 1001 – Please wait!");
+        showError("Xəta 1001 – Zəhmət olmasa gözləyin!");
         return;
       }
       currentColor = c;
@@ -63,6 +70,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     palette.appendChild(d);
   });
 
+  // Seçilmiş rəngi yeniləmək
   function updateSelectedColor() {
     document.querySelectorAll('.color-swatch').forEach(div => {
       div.classList.toggle('selected', div.dataset.color === currentColor);
@@ -70,20 +78,34 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   }
   updateSelectedColor();
 
+  // Xəta mesajını göstərmək
   function showError(msg) {
     errorMessage.textContent = msg;
     errorMessage.style.display = 'block';
-    setTimeout(() => errorMessage.style.display = 'none', 3000);
+    setTimeout(() => errorMessage.style.display = 'none', 3000); // 3 saniyədən sonra gizlət
   }
 
+  // Kətanı çəkmək funksiyası
   function draw() {
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Yalnız görünən pikselləri çəkmək üçün optimizasiya
+    const visibleMinX = Math.floor((-panX) / scale);
+    const visibleMaxX = Math.ceil((canvas.width - panX) / scale);
+    const visibleMinY = Math.floor((-panY) / scale);
+    const visibleMaxY = Math.ceil((canvas.height - panY) / scale);
+
     for (const k in pixelData) {
       const [x, y] = k.split(',').map(Number);
-      ctx.fillStyle = pixelData[k];
-      ctx.fillRect(x * scale + panX, y * scale + panY, scale, scale);
+      // Piksel görünən sahədədirsə çəkin
+      if (x >= visibleMinX && x <= visibleMaxX && y >= visibleMinY && y <= visibleMaxY) {
+        ctx.fillStyle = pixelData[k];
+        ctx.fillRect(x * scale + panX, y * scale + panY, scale, scale);
+      }
     }
+
+    // Əgər önizləmə pikseli varsa və soyuma müddəti bitibsə
     if (previewPixel && Date.now() >= cooldownEnd) {
       const { x, y, color } = previewPixel;
       animationOffset += animationDir * 0.2;
@@ -102,6 +124,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
   }
 
+  // Animasiya dövrü
   function animate() {
     draw();
     updateCooldownUI();
@@ -109,10 +132,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   }
   animate();
 
+  // Zamanı formatlama
   function formatTime(s) {
     const m = Math.floor(s / 60);
     return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
   }
+
+  // Soyuma UI-nı yeniləmək
   function updateCooldownUI() {
     const diff = Math.floor((cooldownEnd - Date.now()) / 1000);
     if (diff > 0) {
@@ -125,6 +151,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     }
   }
 
+  // Kətan koordinatlarını almaq
   function getCanvasCoords(cx, cy) {
     const r = canvas.getBoundingClientRect();
     const x = Math.floor(((cx - r.left) * canvas.width / r.width - panX) / scale);
@@ -132,9 +159,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     return [x, y];
   }
 
+  // Piksel yerləşdirmək
   function placePixel(x, y) {
     if (Date.now() < cooldownEnd) {
-      showError("#error 1001 – Please wait!");
+      showError("Xəta 1001 – Zəhmət olmasa gözləyin!");
       return;
     }
     pixelData[`${x},${y}`] = currentColor;
@@ -156,9 +184,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     drag = false;
   });
 
+  // Zoom funksiyası
   function zoomAt(factor, cx = innerWidth / 2, cy = innerHeight / 2) {
+    // scale dəyərini məhdudlaşdırın. Minimum miqyası 1 olaraq təyin edin.
+    const newScale = Math.max(1, Math.min(100, scale * factor));
+    const actualFactor = newScale / scale;
+
     const wx = (cx - panX) / scale, wy = (cy - panY) / scale;
-    scale *= factor;
+    scale = newScale;
     panX = cx - wx * scale;
     panY = cy - wy * scale;
   }
@@ -171,6 +204,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   zoomInBt.onclick = () => { zoomAt(1.2); zoomInBt.blur(); }
   zoomOutBt.onclick = () => { zoomAt(0.8); zoomOutBt.blur(); }
 
+  // Toxunma hadisələri
   canvas.addEventListener("touchstart", e => {
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -203,29 +237,57 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   canvas.addEventListener("touchend", e => {
     if (currentTouchMode === "pan" && e.changedTouches.length === 1) {
       const [x, y] = getCanvasCoords(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-      if (previewPixel && previewPixel.x === x && previewPixel.y === y) placePixel(x, y);
-      else previewPixel = { x, y, color: currentColor };
+      // Yalnız klik hadisəsini idarə edin (sürüşdürmə deyil)
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      if (Math.abs(touchEndX - sx) < 5 && Math.abs(touchEndY - sy) < 5) {
+        if (previewPixel && previewPixel.x === x && previewPixel.y === y) placePixel(x, y);
+        else previewPixel = { x, y, color: currentColor };
+      }
     }
     lastTouchDist = null;
     currentTouchMode = null;
   });
 
+  // Firebase-dən pikselləri yükləmək
   onValue(ref(db, 'pixels'), snap => {
     const d = snap.val();
-    if (d) for (const k in d) pixelData[k.replace('_', ',')] = d[k];
+    if (d) {
+      // Yalnız yeni və ya dəyişdirilmiş pikselləri yeniləyin
+      for (const k in d) {
+        const key = k.replace('_', ',');
+        if (pixelData[key] !== d[k]) {
+          pixelData[key] = d[k];
+        }
+      }
+      // Silinmiş pikselləri təmizləyin
+      for (const k in pixelData) {
+        if (!d[k.replace(',', '_')]) {
+          delete pixelData[k];
+        }
+      }
+    } else {
+      // Əgər heç bir piksel yoxdursa, təmizləyin
+      for (const k in pixelData) delete pixelData[k];
+    }
     loadOv.style.display = "none";
     canvas.style.display = "block";
     palette.style.display = "flex";
     zoomUI.style.display = "flex";
   });
 
+  // Pəncərənin ölçüsünü dəyişdirmək
   function resize() {
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // panX və panY dəyərlərini yenidən hesablayın
+    panX = window.innerWidth / 2;
+    panY = window.innerHeight / 2;
   }
   window.addEventListener('resize', resize);
   resize();
 
+  // Onlayn istifadəçilərin statusunu izləmək
   onValue(ref(db, "onlineUsers/statusColor"), snap => {
     if (snap.exists()) {
       const color = snap.val().toLowerCase();
