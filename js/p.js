@@ -33,11 +33,11 @@
   const errorMessage = document.getElementById("errorMessage");
 
   // Kətanın və pikselin vəziyyət dəyişənləri
-  // URL-dən koordinatları oxuyun və ya varsayılan dəyərləri istifadə edin
-  const urlParams = new URLSearchParams(window.location.search);
-  let scale = parseFloat(urlParams.get('s')) || 20; // Başlanğıc miqyas
-  let panX = parseFloat(urlParams.get('x')) || innerWidth / 2; // Başlanğıc üfüqi sürüşmə
-  let panY = parseFloat(urlParams.get('y')) || innerHeight / 2; // Başlanğıc şaquli sürüşmə
+  // URL-dən koordinatları oxuyan hissə ləğv edildi.
+  // const urlParams = new URLSearchParams(window.location.search);
+  let scale = 20; // Başlanğıc miqyas
+  let panX = innerWidth / 2; // Başlanğıc üfüqi sürüşmə
+  let panY = innerHeight / 2; // Başlanğıc şaquli sürüşmə
 
   let currentColor = "#000000"; // Cari seçilmiş rəng
   let selectedBaseColor = null; // Əsas palitradan seçilmiş rəngi izləmək üçün
@@ -101,13 +101,13 @@
     return shades;
   }
 
-  // URL-i yeniləmək funksiyası
+  // URL-i yeniləmək funksiyası (Koordinatların URL-ə yazılması hissəsi ləğv edildi)
   function updateURL() {
-    const params = new URLSearchParams();
-    params.set('x', panX.toFixed(2));
-    params.set('y', panY.toFixed(2));
-    params.set('s', scale.toFixed(2));
-    window.history.pushState(null, '', `?${params.toString()}`);
+    // const params = new URLSearchParams();
+    // params.set('x', panX.toFixed(2));
+    // params.set('y', panY.toFixed(2));
+    // params.set('s', scale.toFixed(2));
+    // window.history.pushState(null, '', `?${params.toString()}`);
   }
 
   // Pan hüdudlarını tətbiq edən funksiya
@@ -131,7 +131,7 @@
   function applyPanLimits() {
     panX = clampPan(panX, canvas.width, WORLD_MIN_X, WORLD_MAX_X, scale);
     panY = clampPan(panY, canvas.height, WORLD_MIN_Y, WORLD_MAX_Y, scale);
-    updateURL();
+    // updateURL(); // URL-i yeniləmə çağırışı ləğv edildi
   }
 
   // Soyuma müddətini Firebase-dən almaq
@@ -344,7 +344,7 @@
       else previewPixel = { x, y, color: currentColor };
     }
     drag = false; // Sürükləməni sıfırla
-    updateURL(); // URL-i yenilə
+    // updateURL(); // URL-i yeniləmə çağırışı ləğv edildi
   });
 
   // Zoom funksiyası
@@ -363,7 +363,7 @@
     panY = cy - wy * scale;
 
     applyPanLimits(); // Pan hüdudlarını tətbiq et
-    updateURL(); // URL-i yenilə
+    // updateURL(); // URL-i yeniləmə çağırışı ləğv edildi
   }
 
   // Scroll hadisəsi (zoom üçün)
@@ -420,7 +420,7 @@
     }
     lastTouchDist = null; // Son toxunma məsafəsini sıfırla
     currentTouchMode = null; // Cari toxunma rejimini sıfırla
-    updateURL(); // URL-i yenilə
+    // updateURL(); // URL-i yeniləmə çağırışı ləğv edildi
   });
 
   // Firebase-dən pikselləri yükləmək və yeniləmək
@@ -450,7 +450,7 @@
     palette.style.display = "flex";
     zoomUI.style.display = "flex";
     applyPanLimits(); // İlkin yükləmədə pan hüdudlarını tətbiq edin
-    updateURL(); // İlkin yükləmədə URL-i yeniləyin
+    // updateURL(); // İlkin yükləmədə URL-i yeniləmə çağırışı ləğv edildi
   });
 
   // Pəncərənin ölçüsünü dəyişdirmək funksiyası
@@ -459,14 +459,19 @@
     canvas.height = window.innerHeight; // Kətanın hündürlüyünü pəncərənin hündürlüyünə bərabərləşdir
     // panX və panY dəyərlərini yenidən hesablayın (mərkəzləşdirmə üçün)
     // URL-dən oxunan dəyərlər varsa, onları saxlayın, yoxsa pəncərənin mərkəzinə qoyun
-    const initialPanX = parseFloat(urlParams.get('x'));
-    const initialPanY = parseFloat(urlParams.get('y'));
+    // URL parametrləri oxuyan hissə ləğv edildi
+    // const initialPanX = parseFloat(urlParams.get('x'));
+    // const initialPanY = parseFloat(urlParams.get('y'));
 
-    panX = isNaN(initialPanX) ? window.innerWidth / 2 : initialPanX;
-    panY = isNaN(initialPanY) ? window.innerHeight / 2 : initialPanY;
+    // panX = isNaN(initialPanX) ? window.innerWidth / 2 : initialPanX;
+    // panY = isNaN(initialPanY) ? window.innerHeight / 2 : initialPanY;
     
+    // Yalnız mərkəzi dəyərləri istifadə et
+    panX = window.innerWidth / 2;
+    panY = window.innerHeight / 2;
+
     applyPanLimits(); // Pan hüdudlarını tətbiq et
-    updateURL(); // URL-i yenilə
+    // updateURL(); // URL-i yeniləmə çağırışı ləğv edildi
     draw(); // Kətanı yenidən çək
   }
   window.addEventListener('resize', resize); // Pəncərə ölçüsü dəyişdikdə resize funksiyasını çağır
