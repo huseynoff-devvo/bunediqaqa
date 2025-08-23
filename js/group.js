@@ -55,6 +55,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
             
             if (!snapshot.exists()) {
                 noGroupsMessage.style.display = "block";
+                noRecommendedGroupsMessage.style.display = "block"; // Əlavə olundu
                 return;
             }
 
@@ -98,15 +99,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 
             let hasRecommendedGroups = false;
             for (const gid in allGroupsData) {
-                if (!userGroupsIds.has(gid)) {
-                    hasRecommendedGroups = true;
+                if (!userGroupsIds.has(gid)) { // İstifadəçi bu qrupa qoşulmayıbsa
                     let groupStr = allGroupsData[gid];
                     if (groupStr) {
                         try {
                             const groupObj = JSON.parse(groupStr);
-                            if (groupObj && groupObj.profile_group && groupObj.name) {
+                            // Əsas dəyişiklik: gizli dəyəri 2 deyilsə tövsiyə olunan qruplara əlavə et
+                            if (groupObj && groupObj.profile_group && groupObj.name && groupObj.gizli != 2) {
                                 const card = createGroupCard(groupObj, gid, currentUser, true);
                                 recommendedGroupsList.appendChild(card);
+                                hasRecommendedGroups = true;
                             }
                         } catch (e) {
                             console.error("JSON parse xətası:", e);
