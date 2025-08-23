@@ -1,122 +1,162 @@
-* {
+/* Bütün elementlər üçün vurğulama rəngini silin */
+        * {
             -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box; /* Bütün elementlər üçün box-sizing əlavə edin */
         }
+        /* Fokuslanmış, aktiv və görünən elementlər üçün kontur və kölgəni silin */
         *:focus, *:active, *:focus-visible {
             outline: none !important;
             box-shadow: none !important;
         }
+        /* Bədən stilləri */
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Inter', sans-serif; /* Font 'Inter' olaraq dəyişdirildi */
             background: #121212;
-            color: #fff;
+            color: #e0e0e0; /* Mətn rəngi biraz açıldı */
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            min-height: 100vh; /* Minimum hündürlük 100vh */
         }
+        /* Axtarış sahəsinin stilləri */
         input[type="text"] {
             width: 90%;
-            max-width: 400px;
-            padding: 12px 15px;
-            border-radius: 10px;
+            max-width: 450px; /* Maksimum en artırıldı */
+            padding: 14px 18px; /* Padding artırıldı */
+            border-radius: 12px; /* Radius artırıldı */
             border: none;
             font-size: 16px;
             background: #1f1f1f;
-            color: white;
-            margin-bottom: 20px;
+            color: #e0e0e0;
+            margin-bottom: 25px; /* Margin artırıldı */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); /* Daha yumşaq kölgə */
+            transition: all 0.3s ease;
         }
+        input[type="text"]:focus {
+            background: #282828;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+        }
+        /* Axtarış sahəsi placeholder stilləri */
         input[type="text"]::placeholder {
             color: #999;
         }
+        /* İstifadəçi elementinin stilləri */
         .user {
             display: flex;
-            align-items: center;
-            background: #1e1e1e;
-            border-radius: 12px;
-            padding: 10px;
-            margin-left: -2px;
-            margin-bottom: 15px;
+            flex-direction: column;
+            background: #1f1f1f; /* Arxa fon biraz tündləşdirildi */
+            border-radius: 15px; /* Radius artırıldı */
+            padding: 12px; /* Padding artırıldı */
+            margin-bottom: 18px; /* Margin artırıldı */
             width: 95%;
-            max-width: 500px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            cursor: pointer;
+            max-width: 550px; /* Maksimum en artırıldı */
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3); /* Daha dərin kölgə */
+            transition: all 0.3s ease;
         }
         .user:hover {
             background: #2a2a2a;
+            transform: translateY(-2px); /* Yuxarıya doğru kiçik effekt */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
+        .user-header {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px; /* Başlıq hissəsinə padding əlavə edin */
+        }
+        /* Profil şəkli stilləri */
         .user img.profile-pic {
-            width: 50px;
-            height: 50px;
+            width: 55px; /* Ölçü artırıldı */
+            height: 55px; /* Ölçü artırıldı */
             border-radius: 50%;
-            margin-right: 15px;
+            margin-right: 18px; /* Margin artırıldı */
             object-fit: cover;
+            border: 2px solid #3a3a3a; /* Nazik sərhəd */
         }
+        /* İstifadəçi məlumatlarının stilləri */
         .user-info {
             display: flex;
             flex-direction: column;
+            justify-content: center;
         }
+        /* İstifadəçi adı stilləri */
         .username {
             font-weight: 600;
-            font-size: 15px;
+            font-size: 16px; /* Font ölçüsü artırıldı */
             display: flex;
             align-items: center;
+            color: #f0f0f0;
         }
+        /* Ləqəb stilləri */
         .nickname {
-            font-size: 12px;
-            color: #ccc;
+            font-size: 13px; /* Font ölçüsü artırıldı */
+            color: #a0a0a0; /* Rəng biraz tündləşdirildi */
         }
+        /* Hərəkət ikonlarının konteyner stilləri */
         .actions {
             margin-left: auto;
             display: flex;
-            gap: 12px;
+            gap: 15px; /* Boşluq artırıldı */
         }
+        /* Material ikon stilləri */
         .material-icons {
             cursor: pointer;
-            font-size: 24px;
-            transition: transform 0.2s;
+            font-size: 26px; /* Font ölçüsü artırıldı */
+            transition: transform 0.2s ease, color 0.2s ease;
         }
         .material-icons:hover {
             transform: scale(1.2);
         }
+        /* Bloklanmış ikon stilləri */
         .material-icons.blocked {
-            color: red;
+            color: #ff6b6b; /* Daha canlı qırmızı */
         }
+        /* Blokdan çıxarılmış ikon stilləri */
         .material-icons.unblocked {
-            color: orange;
+            color: #ffa500; /* Daha canlı narıncı */
         }
+        /* Status nişanı stilləri */
         .status-badge {
-            width: 16px;
-            height: 16px;
-            margin-left: 5px;
+            width: 18px; /* Ölçü artırıldı */
+            height: 18px; /* Ölçü artırıldı */
+            margin-left: 8px; /* Margin artırıldı */
         }
+        /* Yükləmə fırlayıcısının konteyner stilləri */
         #loadingSpinner {
-            margin-top: 40px;
+            margin-top: 50px; /* Margin artırıldı */
         }
+        /* Fırlayıcı stilləri */
         .spinner {
-            width: 30px;
-            height: 30px;
-            border: 4px solid #333;
-            border-top: 4px solid #fff;
+            width: 40px; /* Ölçü artırıldı */
+            height: 40px; /* Ölçü artırıldı */
+            border: 5px solid rgba(255,255,255,0.2); /* Daha nazik, şəffaf sərhəd */
+            border-top: 5px solid #007bff; /* Mavi rəngli üst sərhəd */
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite; /* Daha sürətli animasiya */
         }
+        /* Fırlayıcı animasiyası */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        /* Toast mesaj stilləri */
         .toast, .confirm-box {
-            width: 75%;
+            width: 80%;
+            max-width: 350px; /* Maksimum en tənzimləndi */
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: #292929;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 20px 30px; /* Padding artırıldı */
+            border-radius: 12px; /* Radius artırıldı */
             z-index: 9999;
             text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5); /* Daha güclü kölgə */
         }
+        /* Toast animasiyası */
         .toast {
             animation: fadeInOut 2.5s forwards;
         }
@@ -126,24 +166,221 @@
             80% { opacity: 1; transform: translate(-50%, -50%); }
             100% { opacity: 0; transform: translate(-50%, -40%); }
         }
+        /* Təsdiq düymələrinin konteyner stilləri */
         .confirm-buttons {
-            margin-top: 15px;
+            margin-top: 20px; /* Margin artırıldı */
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px; /* Boşluq artırıldı */
         }
+        /* Təsdiq düymələrinin stilləri */
         .confirm-buttons button {
-            padding: 8px 20px;
-            font-size: 14px;
+            padding: 10px 25px; /* Padding artırıldı */
+            font-size: 15px; /* Font ölçüsü artırıldı */
             border: none;
-            border-radius: 6px;
+            border-radius: 8px; /* Radius artırıldı */
             cursor: pointer;
+            transition: all 0.3s ease;
         }
+        /* Bəli düyməsinin stilləri */
         .btn-yes {
             background: #e53935;
             color: white;
+            box-shadow: 0 4px 10px rgba(229, 57, 53, 0.4);
         }
+        .btn-yes:hover {
+            background: #f44336;
+            transform: translateY(-1px);
+        }
+        /* Xeyr düyməsinin stilləri */
         .btn-no {
             background: #555;
             color: white;
+            box-shadow: 0 4px 10px rgba(85, 85, 85, 0.4);
+        }
+        .btn-no:hover {
+            background: #666;
+            transform: translateY(-1px);
+        }
+
+        /* Yeni əlavə olunan stillər */
+        /* İstifadəçi məzmun bölməsi */
+        .user-content-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.6s ease-out; /* Daha hamar keçid */
+            margin-top: 15px; /* Margin artırıldı */
+            width: 100%;
+            padding-top: 15px; /* Üst kənar boşluğu */
+            border-top: 1px solid #282828; /* Daha incə sərhəd */
+        }
+        .user-content-section.open {
+            max-height: 10000px; /* Məzmunu göstərmək üçün böyük dəyər */
+            transition: max-height 0.8s ease-in; /* Daha hamar keçid */
+        }
+        /* Məzmun gridi */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Responsiv grid, minimum en artırıldı */
+            gap: 12px; /* Boşluq artırıldı */
+            padding: 12px; /* Padding artırıldı */
+        }
+        /* Məzmun elementi */
+        .content-item {
+            background: #282828; /* Arxa fon biraz tündləşdirildi */
+            border-radius: 10px; /* Radius artırıldı */
+            overflow: hidden;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4); /* Daha yumşaq kölgə */
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+        }
+        .content-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.5);
+        }
+        /* Məzmun mediası (şəkil/video) */
+        .content-media {
+            width: 100%;
+            height: 160px; /* Sabit hündürlük artırıldı */
+            object-fit: cover;
+            display: block;
+        }
+        /* Məzmun mediası üçün video stilləri */
+        .content-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Mətn postları üçün xüsusi stil */
+        .content-text-only {
+            padding: 15px;
+            height: 160px; /* Media ilə eyni hündürlükdə saxlayın */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 14px;
+            color: #e0e0e0;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a); /* Gradient arxa fon */
+            word-break: break-word; /* Uzun sözləri qırmaq üçün */
+            overflow: hidden; /* Mətn həddini aşarsa gizlət */
+        }
+
+        /* Məzmun statları (bəyənmə/şərh) */
+        .content-stats {
+            padding: 10px; /* Padding artırıldı */
+            display: flex;
+            justify-content: space-between; /* Boşluq paylanması */
+            font-size: 13px; /* Font ölçüsü artırıldı */
+            color: #b0b0b0; /* Rəng tənzimləndi */
+            align-items: center;
+        }
+        .content-stats span {
+            display: flex;
+            align-items: center;
+            gap: 6px; /* Boşluq artırıldı */
+        }
+        .content-stats .material-icons {
+            font-size: 18px; /* Font ölçüsü artırıldı */
+            color: #b0b0b0;
+            cursor: default;
+        }
+        /* Toggle düyməsi stilləri */
+        .toggle-content-btn {
+            background: #007bff; /* Daha canlı mavi rəng */
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Padding artırıldı */
+            border-radius: 8px; /* Radius artırıldı */
+            margin-top: 15px; /* Margin artırıldı */
+            cursor: pointer;
+            width: fit-content;
+            align-self: flex-start;
+            transition: background 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+        }
+        .toggle-content-btn:hover {
+            background: #0056b3; /* Tünd mavi */
+            transform: translateY(-1px);
+        }
+        /* Məzmun silmə ikonunun stilləri */
+        .content-stats .delete-content-icon {
+            color: #ff4d4d; /* Qırmızı rəng */
+            cursor: pointer;
+            font-size: 22px; /* Font ölçüsü artırıldı */
+            margin-left: 10px; /* Soldan boşluq əlavə edildi */
+        }
+        .content-stats .delete-content-icon:hover {
+            transform: scale(1.2);
+            color: #ff1a1a;
+        }
+
+        /* Telefon görünüşü üçün əlavə stillər */
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+            input[type="text"] {
+                width: 100%;
+                font-size: 15px;
+                padding: 12px;
+            }
+            .user {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 12px;
+            }
+            .user img.profile-pic {
+                width: 45px;
+                height: 45px;
+                margin-right: 12px;
+            }
+            .username {
+                font-size: 15px;
+            }
+            .nickname {
+                font-size: 12px;
+            }
+            .material-icons {
+                font-size: 22px;
+            }
+            .status-badge {
+                width: 16px;
+                height: 16px;
+            }
+            .content-grid {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 10px;
+                padding: 10px;
+            }
+            .content-media, .content-text-only {
+                height: 130px;
+                font-size: 13px; /* Mətn postları üçün font ölçüsü */
+            }
+            .content-stats {
+                font-size: 12px;
+                padding: 8px;
+            }
+            .content-stats .material-icons {
+                font-size: 16px;
+            }
+            .content-stats .delete-content-icon {
+                font-size: 20px;
+            }
+            .toggle-content-btn {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+            .toast, .confirm-box {
+                width: 90%;
+                padding: 15px 20px;
+                font-size: 15px;
+            }
+            .confirm-buttons button {
+                padding: 8px 18px;
+                font-size: 13px;
+            }
         }
