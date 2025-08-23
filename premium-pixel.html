@@ -9,18 +9,27 @@
 </head>
 <body>
 
+<!-- Yükləmə örtüyü -->
 <div id="loadingOverlay"><div class="spinner"></div></div>
-<div id="countdown" style="display:none;"></div> <!-- Countdown elementi gizlədildi -->
+<!-- Geri sayım elementi -->
+<div id="countdown">00:30</div>
+<!-- Kətan elementi -->
 <canvas id="canvas" style="display:none;"></canvas>
+<!-- Rəng palitrası -->
 <div class="toolbar" id="colorPalette" style="display:none;"></div>
+<!-- Ton palitrası (yeni) -->
+<div class="shades-toolbar" id="shadesPalette" style="display:none;"></div>
+<!-- Xəta mesajı -->
 <div id="errorMessage"></div>
+<!-- Zoom idarəetmələri -->
 <div class="zoom-controls" id="zoomControls" style="display:none;">
   <button id="zoomIn" class="zoom-btn"><span class="material-symbols-outlined">add</span></button>
   <button id="zoomOut" class="zoom-btn"><span class="material-symbols-outlined">remove</span></button>
 </div>
+<!-- Onlayn istifadəçilərin sayı göstəricisi -->
 <div id="onlineCountBar" title="Online istifadəçilər"><div class="dot"></div></div>
+<!-- Təmir mesajı -->
 <div id="maintenanceMsg">Sistem təmir edilir!</div>
 <script  type="module" src="https://huseynoff-devvo.github.io/bunediqaqa/js/pm.js"></script>
-
 </body>
 </html>
