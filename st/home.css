@@ -499,8 +499,6 @@
         .story-likes-list-container, .story-views-list-container {
             position: absolute;
             bottom: 94%;
-            left: 162px;
-            transform: translateX(-50%);
             width: 87%;
             max-height: 205px;
             background: rgba(0, 0, 0, 0.7);
