@@ -823,7 +823,7 @@
         .comment-input-area button {
             background: none;
             border: none;
-            color: #4a90e2;
+            color: #e71212;
             font-size: 24px;
             cursor: pointer;
             padding: 0;
@@ -850,7 +850,7 @@
         }
 
         .follow-button.follow {
-            background-color: #4a90e2; /* Mavi rəng */
+            background-color: #ed1c1c; /* Mavi rəng */
             color: white;
         }
 
@@ -889,7 +889,7 @@
         }
 
         #post-navigation-bar button.active {
-            background-color: #4a90e2; /* Aktiv düymə rəngi */
+            background-color: #e21616; /* Aktiv düymə rəngi */
             color: white;
         }
 
