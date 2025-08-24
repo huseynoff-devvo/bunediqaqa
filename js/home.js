@@ -1913,11 +1913,15 @@
 
                 // Sayğacları azalt
                 myFollowingCountRef.transaction((currentCount) => {
-                    return (currentCount || 0) - 1;
+                    // currentCount undefined veya null ise 0 olarak kabul et
+                    const count = typeof currentCount === 'number' ? currentCount : 0;
+                    return count - 1;
                 });
                 // Düzəldilmişdir: unfollow edildikdə targetFollowCountRef də azalmalıdır
                 targetFollowCountRef.transaction((currentCount) => { 
-                    return (currentCount || 0) - 1;
+                    // currentCount undefined veya null ise 0 olarak kabul et
+                    const count = typeof currentCount === 'number' ? currentCount : 0;
+                    return count - 1;
                 });
             } else {
                 // Takib et
@@ -1926,10 +1930,14 @@
 
                 // Sayğacları artır
                 myFollowingCountRef.transaction((currentCount) => {
-                    return (currentCount || 0) + 1;
+                    // currentCount undefined veya null ise 0 olarak kabul et
+                    const count = typeof currentCount === 'number' ? currentCount : 0;
+                    return count + 1;
                 });
                 targetFollowCountRef.transaction((currentCount) => {
-                    return (currentCount || 0) + 1;
+                    // currentCount undefined veya null ise 0 olarak kabul et
+                    const count = typeof currentCount === 'number' ? currentCount : 0;
+                    return count + 1;
                 });
             }
         }
