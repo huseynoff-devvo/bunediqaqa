@@ -146,6 +146,14 @@
         let isPaused = false;
         let lastTouchTime = 0;
 
+        // Reklamlar massivi
+        const ads = [
+            {"image":"https://res.cloudinary.com/dhski1gkx/image/upload/v1756117214/ChatGPT_Image_25_A%C4%9Fu_2025_14_10_20_q1hc4u.png","text":"Reax - Yerli sosial şəbəkə","reklam_id":"6089303"},
+            // Əlavə reklamlar buraya əlavə edilə bilər
+            // {"image": "URL_TO_AD_IMAGE_2", "text": "Başqa Reklam Mətni", "reklam_id": "AD_ID_2"}
+        ];
+        let currentAdIndex = 0; // Hansı reklamın göstəriləcəyini izləmək üçün
+
         // Cari post filtrini izləmək üçün qlobal dəyişən
         let currentPostFilter = 'all'; // 'all', 'mine', 'friends'
 
@@ -235,6 +243,17 @@
             if (hours > 0) return `${hours} saat əvvəl`;
             if (minutes > 0) return `${minutes} dəq əvvəl`;
             return `${seconds} san əvvəl`;
+        }
+
+        // Reklam elementini yaradan funksiya
+        function createAdElement(ad) {
+            const adDiv = document.createElement('div');
+            adDiv.className = 'ad-container';
+            adDiv.innerHTML = `
+                <img src="${ad.image}" alt="Reklam Şəkli" class="ad-image" onerror="this.onerror=null;this.src='https://placehold.co/600x400/333/666?text=Ad+Image+Not+Found';" />
+                <p class="ad-text">${ad.text}</p>
+            `;
+            return adDiv;
         }
 
         function renderPost(postId, data) {
@@ -1596,8 +1615,18 @@
             // --- Dəyişiklik burada bitir ---
             
             postsContainer.innerHTML = ''; // Cari postları təmizlə
+            let postCount = 0; // Reklamları saymaq üçün əlavə sayğac
+
             filteredPostsArray.forEach(post => {
                 postsContainer.appendChild(renderPost(post.id, post.data));
+                postCount++;
+
+                // Hər 7 postdan bir reklam göstər
+                if (ads.length > 0 && postCount % 7 === 0) {
+                    const currentAd = ads[currentAdIndex];
+                    postsContainer.appendChild(createAdElement(currentAd));
+                    currentAdIndex = (currentAdIndex + 1) % ads.length; // Növbəti reklama keç
+                }
             });
         }
 
