@@ -79,6 +79,19 @@
             const commentLikesApp = firebase.initializeApp(commentLikesFirebaseConfig, 'commentLikesApp');
             const commentLikesDb = commentLikesApp.database();
 
+            // Firebase configuration for GIFS (from user input)
+            const gifFirebaseConfig = {
+                apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE",
+                authDomain: "gif-s-53e6d.firebaseapp.com",
+                databaseURL: "https://gif-s-53e6d-default-rtdb.firebaseio.com",
+                projectId: "gif-s-53e6d",
+                storageBucket: "gif-s-53e6d.firebasestorage.app",
+                messagingSenderId: "285576525417",
+                appId: "1:285576525417:web:515028b392b379122cd4f8"
+            };
+            const gifApp = firebase.initializeApp(gifFirebaseConfig, 'gifApp');
+            const gifDb = gifApp.database();
+
 
             // DOM elements
             const app = document.getElementById('app');
@@ -100,6 +113,11 @@
             const snapsNav = document.getElementById('snaps-nav');
             const friendsNav = document.getElementById('friends-nav');
             const mySnapsNav = document.getElementById('my-snaps-nav');
+            const gifButton = document.querySelector('.gif-button');
+            const gifListContainer = document.getElementById('gif-list-container');
+            const gifList = document.getElementById('gif-list');
+            const closeGifListBtn = document.querySelector('.close-gif-list');
+
 
             // URL parameters
             const userFromUrl = window.location.search.match(/user=([^&]+)/)?.[1];
@@ -252,13 +270,13 @@
                 loader.style.display = 'flex';
                 currentUserName = await fetchUserName(cleanCurrentUser);
                 currentUserProfilePic = await fetchUserProfile(cleanCurrentUser);
-                
+
                 const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
                 allReels = Object.keys(postsData).map(key => {
                     let post = JSON.parse(postsData[key]);
                     return { id: key, ...post };
                 });
-                
+
                 await displayReels('snaps');
                 loader.style.display = 'none';
 
@@ -274,14 +292,14 @@
             }
 
             async function displayReels(mode, postIdToOpen = null) {
-                if(isAnimating) return;
+                if (isAnimating) return;
                 isAnimating = true;
 
                 // Hide all main app views
                 app.style.display = 'none';
                 mySnapsGrid.style.display = 'none';
-                
-                if(currentReels[activeIndex] && currentReels[activeIndex].video) {
+
+                if (currentReels[activeIndex] && currentReels[activeIndex].video) {
                     currentReels[activeIndex].video.pause();
                 }
 
@@ -295,7 +313,7 @@
 
                 mySnapsLoader.style.display = 'none';
                 noSnapsMessage.style.display = 'none';
-                
+
                 currentReels = [];
                 activeIndex = 0;
 
@@ -320,8 +338,8 @@
                         const cleanNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                         return cleanNickname === cleanCurrentUser;
                     });
-                    
-                    if(postIdToOpen) {
+
+                    if (postIdToOpen) {
                         // Open a specific snap in reel view
                         app.style.display = 'block';
                         const postToOpen = postsToDisplay.find(p => p.id === postIdToOpen);
@@ -348,7 +366,7 @@
                         }
                     }
                 }
-                
+
                 if (mode === 'snaps' || mode === 'friends' || postIdToOpen) {
                     const loadedReels = [];
                     for (const post of postsToDisplay) {
@@ -395,7 +413,7 @@
                     }
 
                 }
-                
+
                 isAnimating = false;
             }
 
@@ -446,7 +464,7 @@
                     }
                 });
             });
-            
+
             // Function to create a my-snap grid item
             function createMySnapItem(post) {
                 const item = document.createElement('div');
@@ -454,7 +472,7 @@
                 if (post.type && post.type.toLowerCase() === 'post') {
                     item.classList.add('post');
                 }
-                
+
                 let mediaElement;
                 if (post.video) {
                     mediaElement = document.createElement('video');
@@ -468,27 +486,27 @@
                     mediaElement = document.createElement('img');
                     mediaElement.src = post.image;
                 }
-                
+
                 if (mediaElement) {
                     item.appendChild(mediaElement);
                 }
-                
+
                 const overlay = document.createElement('div');
                 overlay.className = 'my-snap-overlay';
-                
+
                 const typeLabel = document.createElement('div');
                 typeLabel.className = 'my-snap-type';
                 typeLabel.textContent = post.type || 'SNAP';
                 item.appendChild(typeLabel);
-                
+
                 const text = document.createElement('div');
                 text.className = 'my-snap-text';
                 text.textContent = post.text;
                 overlay.appendChild(text);
-                
+
                 const info = document.createElement('div');
                 info.className = 'my-snap-info';
-                
+
                 // Get likes and comments count from Firebase
                 const likes = document.createElement('div');
                 likes.className = 'icon-text';
@@ -499,7 +517,7 @@
                     const count = snapshot.val() || 0;
                     likes.querySelector('span:last-child').textContent = count;
                 });
-                
+
                 const comments = document.createElement('div');
                 comments.className = 'icon-text';
                 comments.innerHTML = `<span class="material-icons">comment</span><span>0</span>`;
@@ -518,14 +536,14 @@
                     }
                     comments.querySelector('span:last-child').textContent = totalComments;
                 });
-                
+
                 overlay.appendChild(info);
                 item.appendChild(overlay);
-                
+
                 item.addEventListener('click', () => {
                     displayReels('my-snaps', post.id);
                 });
-                
+
                 return item;
             }
 
@@ -558,7 +576,7 @@
 
                     reel.video.addEventListener('loadeddata', () => {
                         reel.video.style.display = 'block';
-                        if(reel.loader) reel.loader.style.display = 'none';
+                        if (reel.loader) reel.loader.style.display = 'none';
 
                         reel.video.muted = !allVideosSoundOn;
                         reel.video.play().catch(e => {
@@ -572,10 +590,10 @@
 
                     if (reel.video.readyState < 2) {
                         reel.video.style.display = 'none';
-                        if(reel.loader) reel.loader.style.display = 'block';
+                        if (reel.loader) reel.loader.style.display = 'block';
                     } else {
                         reel.video.style.display = 'block';
-                        if(reel.loader) reel.loader.style.display = 'none';
+                        if (reel.loader) reel.loader.style.display = 'none';
                         reel.video.muted = !allVideosSoundOn;
                         reel.video.play();
                     }
@@ -691,7 +709,7 @@
 
                 const video = document.createElement('video');
                 // Video yüklənməsini təxirə salmaq üçün preload='none' istifadə edin
-                video.preload = 'none'; 
+                video.preload = 'none';
                 video.loop = true;
                 video.playsInline = true;
                 video.muted = !allVideosSoundOn;
@@ -935,6 +953,7 @@
             function closeComments() {
                 commentsContainer.classList.remove('open');
                 commentsList.innerHTML = '';
+                gifListContainer.classList.remove('open'); // GIF siyahısını da bağlayın
 
                 const searchString = window.location.search;
                 let userParam = null;
@@ -959,7 +978,7 @@
 
             closeCommentsBtn.addEventListener('click', closeComments);
 
-            sendCommentBtn.addEventListener('click', sendComment);
+            sendCommentBtn.addEventListener('click', () => sendComment()); // Update to call sendComment without arguments
             commentInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     sendComment();
@@ -1005,10 +1024,19 @@
                 const userName = await fetchUserName(comment.user);
 
                 let formattedText = comment.text;
-                // Highlight hashtags and replied users
-                formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
-                formattedText = formattedText.replace(/@(\w+)/g, '<a href="#" class="reply-user">@$1</a>');
+                // GIF URL-ini yoxlayın və GIF olaraq göstərin
+                const gifRegex = /(https?:\/\/.*\.(?:gif|webp|png|jpg|jpeg|svg))/i;
+                const gifMatch = formattedText.match(gifRegex);
 
+                if (gifMatch) {
+                    const gifUrl = gifMatch[0];
+                    formattedText = formattedText.replace(gifRegex, `<img src="${gifUrl}" alt="GIF" style="max-width:100%; border-radius:8px;">`);
+                } else {
+                    // Hashtag-ləri və cavab verilən istifadəçiləri vurğulayın
+                    formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
+                    formattedText = formattedText.replace(/@(\w+)/g, '<a href="#" class="reply-user">@$1</a>');
+                }
+                
                 commentElement.innerHTML = `
                     <div class="comment-main-content">
                         <img src="${userProfilePic}" class="comment-profile-pic" alt="${userName}" />
@@ -1023,7 +1051,7 @@
                 if (!parentCommentId) {
                     const actionsHtml = `<div class="comment-actions">
                         <button class="reply-button">
-                            <span class="reply-text">Reply</span>
+                            <span class="reply-text">Cavabla</span>
                             <span class="reply-count"></span>
                         </button>
                         <div class="comment-like-section">
@@ -1175,6 +1203,7 @@
             async function openComments(postId) {
                 activePostId = postId;
                 commentsContainer.classList.add('open');
+                gifListContainer.classList.remove('open'); // GIF siyahısını bağlayın
 
                 // Update URL to reflect comments state for better navigation
                 const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`;
@@ -1185,45 +1214,46 @@
 
                 // Attach a listener for new comments and replies
                 if (!commentAddedListenerAttached) {
-                     const commentsRef = commentsDb.ref(`comments/${postId}`);
+                    const commentsRef = commentsDb.ref(`comments/${postId}`);
 
-                     // Listener for new main comments
-                     commentsRef.on('child_added', async (snapshot) => {
-                         const newComment = { id: snapshot.key, ...snapshot.val() };
-                         // Ensure we don't add duplicates
-                         if (!commentsList.querySelector(`[data-comment-id=\"${newComment.id}\"]`)) {
-                             await addCommentToDOM(newComment);
-                         }
-                     });
+                    // Listener for new main comments
+                    commentsRef.on('child_added', async (snapshot) => {
+                        const newComment = { id: snapshot.key, ...snapshot.val() };
+                        // Ensure we don't add duplicates
+                        if (!commentsList.querySelector(`[data-comment-id=\"${newComment.id}\"]`)) {
+                            await addCommentToDOM(newComment);
+                        }
+                    });
 
-                     // Listener for new replies
-                     commentsRef.on('child_changed', async (snapshot) => {
+                    // Listener for new replies
+                    commentsRef.on('child_changed', async (snapshot) => {
                         const updatedComment = { id: snapshot.key, ...snapshot.val() };
                         if (updatedComment.replies) {
-                            const newReplyId = Object.keys(updatedComment.replies)[Object.keys(updatedComment.replies).length - 1];
-                            const newReply = updatedComment.replies[newReplyId];
-
-                            const existingReply = document.querySelector(`.reply-item[data-comment-id=\"${newReplyId}\"]`);
-                            if (!existingReply) {
-                                // Add the new reply to its parent comment's replies list
-                                const parentCommentElement = commentsList.querySelector(`.comment-item[data-comment-id="${updatedComment.id}"]`);
-                                if (parentCommentElement && parentCommentElement.querySelector('.replies-list').style.display === 'flex') {
-                                    await addCommentToDOM({ id: newReplyId, ...newReply }, updatedComment.id);
+                            // Sadece yeni əlavə olunan cavabları tapın
+                            const existingReplies = Array.from(document.querySelectorAll(`.reply-item[data-parent-id="${updatedComment.id}"]`)).map(el => el.dataset.commentId);
+                            for (const replyId in updatedComment.replies) {
+                                if (!existingReplies.includes(replyId)) {
+                                    const newReply = updatedComment.replies[replyId];
+                                    const parentCommentElement = commentsList.querySelector(`.comment-item[data-comment-id="${updatedComment.id}"]`);
+                                    if (parentCommentElement && parentCommentElement.querySelector('.replies-list').style.display === 'flex') {
+                                        await addCommentToDOM({ id: replyId, ...newReply }, updatedComment.id);
+                                    }
                                 }
                             }
                         }
-                     });
+                    });
 
-                     // Listener for deleted comments
-                     commentsRef.on('child_removed', (snapshot) => {
-                         const deletedCommentId = snapshot.key;
-                         const elementToRemove = document.querySelector(`.comment-item[data-comment-id="${deletedCommentId}"]`);
-                         if (elementToRemove) {
-                             elementToRemove.remove();
-                         }
-                     });
 
-                     commentAddedListenerAttached = true;
+                    // Listener for deleted comments
+                    commentsRef.on('child_removed', (snapshot) => {
+                        const deletedCommentId = snapshot.key;
+                        const elementToRemove = document.querySelector(`.comment-item[data-comment-id="${deletedCommentId}"]`);
+                        if (elementToRemove) {
+                            elementToRemove.remove();
+                        }
+                    });
+
+                    commentAddedListenerAttached = true;
                 }
 
                 commentsLoader.style.display = 'none'; // Hide loading spinner after initial load
@@ -1232,9 +1262,16 @@
             /**
              * Sends a new comment or reply to Firebase.
              * Adds the new comment/reply to the DOM immediately.
+             * @param {string} [content=null] - Optional content to send (e.g., a GIF URL). If null, uses commentInput.value.
              */
-            async function sendComment() {
-                const commentText = commentInput.value.trim();
+            async function sendComment(content = null) {
+                let commentText;
+                if (content) {
+                    commentText = content; // Use provided content (GIF URL)
+                } else {
+                    commentText = commentInput.value.trim(); // Fallback to input field
+                }
+
                 if (commentText === "" || !activePostId) return;
 
                 const newComment = {
@@ -1243,6 +1280,7 @@
                     timestamp: Date.now()
                 };
 
+                // Determine if it's a reply based on input content or activeCommentId
                 const replyToUserMatch = commentText.match(/^@(\w+)/);
                 if (replyToUserMatch && activeCommentId) {
                     const replyRef = commentsDb.ref(`comments/${activePostId}/${activeCommentId}/replies`).push();
@@ -1254,6 +1292,7 @@
                 }
 
                 commentInput.value = ''; // Clear input field
+                gifListContainer.classList.remove('open'); // GIF siyahısını da bağlayın
             }
 
             /**
@@ -1309,4 +1348,47 @@
                     hideDeleteDialog();
                 }
             });
+
+            // GIF funksionallığı
+            gifButton.addEventListener('click', () => {
+                if (gifListContainer.classList.contains('open')) {
+                    gifListContainer.classList.remove('open');
+                } else {
+                    gifListContainer.classList.add('open');
+                    loadGifs();
+                }
+            });
+
+            closeGifListBtn.addEventListener('click', () => {
+                gifListContainer.classList.remove('open');
+            });
+
+            // GIF-ləri yükləyən funksiya
+            async function loadGifs() {
+                gifList.innerHTML = ''; // Əvvəlki GIF-ləri təmizləyin
+                try {
+                    const snapshot = await gifDb.ref('gif').once('value');
+                    const gifsData = snapshot.val();
+                    if (gifsData) {
+                        for (const gifId in gifsData) {
+                            const gifUrl = gifsData[gifId];
+                            const gifItem = document.createElement('div');
+                            gifItem.className = 'gif-item';
+                            gifItem.innerHTML = `<img src="${gifUrl}" alt="GIF">`;
+                            gifItem.addEventListener('click', () => {
+                                // commentInput.value = gifUrl; // Bu sətir silindi
+                                sendComment(gifUrl); // GIF URL-ini birbaşa sendComment funksiyasına göndərin
+                                gifListContainer.classList.remove('open'); // GIF siyahısını bağlayın
+                                commentInput.focus();
+                            });
+                            gifList.appendChild(gifItem);
+                        }
+                    } else {
+                        console.log("Firebase-də GIF tapılmadı.");
+                    }
+                } catch (e) {
+                    console.error("GIF-ləri yükləyərkən xəta baş verdi:", e);
+                }
+            }
+
         })();
