@@ -390,8 +390,8 @@
                         activeReel.element.classList.add('active');
                         activeReel.element.style.transform = 'translateY(0)';
                         activeReel.element.style.opacity = '1';
-                        playActiveVideo(activeIndex);
-                        preloadVideos();
+                        // Yalnız aktiv videonu ön yükləyin və oynadın
+                        preloadAndPlayVideo(activeIndex);
                     }
 
                 }
@@ -463,6 +463,7 @@
                     mediaElement.muted = true;
                     mediaElement.playsInline = true;
                     mediaElement.autoplay = true;
+                    mediaElement.preload = 'none'; // Videoları yükləmə
                 } else if (post.image) {
                     mediaElement = document.createElement('img');
                     mediaElement.src = post.image;
@@ -542,22 +543,19 @@
                 }, 1000);
             }
 
-            /** Preloads videos for smoother playback. */
-            function preloadVideos() {
-                for (let i = 0; i < currentReels.length; i++) {
-                    const video = currentReels[i].video;
-                    video.preload = 'auto';
-                }
-            }
-
             /**
-             * Plays the video of the currently active reel.
-             * Handles autoplay and muted states.
-             * @param {number} index - The index of the active reel.
+             * Yalnız cari videonu ön yükləyin və oynadın.
+             * @param {number} index - Aktiv makaranın indeksi.
              */
-            function playActiveVideo(index) {
+            function preloadAndPlayVideo(index) {
                 const reel = currentReels[index];
                 if (reel && reel.video) {
+                    // Aktiv videonun src atributunu təyin edin (əgər hələ təyin olunmayıbsa)
+                    if (!reel.video.src || reel.video.src !== reel.postVideoUrl) {
+                        reel.video.src = reel.postVideoUrl;
+                    }
+                    reel.video.load(); // Videonu yükləməyə başlayın
+
                     reel.video.addEventListener('loadeddata', () => {
                         reel.video.style.display = 'block';
                         if(reel.loader) reel.loader.style.display = 'none';
@@ -584,6 +582,18 @@
                 }
             }
 
+
+            /**
+             * Plays the video of the currently active reel.
+             * Handles autoplay and muted states.
+             * @param {number} index - The index of the active reel.
+             */
+            function playActiveVideo(index) {
+                // Bu funksiya preloadAndPlayVideo ilə əvəz olunur.
+                // Ancaq əvvəlki funksionallığı qorumaq üçün burada saxlanılır.
+                preloadAndPlayVideo(index);
+            }
+
             /**
              * Pauses videos of inactive reels and resets their playback position.
              * @param {number} activeIndex - The index of the currently active reel.
@@ -594,6 +604,9 @@
                         r.video.pause();
                         r.video.currentTime = 0;
                         r.video.muted = true;
+                        // Aktiv olmayan videoların src atributunu təmizləyin
+                        r.video.removeAttribute('src');
+                        r.video.load(); // Videonu sıfırlayın
                     }
                 });
             }
@@ -677,11 +690,11 @@
                 reel.appendChild(loader);
 
                 const video = document.createElement('video');
-                video.src = post.video;
+                // Video yüklənməsini təxirə salmaq üçün preload='none' istifadə edin
+                video.preload = 'none'; 
                 video.loop = true;
                 video.playsInline = true;
                 video.muted = !allVideosSoundOn;
-                video.preload = 'auto';
                 video.style.display = 'none';
 
                 video.addEventListener('click', () => {
@@ -825,7 +838,8 @@
 
                 reel.appendChild(overlay);
 
-                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton, loader: loader, commentCountElement: commentCount };
+                // `postVideoUrl` əlavə edin ki, sonra videonun src-ni təyin edə bilək
+                return { element: reel, video, likeIcon, likeCount, postId: post.id, userNickname: post.nickname, followButton: followButton, loader: loader, commentCountElement: commentCount, postVideoUrl: post.video };
             }
 
             /**
@@ -845,7 +859,7 @@
                 const currentReel = currentReels[activeIndex];
                 const nextReel = currentReels[newIndex];
 
-                pauseInactiveVideos(newIndex);
+                pauseInactiveVideos(newIndex); // Aktiv olmayan videoları dayandırın və src-ni təmizləyin
 
                 currentReel.element.style.transform = (newIndex > activeIndex) ? 'translateY(-100%)' : 'translateY(100%)';
                 currentReel.element.style.opacity = '0';
@@ -861,7 +875,7 @@
 
                 setTimeout(() => {
                     isAnimating = false;
-                    playActiveVideo(activeIndex);
+                    preloadAndPlayVideo(activeIndex); // Yeni aktiv videonu ön yükləyin və oynadın
                 }, 500);
             }
 
