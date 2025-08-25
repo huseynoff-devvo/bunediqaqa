@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bütün Postlar + Bəyən + Şərh Dəstəyi (Canlı Bəyənmə)</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/your-post.css">
 
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/your-post.css">
 </head>
 <body>
     <div id="loader">
@@ -29,8 +29,25 @@
         </div>
     </div>
 
+    <!-- Comment Overlay -->
+    <div id="comment-overlay">
+        <div class="comment-overlay-content">
+            <div class="comment-overlay-header">
+                <button class="close-comment-overlay material-icons">close</button>
+                <h3>Şərhlər</h3>
+            </div>
+            <div id="comments-list">
+                <!-- Comments will be rendered here -->
+            </div>
+            <div class="comment-input-area">
+                <textarea id="comment-input" placeholder="Şərh yazın..." rows="1"></textarea>
+                <button id="send-comment-button" disabled>Göndər</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
- <script type="module" src="https://huseynoff-devvo.github.io/bunediqaqa/js/your-post.js"></script>
+    <script type="module" src="https://huseynoff-devvo.github.io/bunediqaqa/js/your-post.js"></script>
 </body>
 </html>
