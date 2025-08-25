@@ -148,7 +148,7 @@
 
         // Reklamlar massivi
         const ads = [
-            {"image":"https://res.cloudinary.com/dhski1gkx/image/upload/v1756117214/ChatGPT_Image_25_A%C4%9Fu_2025_14_10_20_q1hc4u.png","text":"Reax - Yerli sosial şəbəkə","reklam_id":"6089303"},
+            {"image":"https://res.cloudinary.com/dhski1gkx/image/upload/v1756117214/ChatGPT_Image_25_A%C4%9Fu_2025_14_10_20_q1hc4u.png","text":"Reax -İctimaiyyəti birləşdirən, yerli dəyərləri qoruyan və insanları daha da yaxınlaşdıran platforma.","reklam_id":"6089303"},
             // Əlavə reklamlar buraya əlavə edilə bilər
             // {"image": "URL_TO_AD_IMAGE_2", "text": "Başqa Reklam Mətni", "reklam_id": "AD_ID_2"}
         ];
