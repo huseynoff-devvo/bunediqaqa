@@ -65,12 +65,19 @@
 
     <div id="posts"></div>
 
+    <!-- Təsdiq dialoqu -->
     <div class="confirm-dialog" id="confirmDialog">
         <div>Bu postu silmək istəyirsiniz?</div>
         <div style="margin-top: 10px;">
             <button class="yes" id="confirmYes">Bəli</button>
             <button class="no" id="confirmNo">Xəyr</button>
         </div>
+    </div>
+
+    <!-- Alert Dialoqu -->
+    <div class="alert-dialog" id="alertDialog">
+        <div id="alertMessage"></div>
+        <button id="alertOk">Ok</button>
     </div>
 
     <!-- Şərh Overlay -->
@@ -82,7 +89,25 @@
         <div id="comments-list">
             <!-- Şərhlər buraya yüklənəcək -->
         </div>
+        <!-- Yeni Comment Sil Təsdiq Dialoqu (Moved inside comment-overlay) -->
+        <div class="confirm-dialog" id="confirmDeleteCommentDialog">
+            <div>Bu şərhi silmək istəyirsiniz?</div>
+            <div style="margin-top: 10px;">
+                <button class="yes" id="confirmDeleteCommentYes">Bəli</button>
+                <button class="no" id="confirmDeleteCommentNo">Xəyr</button>
+            </div>
+        </div>
+        <div id="gif-list-container">
+            <div id="gif-list-header">
+                <h3>GIF seçin</h3>
+                <span class="material-icons close-gif-list" onclick="toggleGifList()">close</span>
+            </div>
+            <div id="gif-carousel">
+                <!-- GIF-lər buraya yüklənəcək -->
+            </div>
+        </div>
         <div class="comment-input-area">
+            <button id="gif-button" class="material-icons gif-button">gif</button>
             <input type="text" id="comment-input" placeholder="Şərh yazın..." />
             <button id="send-comment-button" class="material-icons" disabled>send</button>
         </div>
