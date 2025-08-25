@@ -158,6 +158,7 @@
             margin-right: 5px;
         }
 
+        /* Confirm dialog for posts (outside comment overlay) */
         .confirm-dialog {
             position: fixed;
             text-align: center;
@@ -194,6 +195,36 @@
             background: #444;
             color: white;
             margin-left: 10px;
+        }
+
+        /* General alert dialog */
+        .alert-dialog {
+            position: fixed;
+            text-align: center;
+            font-size: 13px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #282828;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: none; /* Varsayılan olaraq gizlədilir */
+            flex-direction: column;
+            align-items: center;
+            z-index: 10001; /* Təsdiq dialoqundan yuxarıda */
+            box-shadow: 0 0 10px #000;
+        }
+
+        .alert-dialog button {
+            margin-top: 10px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #e71212;
+            color: white;
+            user-select: none;
         }
 
         .liked-users-summary {
@@ -653,7 +684,13 @@
             display: flex;
             margin-bottom: 15px;
             align-items: flex-start;
+            cursor: pointer; /* Added for better UX */
         }
+        .comment-item.deleting {
+            opacity: 0.5;
+            pointer-events: none; /* Keep this to prevent interaction while dialog is open */
+        }
+
 
         .comment-item .profile-pic {
             width: 35px;
@@ -732,6 +769,11 @@
             display: flex;
             margin-top: 10px; /* Cavablar arasında boşluq */
             align-items: flex-start;
+            cursor: pointer; /* Added for better UX */
+        }
+        .reply-item.deleting {
+            opacity: 0.5;
+            pointer-events: none; /* Keep this to prevent interaction while dialog is open */
         }
 
         .reply-item .profile-pic {
@@ -836,6 +878,96 @@
             cursor: not-allowed;
         }
 
+        /* GIF butonu üçün stil */
+        .gif-button {
+            background: none;
+            border: none;
+            color: #4a90e2; /* Mavi rəng */
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            transition: color 0.3s;
+        }
+        .gif-button:hover {
+            color: #6da2ed;
+        }
+
+        /* GIF siyahısı üçün stil */
+        #gif-list-container {
+            position: absolute;
+            bottom: 60px; /* input sahəsinin üstündə yerləşsin */
+            left: 0;
+            width: 100%;
+            background: #1e1e1e;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+            border-radius: 10px 10px 0 0;
+            display: none; /* Varsayılan olaraq gizli */
+            flex-direction: column;
+            z-index: 30001;
+        }
+
+        #gif-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        #gif-list-header h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        #gif-list-header .close-gif-list {
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        #gif-carousel {
+            display: flex;
+            overflow-x: scroll;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px;
+            gap: 10px;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        #gif-carousel::-webkit-scrollbar { /* Chrome, Safari, Opera */
+            display: none;
+        }
+
+        .gif-item {
+            flex-shrink: 0;
+            width: 120px;
+            height: 90px;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .gif-item:hover {
+            border-color: #4a90e2;
+        }
+
+        .gif-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+
         /* Follow Button Styles */
         .follow-button {
             margin-left: auto; /* Sağ tərəfə hizala */
@@ -936,4 +1068,38 @@
 
         .ad-button:hover {
             background: #0056b3;
+        }
+
+        /* Confirm delete comment dialog (inside comment overlay) */
+        #comment-overlay #confirmDeleteCommentDialog {
+            position: absolute; /* Changed from fixed to absolute */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30002; /* Higher than comment-overlay's z-index */
+            background: #282828;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 10px #000;
+        }
+
+        /* Alert dialog when comment overlay is open */
+        #comment-overlay #alertDialog {
+            position: absolute; /* Changed from fixed to absolute */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30003; /* Higher than #confirmDeleteCommentDialog */
+            background: #282828;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 10px #000;
         }
