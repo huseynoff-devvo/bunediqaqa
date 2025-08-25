@@ -6,9 +6,9 @@
     <title>Pasyak Reels</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=keyboard_arrow_down" />
-        <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/snaps.css">
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=keyboard_arrow_down,sentiment_satisfied_alt" />
 </head>
+<link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/snaps.css">
 <body>
     <div id="loader">
         <div class="spinner"></div>
@@ -41,7 +41,17 @@
             </div>
             <div class="comments-list-content"></div>
         </div>
+        <div id="gif-list-container" class="gif-list-container">
+            <div class="gif-list-header">
+                <h4>GIF Seçin</h4>
+                <button class="close-gif-list">&times;</button>
+            </div>
+            <div id="gif-list" class="gif-list">
+                <!-- GIF-lər buraya yüklənəcək -->
+            </div>
+        </div>
         <div class="comment-input-area">
+            <button class="gif-button material-icons">sentiment_satisfied_alt</button>
             <input type="text" class="comment-input" placeholder="Şərh yazın..." />
             <button class="send-comment-btn material-icons">send</button>
         </div>
