@@ -1,4 +1,4 @@
-// ---- Firebase apps initialization ----
+// Firebase tətbiqlərinin ilkin təyin edilməsi
         const postsFirebaseConfig = {
             apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
             authDomain: "pasyakaaz.firebaseapp.com",
@@ -17,7 +17,7 @@
             appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
             measurementId: "G-FW0KJDLF4B"
         };
-        // Firebase config for comments on regular posts
+        // Normal postlar üçün şərhlər Firebase konfiqurasiyası
         const postsCommentsFirebaseConfig = {
             apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
             authDomain: "gonline-1880b.firebaseapp.com",
@@ -27,7 +27,7 @@
             messagingSenderId: "988052893147",
             appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
         };
-        // NEW Firebase config for comments on snaps/reels
+        // Snaps/reels üçün şərhlər Firebase konfiqurasiyası
         const snapCommentsFirebaseConfig = {
             apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
             authDomain: "reply-eb654.firebaseapp.com",
@@ -69,37 +69,46 @@
         const currentUser = (urlParams.get("user") || "anonim").trim();
         const showOnlyMyPosts = urlParams.get("myPosts") === "true";
 
-        let likeCache = {};
-        let commentCountCache = {}; // Stores postId -> count
-        let postDataCache = {};
+        // Global cache obyektləri
+        let likeCache = {}; // postId -> { count: N, users: { userId: true } }
+        let commentCountCache = {}; // postId -> count
+        let postDataCache = {}; // postId -> postData
         let deletePostId = null;
-        let tickUsers = {};
-        let premiumUsers = {};
+        let tickUsers = {}; // nickname -> "+"
+        let premiumUsers = {}; // nickname -> "+"
 
-        // Comment Overlay related globals
+        // Şərh overlay ilə bağlı qlobal dəyişənlər
         let activeCommentPostId = null;
-        let activeCommentsDbForOverlay = null; // Which Firebase DB is currently active for the overlay
-        let activeCommentListener = null; // To manage Firebase listeners
-        let activeCommentData = {}; // Stores comments for the currently open overlay
+        let activeCommentsDbForOverlay = null; // Hazırda overlay üçün aktiv olan Firebase DB
+        let activeCommentListener = null; // Firebase dinləyicilərini idarə etmək üçün
         let replyingToCommentId = null;
         let replyingToCommentAuthor = null;
 
+        // Elementlərə istinadlar
+        const commentOverlay = document.getElementById('comment-overlay');
+        const commentsList = document.getElementById('comments-list');
+        const commentInput = document.getElementById('comment-input');
+        const sendCommentButton = document.getElementById('send-comment-button');
+        const closeCommentOverlayButton = document.querySelector('.close-comment-overlay');
+
+        // Firebase tətbiqlərini ilkin təyin edir
         function initializeFirebaseApps() {
             postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
             videosApp = firebase.initializeApp(videosFirebaseConfig, "videosApp");
-            postsCommentsApp = firebase.initializeApp(postsCommentsFirebaseConfig, "postsCommentsApp"); // For regular post comments
-            snapCommentsApp = firebase.initializeApp(snapCommentsFirebaseConfig, "snapCommentsApp"); // For snap comments
+            postsCommentsApp = firebase.initializeApp(postsCommentsFirebaseConfig, "postsCommentsApp");
+            snapCommentsApp = firebase.initializeApp(snapCommentsFirebaseConfig, "snapCommentsApp");
             tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
             premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
 
             postsDb = postsApp.database();
             videosDb = videosApp.database();
-            postsCommentsDb = postsCommentsApp.database(); // For comments on regular posts
-            snapCommentsDb = snapCommentsApp.database();   // For comments on snaps
+            postsCommentsDb = postsCommentsApp.database();
+            snapCommentsDb = snapCommentsApp.database();
             tickDb = tickApp.database();
             premiumDb = premiumApp.database();
         }
 
+        // Status nişanını (tick/premium) qaytarır
         function getStatusBadge(nickname = "") {
             const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
             const isTick = tickUsers[cleanNickname] === "+";
@@ -110,6 +119,25 @@
             return null;
         }
 
+        // Timestamp'ı oxunaqlı formata çevirir
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffSeconds = Math.floor((now - date) / 1000);
+
+            if (diffSeconds < 60) return `${diffSeconds} saniyə əvvəl`;
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            if (diffMinutes < 60) return `${diffMinutes} dəqiqə əvvəl`;
+            const diffHours = Math.floor(diffMinutes / 60);
+            if (diffHours < 24) return `${diffHours} saat əvvəl`;
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) return `${diffDays} gün əvvəl`;
+            
+            return date.toLocaleDateString('az-AZ', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        // Post elementini yaradır və render edir
         function renderPost(postId, data) {
             if (!data) return null;
             if (showOnlyMyPosts) {
@@ -125,16 +153,15 @@
             if (data.image || data.video) {
                 const badge = document.createElement("div");
                 badge.className = "post-type-badge";
-                badge.textContent = data.image ? "Post" : "Snap"; // Changed to display "Post" for images, "Snap" for videos
+                badge.textContent = data.image ? "Post" : "Snap";
                 postEl.appendChild(badge);
             }
 
             const header = document.createElement("div");
             header.className = "post-header";
-            // Check if specific post is loaded to display header
             const urlPostId = urlParams.get('post_id');
             const urlSnapId = urlParams.get('snap_id');
-            if (urlPostId === postId || urlSnapId === postId) { // Check if the current post matches the URL ID
+            if (urlPostId === postId || urlSnapId === postId) {
                 header.style.display = 'flex';
                 header.style.alignItems = 'center';
                 header.style.marginBottom = '10px';
@@ -246,15 +273,16 @@
             // });
             postFooter.appendChild(likeBtn);
 
-            // Comment count display for ALL posts
+            // Bütün postlar üçün şərh sayını göstərir
             const commentBtn = document.createElement("button");
-            commentBtn.className = "comment-button disabled"; // Add disabled class
-            commentBtn.setAttribute('aria-disabled', 'true'); // Add aria-disabled for accessibility
+            // Şərh düyməsini deaktiv edir və sadəcə say göstərir
+            commentBtn.className = "comment-button disabled"; 
+            commentBtn.setAttribute('aria-disabled', 'true'); // Əlçatanlıq üçün əlavə edilib
             const commentCount = commentCountCache[postId] || 0;
             commentBtn.innerHTML = `<span class="material-icons">comment</span><span class="comment-count">${commentCount}</span>`;
-            // Removed event listener to prevent interaction
-            // commentBtn.addEventListener("click", (event) => {
+            // commentBtn.addEventListener("click", (event) => { // Bu sətir deaktiv edilib
             //     event.stopPropagation();
+            //     // Postun növünə uyğun şərh DB-ni təyin edir
             //     const commentsSourceDb = data.sourceDb === postsDb ? postsCommentsDb : snapCommentsDb;
             //     openCommentOverlay(postId, commentsSourceDb);
             // });
@@ -276,42 +304,33 @@
             return postEl;
         }
 
+        // Post silinməsini təsdiq edir
         document.getElementById("confirmYes").addEventListener("click", () => {
-            if (deletePostId) {
-                const post = postDataCache[deletePostId];
-                if (post && post.sourceDb) {
-                    if (post.sourceDb === postsDb) {
-                        postsDb.ref("posts/" + deletePostId).remove();
-                        postsDb.ref("likes/" + deletePostId).remove();
-                        postsCommentsDb.ref("comments/" + deletePostId).remove(); // Delete comments from postsCommentsDb
-                    } else if (post.sourceDb === videosDb) {
-                        videosDb.ref("reels/" + deletePostId).remove();
-                        videosDb.ref("likes/" + deletePostId).remove();
-                        snapCommentsDb.ref("comments/" + deletePostId).remove(); // Delete comments from snapCommentsDb
-                    }
-                }
-                document.getElementById("confirmDialog").style.display = "none";
-                deletePostId = null;
-                // Yeniləməni tetiklə
-                renderAllPosts();
-            }
+            // Bu funksiya artıq çağrılmamalıdır, çünki sil düyməsi yoxdur.
+            console.warn("Post silmə təsdiqi funksiyası çağrıldı, lakin silmə düyməsi deaktivdir.");
+            document.getElementById("confirmDialog").style.display = "none";
+            deletePostId = null;
         });
 
+        // Post silinməsini ləğv edir
         document.getElementById("confirmNo").addEventListener("click", () => {
             document.getElementById("confirmDialog").style.display = "none";
             deletePostId = null;
         });
 
+        // Bütün postları render edir
         function renderAllPosts() {
             postsContainer.innerHTML = "";
             let postIds = Object.keys(postDataCache || {});
             const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
 
-            postIds = postIds.filter(id => {
-                const p = postDataCache[id] || {};
-                const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-                return nick === cleanCurrent;
-            });
+            if (showOnlyMyPosts) {
+                postIds = postIds.filter(id => {
+                    const p = postDataCache[id] || {};
+                    const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
+                    return nick === cleanCurrent;
+                });
+            }
             
             postIds.sort((a,b) => {
                 const aData = postDataCache[a];
@@ -338,39 +357,39 @@
             setupVideoObserver();
         }
 
+        // Bəyənmə saylarını yeniləyir
         function updateLikeCounts() {
             Object.keys(postDataCache).forEach(postId => {
                 const postElement = document.getElementById(`post_${postId}`);
                 if (postElement) {
                     const postLikes = likeCache[postId];
                     let currentLikeCount = 0;
-                    // let isLikedByUser = false; // This is no longer needed since like button is disabled
                     
                     if (postLikes && postLikes.users) {
                         currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
-                        // isLikedByUser = postLikes.users[currentUser];
                     } else if (postLikes) {
                         currentLikeCount = Object.keys(postLikes).length;
-                        // isLikedByUser = postLikes[currentUser];
                     }
 
                     const likeCountElement = postElement.querySelector('.like-count');
-                    // const likeButtonElement = postElement.querySelector('.like-button'); // This is no longer interactable
+                    const likeButtonElement = postElement.querySelector('.like-button');
                     if (likeCountElement) {
                         likeCountElement.textContent = currentLikeCount;
                     }
-                    // No need to update 'liked' class as button is disabled
-                    // if (likeButtonElement) {
-                    //     if (isLikedByUser) {
-                    //         likeButtonElement.classList.add("liked");
-                    //     } else {
-                    //         likeButtonElement.classList.remove("liked");
-                    //     }
-                    // }
+                    if (likeButtonElement) {
+                        // Like düyməsi deaktiv edildiyi üçün 'liked' class-ını yeniləməyə ehtiyac yoxdur.
+                        // lakin, əgər istənilərsə, "liked" classını yalnız vizual məqsədlər üçün saxlamaq olar.
+                        // if (isLikedByUser) {
+                        //     likeButtonElement.classList.add("liked");
+                        // } else {
+                        //     likeButtonElement.classList.remove("liked");
+                        // }
+                    }
                 }
             });
         }
 
+        // Şərh saylarını yeniləyir
         function updateCommentCounts() {
             Object.keys(postDataCache).forEach(postId => {
                 const postElement = document.getElementById(`post_${postId}`);
@@ -383,12 +402,14 @@
             });
         }
 
+        // Masonry layoutunu yeniləyir
         function refreshMasonry() {
             postsContainer.style.visibility = 'hidden';
             setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
         }
 
         let videoObserver;
+        // Video observerini qurur
         function setupVideoObserver() {
             if ('IntersectionObserver' in window) {
                 if (videoObserver) {
@@ -418,6 +439,7 @@
             }
         }
         
+        // Canlı dinləyiciləri qurur
         function setupLiveListeners() {
             postsDb.ref("likes").on("value", (snapshot) => {
                 const likesData = snapshot.val() || {};
@@ -435,7 +457,7 @@
                  updateLikeCounts();
             });
 
-            // Live listener for comments on *regular posts* (from gonline-1880b)
+            // Normal postlar üçün şərhlər dinləyicisi (gonline-1880b-dən)
             postsCommentsDb.ref("comments").on("value", (snapshot) => {
                 const commentsData = snapshot.val() || {};
                 Object.keys(commentsData).forEach(postId => {
@@ -447,7 +469,7 @@
                 updateCommentCounts();
             });
 
-            // Live listener for comments on *snaps/reels* (from reply-eb654)
+            // Snaps/reels üçün şərhlər dinləyicisi (reply-eb654-dən)
             snapCommentsDb.ref("comments").on("value", (snapshot) => {
                 const commentsData = snapshot.val() || {};
                 Object.keys(commentsData).forEach(postId => {
@@ -460,15 +482,17 @@
             });
         }
 
-        // --- Initial Load Logic ---
+        // --- İlkin Yükləmə Məntiqi ---
         initializeFirebaseApps();
 
         if (showOnlyMyPosts) {
+            document.getElementById("loader").querySelector("p").textContent = ""; // Loader mesajını yeniləyir
+
             Promise.all([
                 postsDb.ref("posts").once("value"),
                 videosDb.ref("reels").once("value"),
-                postsCommentsDb.ref("comments").once("value"), // Fetch initial comments data for posts
-                snapCommentsDb.ref("comments").once("value"),  // Fetch initial comments data for snaps
+                postsCommentsDb.ref("comments").once("value"),
+                snapCommentsDb.ref("comments").once("value"),
                 postsDb.ref("likes").once("value"),
                 videosDb.ref("likes").once("value"),
                 tickDb.ref("tick").once("value"),
@@ -489,14 +513,13 @@
                      } catch (e) { console.warn("videosDb: Video yüklənərkən xəta:", snap.key, e); }
                 });
 
-                commentCountCache = {}; // Reset cache
+                commentCountCache = {};
                 const allCommentsPosts = commentsSnapPosts.val() || {};
                 Object.keys(allCommentsPosts).forEach(postId => {
                     commentCountCache[postId] = Object.keys(allCommentsPosts[postId] || {}).length;
                 });
                 const allCommentsSnaps = commentsSnapSnaps.val() || {};
                 Object.keys(allCommentsSnaps).forEach(postId => {
-                    // Overwrite/add snap comment counts. Assuming unique IDs between posts and snaps.
                     commentCountCache[postId] = Object.keys(allCommentsSnaps[postId] || {}).length;
                 });
                 
@@ -530,29 +553,20 @@
             });
 
         } else {
+            // Əgər myPosts=true parametri yoxdursa, boş səhifə göstərir
             document.getElementById("loader").style.display = "none";
-            // postsContainer.style.display = "none";
-            // noPostsMessage.style.display = "flex";
-            // noPostsMessage.querySelector('span:last-child').textContent = "Profil səhifəsini görmək üçün `?myPosts=true` parametri istifadə olunmalıdır.";
+            postsContainer.style.display = "none";
+            noPostsMessage.style.display = "flex";
+            noPostsMessage.querySelector('span:last-child').textContent = "Profil səhifəsini görmək üçün `?myPosts=true` parametri istifadə olunmalıdır.";
         }
 
-        // Comment functionality
-        const commentOverlay = document.getElementById('comment-overlay');
-        const commentsList = document.getElementById('comments-list');
-        const commentInput = document.getElementById('comment-input');
-        const sendCommentButton = document.getElementById('send-comment-button');
-
+        // Şərh overlayını açır (indi bu funksiya heç vaxt çağrılmamalıdır)
         function openCommentOverlay(postId, sourceDbForComments) {
+            // Bu funksiya artıq çağrılmamalıdır, çünki şərh düyməsi deaktivdir.
+            // Əgər gələcəkdə lazım olarsa, kodu təkrar aktivləşdirə bilərsiniz.
+            console.warn("openCommentOverlay funksiyası çağrıldı, lakin şərh düyməsi deaktivdir.");
             activeCommentPostId = postId;
-            activeCommentsDbForOverlay = sourceDbForComments; // Store the correct DB instance
-
-            // Removed URL update to prevent adding '&comment=true'
-            // const currentUrl = new URL(window.location.href);
-            // const newSearchParams = new URLSearchParams(currentUrl.search);
-            // newSearchParams.set('comment', 'true');
-            // newSearchParams.delete('postId'); 
-            // const newUrl = currentUrl.origin + currentUrl.pathname + '?' + newSearchParams.toString();
-            // history.pushState(null, '', newUrl);
+            activeCommentsDbForOverlay = sourceDbForComments;
 
             commentOverlay.style.display = 'flex';
             requestAnimationFrame(() => {
@@ -566,52 +580,42 @@
             commentInput.placeholder = 'Şərh yazın...';
             sendCommentButton.disabled = true;
 
-            // Detach previous listener if any
             if (activeCommentListener) {
-                activeCommentListener(); // Call the unsubscribe function
+                activeCommentListener();
             }
 
-            // Attach a new listener for the specific post and its comments DB
             activeCommentListener = activeCommentsDbForOverlay.ref(`comments/${postId}`).on("value", (snapshot) => {
-                activeCommentData = snapshot.val() || {}; // Update active comment data
-                renderComments(snapshot); // Render comments using the snapshot
+                renderComments(snapshot);
             });
         }
 
+        // Şərh overlayını bağlayır
         function closeCommentOverlay() {
             commentOverlay.classList.remove('visible');
             
-            // Removed URL update to prevent removing '&comment=true'
-            // const currentUrl = new URL(window.location.href);
-            // const newSearchParams = new URLSearchParams(currentUrl.search);
-            // newSearchParams.delete('comment');
-            // newSearchParams.delete('postId'); 
-            // const newUrl = currentUrl.origin + currentUrl.pathname + '?' + newSearchParams.toString();
-            // history.pushState(null, '', newUrl);
-
             setTimeout(() => {
                 commentOverlay.style.display = 'none';
                 document.body.style.overflow = 'auto';
 
-                // Detach listener when closing overlay
                 if (activeCommentListener) {
                     activeCommentListener();
                     activeCommentListener = null;
                 }
                 
                 activeCommentPostId = null;
-                activeCommentsDbForOverlay = null; // Reset active DB
-                activeCommentData = {}; // Clear active comment data
+                activeCommentsDbForOverlay = null;
                 replyingToCommentId = null;
                 replyingToCommentAuthor = null;
                 commentInput.value = '';
                 commentInput.placeholder = 'Şərh yazın...';
+                sendCommentButton.disabled = true;
             }, 300);
         }
 
+        // Şərhləri render edir (yalnız overlay açıq olsaydı istifadə olunardı)
         function renderComments(snapshot) {
             commentsList.innerHTML = '';
-            const commentsForPost = snapshot.val() || {}; // Use the snapshot data directly
+            const commentsForPost = snapshot.val() || {};
             
             const sortedCommentIds = Object.keys(commentsForPost).sort((a, b) => {
                 return commentsForPost[a].timestamp - commentsForPost[b].timestamp;
@@ -624,6 +628,7 @@
             commentsList.scrollTop = commentsList.scrollHeight;
         }
 
+        // Şərh elementini yaradır (yalnız overlay açıq olsaydı istifadə olunardı)
         function createCommentElement(commentId, commentData, isReply = false) {
             const wrapperElement = document.createElement('div');
             wrapperElement.className = isReply ? 'reply-item' : 'comment-item';
@@ -632,7 +637,7 @@
             const profilePic = document.createElement('img');
             profilePic.className = 'profile-pic';
             profilePic.src = commentData.profilePic || "https://placehold.co/35x35/333333/FFFFFF?text=📸";
-            profilePic.alt = commentData.nickname + ' profile picture';
+            profilePic.alt = commentData.nickname + ' profil şəkili';
             profilePic.onclick = () => window.location.href = `?other_user=${commentData.nickname}`;
 
             const contentContainer = document.createElement('div');
@@ -643,7 +648,7 @@
 
             const author = document.createElement('span');
             author.className = isReply ? 'reply-author' : 'comment-author';
-            author.textContent = commentData.nickname; // Assuming nickname is the display name for comments
+            author.textContent = commentData.nickname;
             author.onclick = () => window.location.href = `?other_user=${commentData.nickname}`;
 
             const time = document.createElement('span');
@@ -674,29 +679,28 @@
             const actions = document.createElement('div');
             actions.className = 'comment-actions';
 
-            // Like button for comments - ONLY show for top-level comments (not replies)
-            // Comment likes are still assumed to be in postsCommentsDb (gonline-1880b)
+            // Şərhlər üçün bəyənmə düyməsi (yalnız əsas şərhlər üçün)
             if (!isReply) {
                 const likeCommentButton = document.createElement('span');
-                likeCommentButton.className = 'like-comment-button'; // Keep for styling
-                // const commentLikes = postsCommentsDb.ref(`commentLikes/${commentId}/${currentUser}`); // No longer interactive
-                let currentLikesCount = 0;
-                // let isLikedCommentByUser = false; // Not needed as button is not interactive
-
-                // Fetch current likes for this comment to display count
-                postsCommentsDb.ref(`commentLikes/${commentId}`).once('value').then(snap => {
+                likeCommentButton.className = 'like-comment-button';
+                // Şərh bəyənmələrini postsCommentsDb-dən idarə edir
+                const commentLikesRef = postsCommentsDb.ref(`commentLikes/${commentId}`);
+                
+                // Anlıq bəyənmə sayını dinləmək
+                commentLikesRef.on('value', snap => {
                     const likesUsers = snap.val() || {};
-                    currentLikesCount = Object.keys(likesUsers).length;
-                    // isLikedCommentByUser = likesUsers[currentUser] === true; // Not needed
-                    
+                    const currentLikesCount = Object.keys(likesUsers).length;
+                    const isLikedCommentByUser = likesUsers[currentUser] === true;
+
                     likeCommentButton.innerHTML = `
-                        <span class="material-icons">favorite</span>
+                        <span class="material-icons">${isLikedCommentByUser ? 'favorite' : 'favorite_border'}</span>
                         <span>${currentLikesCount > 0 ? currentLikesCount : ''}</span>
                     `;
-                    // if (isLikedCommentByUser) likeCommentButton.classList.add('liked'); // Not needed
+                    if (isLikedCommentByUser) likeCommentButton.classList.add('liked');
+                    else likeCommentButton.classList.remove('liked');
                 });
                 
-                // Removed event listener for likeCommentButton
+                // Bu düymə də artıq interaktiv deyil.
                 // likeCommentButton.onclick = (e) => {
                 //     e.stopPropagation();
                 //     toggleCommentLike(commentId);
@@ -704,15 +708,16 @@
                 actions.appendChild(likeCommentButton);
             }
 
-            // Reply button
-            if (!isReply) { // Only show reply button for top-level comments
+            // Cavab düyməsi (yalnız əsas şərhlər üçün)
+            if (!isReply) {
                 const replyButton = document.createElement('span');
                 replyButton.className = 'reply-button';
                 replyButton.textContent = 'Cavab ver';
-                replyButton.onclick = (e) => {
-                    e.stopPropagation();
-                    initiateReply(commentId, commentData.nickname);
-                };
+                // Cavab düyməsi də artıq interaktiv deyil.
+                // replyButton.onclick = (e) => {
+                //     e.stopPropagation();
+                //     initiateReply(commentId, commentData.nickname);
+                // };
                 actions.appendChild(replyButton);
             }
 
@@ -723,7 +728,7 @@
             wrapperElement.appendChild(profilePic);
             wrapperElement.appendChild(contentContainer);
 
-            // Replies section (only for top-level comments)
+            // Cavablar bölməsi (yalnız əsas şərhlər üçün)
             if (!isReply) {
                 const replies = commentData.replies || {};
                 const sortedReplyIds = Object.keys(replies).sort((a, b) => {
@@ -748,11 +753,10 @@
 
                     const replySection = document.createElement('div');
                     replySection.className = 'reply-section';
-                    replySection.style.display = 'none'; // Hidden by default
+                    replySection.style.display = 'none';
                     
                     sortedReplyIds.forEach(replyId => {
                         const replyData = replies[replyId];
-                        // Pass isReply = true when creating reply elements
                         replySection.appendChild(createCommentElement(replyId, replyData, true));
                     });
                     contentContainer.appendChild(replySection);
@@ -762,34 +766,47 @@
             return wrapperElement;
         }
 
+        // Cavab vermə prosesini başlatır (yalnız overlay açıq olsaydı istifadə olunardı)
         function initiateReply(commentId, authorNickname) {
+            // Bu funksiya artıq çağrılmamalıdır.
+            console.warn("initiateReply funksiyası çağrıldı, lakin şərh düyməsi deaktivdir.");
             replyingToCommentId = commentId;
             replyingToCommentAuthor = authorNickname;
-            commentInput.placeholder = `@${authorNickname}'a cavab yazın...`; // Use actual nickname for reply prompt
+            commentInput.placeholder = `@${authorNickname}'a cavab yazın...`;
             commentInput.focus();
+            adjustCommentInputHeight();
         }
 
+        // Şərh inputunun hündürlüyünü tənzimləyir
+        function adjustCommentInputHeight() {
+            commentInput.style.height = 'auto';
+            commentInput.style.height = commentInput.scrollHeight + 'px';
+        }
+
+        // Şərh inputu dəyişəndə göndər düyməsini aktivləşdirir/deaktivləşdirir
         commentInput.addEventListener('input', () => {
             sendCommentButton.disabled = commentInput.value.trim() === '';
+            adjustCommentInputHeight();
         });
 
+        // Şərh göndər düyməsinin klik hadisəsi (yalnız overlay açıq olsaydı istifadə olunardı)
         sendCommentButton.addEventListener('click', () => {
+            // Bu funksiya artıq çağrılmamalıdır.
+            console.warn("sendCommentButton klikləndi, lakin şərh düyməsi deaktivdir.");
             const commentText = commentInput.value.trim();
             if (commentText === '' || !activeCommentPostId || !activeCommentsDbForOverlay) return;
 
             const newComment = {
-                nickname: currentUser.replace('@', ''), // Store clean nickname
+                nickname: currentUser.replace('@', ''),
                 text: commentText,
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
-                profilePic: "https://placehold.co/35x35/333333/FFFFFF?text=📸" // Placeholder, update if user has a real profile pic
+                profilePic: "https://placehold.co/35x35/333333/FFFFFF?text=📸"
             };
 
             if (replyingToCommentId && replyingToCommentAuthor) {
-                // It's a reply
-                newComment.replyToNickname = replyingToCommentAuthor.replace('@', ''); // Store clean nickname for replyTo
+                newComment.replyToNickname = replyingToCommentAuthor.replace('@', '');
                 activeCommentsDbForOverlay.ref(`comments/${activeCommentPostId}/${replyingToCommentId}/replies`).push(newComment);
             } else {
-                // It's a new top-level comment
                 activeCommentsDbForOverlay.ref(`comments/${activeCommentPostId}`).push(newComment);
             }
 
@@ -798,11 +815,13 @@
             replyingToCommentId = null;
             replyingToCommentAuthor = null;
             commentInput.placeholder = 'Şərh yazın...';
+            adjustCommentInputHeight();
         });
 
+        // Şərh bəyənməsini dəyişir (yalnız overlay açıq olsaydı istifadə olunardı)
         function toggleCommentLike(commentId) {
-            // This function is still here but will not be called from the UI because the like button is no longer interactive.
-            // Comment likes are still managed by postsCommentsDb (gonline-1880b)
+            // Bu funksiya artıq çağrılmamalıdır.
+            console.warn("toggleCommentLike funksiyası çağrıldı, lakin şərh bəyənmə düyməsi deaktivdir.");
             const likeRef = postsCommentsDb.ref(`commentLikes/${commentId}/${currentUser}`);
             likeRef.once('value').then(snap => {
                 const isCurrentlyLiked = snap.exists();
@@ -813,18 +832,47 @@
                 }
             });
         }
-        
-        // Handle URL changes to open/close comment overlay (functionality removed per user request)
+
+        // Şərh overlayını bağlama düyməsi (hələ də istifadə olunur, lakin URL idarəçiliyi yoxdur)
+        closeCommentOverlayButton.addEventListener('click', closeCommentOverlay);
+
+        // URL dəyişikliklərini idarə edir (şərh overlayını açmaq/bağlamaq üçün)
         window.addEventListener('popstate', () => {
-            // All logic related to opening/closing comment overlay from URL has been removed
-            // as per user request ("ulde comment true elemesin comment duymesine basmaq olmasin").
-            // No action is taken based on URL parameters for comment overlay.
-            // If the comment overlay is visible, it will be closed if 'comment=true' is not in URL
-            // and the overlay itself is not visible.
             const currentUrlParams = new URLSearchParams(window.location.search);
             const isCommentOpenInUrl = currentUrlParams.get('comment') === 'true';
+            
+            // openCommentOverlay çağrışları yığışdırılıb
+            if (isCommentOpenInUrl && !commentOverlay.classList.contains('visible')) {
+                const urlPostId = urlParams.get('post_id');
+                const urlSnapId = urlParams.get('snap_id');
+                const specificPostId = urlPostId || urlSnapId;
 
-            if (!isCommentOpenInUrl && commentOverlay.classList.contains('visible')) {
+                if (specificPostId) {
+                    Promise.all([
+                        postsDb.ref(`posts/${specificPostId}`).once('value'),
+                        videosDb.ref(`reels/${specificPostId}`).once('value')
+                    ]).then(([postSnap, reelSnap]) => {
+                        let commentsSourceDb = null;
+                        if (postSnap.exists()) {
+                            commentsSourceDb = postsCommentsDb;
+                        } else if (reelSnap.exists()) {
+                            commentsSourceDb = snapCommentsDb;
+                        }
+                        // openCommentOverlay çağrısı silindi
+                        // if (commentsSourceDb) {
+                        //     openCommentOverlay(specificPostId, commentsSourceDb);
+                        // } else {
+                        //     closeCommentOverlay();
+                        // }
+                        closeCommentOverlay(); // Yalnız bağla, açma funksiyası yoxdur
+                    }).catch(error => {
+                        console.error("Şərh overlayı üçün post növü müəyyən edilərkən xəta baş verdi:", error);
+                        closeCommentOverlay();
+                    });
+                } else {
+                    closeCommentOverlay();
+                }
+            } else if (!isCommentOpenInUrl && commentOverlay.classList.contains('visible')) {
                 closeCommentOverlay();
             }
         });
