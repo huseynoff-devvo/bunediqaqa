@@ -597,6 +597,7 @@
         align-items: center;
         padding: 10px 15px;
         border-top: 1px solid #333;
+            background-color:#121212;
         position: relative; /* GIF list üçün */
     }
 
@@ -731,10 +732,10 @@
     /* GIF list container styles */
     .gif-list-container {
         position: absolute;
-        bottom: 70px; /* Comment input area-nın üstündə göstərmək üçün */
+        bottom: 58px; /* Comment input area-nın üstündə göstərmək üçün */
         left: 0;
         width: 100%;
-        background: #2b2b2b;
+        background: #121212;
         border-top-left-radius: 15px;
         border-top-right-radius: 15px;
         padding: 10px;
