@@ -916,6 +916,7 @@
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid #333;
+               background-color:#121212;
         }
 
         #gif-list-header h3 {
@@ -937,7 +938,7 @@
             gap: 10px;
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none;  /* IE and Edge */
-               backround-color:#121212;
+               background-color:#121212;
         }
         #gif-carousel::-webkit-scrollbar { /* Chrome, Safari, Opera */
             display: none;
