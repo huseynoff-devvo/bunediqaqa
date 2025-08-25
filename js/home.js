@@ -20,12 +20,25 @@
             appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
         };
 
+        // GIF-lər üçün Firebase konfiqurasiyası
+        const gifFirebaseConfig = {
+            apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE",
+            authDomain: "gif-s-53e6d.firebaseapp.com",
+            databaseURL: "https://gif-s-53e6d-default-rtdb.firebaseio.com",
+            projectId: "gif-s-53e6d",
+            storageBucket: "gif-s-53e6d.firebasestorage.app",
+            messagingSenderId: "285576525417",
+            appId: "1:285576525417:web:515028b392b379122cd4f8"
+        };
+
         // Ayrı Firebase tətbiplərini ilkinləşdir
         const postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
         const commentsApp = firebase.initializeApp(commentsFirebaseConfig, "commentsApp");
+        const gifApp = firebase.initializeApp(gifFirebaseConfig, "gifApp"); // GIF tətbiqini ilkinləşdir
 
         const db = postsApp.database(); // Bu, postlar və bəyənmələr üçün istifadə ediləcək
         const commentsDb = commentsApp.database(); // Bu, şərhlər və şərh bəyənmələri üçün istifadə ediləcək
+        const gifDb = gifApp.database(); // Bu, GIF-lər üçün istifadə ediləcək
 
         const postsContainer = document.getElementById("posts");
         const urlParams = new URLSearchParams(window.location.search);
@@ -38,13 +51,19 @@
         let commentsCache = {};
         let commentLikesCache = {};
         let deletePostId = null;
-        let dataLoaded = { posts: false, likes: false, tick: false, premium: false, users: false, following: false, stories: false, storyLikes: false, storyReadStatusFromFirebase: false, storyViews: false, comments: false, commentLikes: false, userFollows: false, userFollowing: false };
+        let dataLoaded = { posts: false, likes: false, tick: false, premium: false, users: false, following: false, stories: false, storyLikes: false, storyReadStatusFromFirebase: false, storyViews: false, comments: false, commentLikes: false, userFollows: false, userFollowing: false, gifs: false };
         let initialLoadDone = false;
         let activeCommentPostId = null;
         let replyingToCommentId = null;
         let replyingToCommentAuthor = null;
         // Postların sıralamasını qeyd etmək üçün dəyişən
         let postOrder = [];
+
+        // Yeni əlavələr
+        let deletingComment = null; // Silinəcək şərhi izləmək üçün
+        let deletingCommentIsReply = false; // Silinəcək şərhin cavab olub olmadığını izləmək üçün
+        let deletingParentCommentId = null; // Əgər cavab silinirsə, əsas şərhin ID-si
+
 
         const tickFirebaseConfig = {
             apiKey: "AIzaSyA2RNLGS-qUkh6zNGtoUMTXJ3jNTfuHoG",
@@ -57,7 +76,7 @@
             measurementId: "G-DW00VF06NR"
         };
         const premiumFirebaseConfig = {
-            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsS_Cpd9CXzwyHyc",
+            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsT_Cpd9CXzwyHyc",
             authDomain: "pasyak-premium.firebaseapp.com",
             databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
             projectId: "pasyak-premium",
@@ -145,6 +164,7 @@
         let progressStartTime = 0;
         let isPaused = false;
         let lastTouchTime = 0;
+        let allGifs = {}; // GIF-ləri saxlamaq üçün obyekt
 
         // Reklamlar massivi
         const ads = [
@@ -160,7 +180,7 @@
         function hideLoaderIfReady() {
             // Yükləyiciyi gizlətmədən əvvəl əsas məlumatların yüklənib-yüklənmədiyini yoxla
             // İlkin göstərmə üçün postlar, bəyənmələr, istifadəçilər və izləmə məlumatları lazımdır
-            if (dataLoaded.posts && dataLoaded.likes && dataLoaded.users && dataLoaded.userFollowing) {
+            if (dataLoaded.posts && dataLoaded.likes && dataLoaded.users && dataLoaded.userFollowing && dataLoaded.gifs) {
                 const loader = document.getElementById("loader");
                 loader.style.opacity = 0;
                 setTimeout(() => {
@@ -178,6 +198,34 @@
                 }
             }
         }
+
+        // Xəbərdarlıq mesajı göstərən funksiya
+        function showAlertDialog(message) {
+            const alertDialog = document.getElementById('alertDialog');
+            // Check if the comment overlay is visible to decide which alertDialog to use
+            if (commentOverlay.classList.contains('visible')) {
+                const commentOverlayAlertDialog = document.querySelector('#comment-overlay #alertDialog');
+                if (commentOverlayAlertDialog) {
+                    commentOverlayAlertDialog.querySelector('#alertMessage').textContent = message;
+                    commentOverlayAlertDialog.style.display = 'flex';
+                }
+            } else {
+                document.getElementById('alertMessage').textContent = message;
+                alertDialog.style.display = 'flex';
+            }
+        }
+
+        document.getElementById('alertOk').onclick = () => {
+            // Check if the comment overlay is visible to hide the correct alertDialog
+            if (commentOverlay.classList.contains('visible')) {
+                const commentOverlayAlertDialog = document.querySelector('#comment-overlay #alertDialog');
+                if (commentOverlayAlertDialog) {
+                    commentOverlayAlertDialog.style.display = 'none';
+                }
+            } else {
+                document.getElementById('alertDialog').style.display = 'none';
+            }
+        };
         
         function getStatusBadge(nickname) {
             const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
@@ -464,6 +512,54 @@
             deletePostId = null;
         };
 
+        // Şərh silmə təsdiq dialoqu üçün funksiyalar
+        document.getElementById("confirmDeleteCommentYes").onclick = () => {
+            if (activeCommentPostId && deletingComment) {
+                let commentRef;
+                if (deletingCommentIsReply && deletingParentCommentId) {
+                    commentRef = commentsDb.ref(`comments/${activeCommentPostId}/${deletingParentCommentId}/replies/${deletingComment}`);
+                } else {
+                    commentRef = commentsDb.ref(`comments/${activeCommentPostId}/${deletingComment}`);
+                }
+                
+                commentRef.remove()
+                    .then(() => {
+                        console.log("Şərh uğurla silindi.");
+                        // Əgər üst səviyyə şərh silinirsə, onun bəyənmələrini də sil
+                        if (!deletingCommentIsReply) {
+                            commentsDb.ref(`commentLikes/${deletingComment}`).remove();
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Şərh silinərkən xəta:", error);
+                        showAlertDialog("Şərh silinərkən xəta baş verdi.");
+                    })
+                    .finally(() => {
+                        document.getElementById("confirmDeleteCommentDialog").style.display = "none";
+                        // Also remove the visual 'deleting' class from the comment item
+                        const commentElement = document.getElementById(`${deletingCommentIsReply ? 'reply_' : 'comment_'}${deletingComment}`);
+                        if (commentElement) {
+                            commentElement.classList.remove('deleting');
+                        }
+                        deletingComment = null;
+                        deletingCommentIsReply = false;
+                        deletingParentCommentId = null;
+                    });
+            }
+        };
+
+        document.getElementById("confirmDeleteCommentNo").onclick = () => {
+            document.getElementById("confirmDeleteCommentDialog").style.display = "none";
+            // Also remove the visual 'deleting' class from the comment item
+            const commentElement = document.getElementById(`${deletingCommentIsReply ? 'reply_' : 'comment_'}${deletingComment}`);
+            if (commentElement) {
+                commentElement.classList.remove('deleting');
+            }
+            deletingComment = null;
+            deletingCommentIsReply = false;
+            deletingParentCommentId = null;
+        };
+
         function updateLikeInfo(postId) {
             const postEl = document.getElementById("post_" + postId);
             if (!postEl) return;
@@ -726,6 +822,7 @@
                         })
                         .catch(error => {
                             console.error("Story silinərkən xəta:", error); // Error handling
+                            showAlertDialog("Story silinərkən xəta baş verdi.");
                         });
                 }
             };
@@ -1447,6 +1544,14 @@
             hideLoaderIfReady();
         });
 
+        // GIF-lər üçün dinləyici
+        gifDb.ref("gif").on("value", (snapshot) => {
+            allGifs = snapshot.val() || {};
+            dataLoaded.gifs = true;
+            // renderGifList(); // GIF-ləri yüklədikdən sonra siyahını render et
+            hideLoaderIfReady();
+        });
+
         tickDb.ref("tick").on("value", (snapshot) => {
             tickUsers = snapshot.val() || {};
             dataLoaded.tick = true;
@@ -1520,7 +1625,7 @@
                     const postData = JSON.parse(snap.val());
                     postCache[postId] = { id: postId, data: postData }; // Orijinal formatı saxla
                     // Post dəyişdirildikdə postları yenidən filtr et
-                    // Değişiklikler yorum sayısını etkileyebilir, ancak post sırasını etkilememeli.
+                    // Değişiklikler yorum sayısını etkileyecek, ancak post sırasını etkilememeli.
                     // Bu yüzden `shouldRandomize = false` olarak geçiyoruz.
                     filterPosts(currentPostFilter, false); 
                 } catch (e) {
@@ -1641,10 +1746,9 @@
         const commentsList = document.getElementById('comments-list');
         const commentInput = document.getElementById('comment-input');
         const sendCommentButton = document.getElementById('send-comment-button');
-        // const currentUserCommentPic = document.getElementById('current-user-comment-pic'); // Bu element silindi
-
-        // Profil şəkli elementi HTML-dən silindiyi üçün artıq lazım deyil
-        // currentUserCommentPic.src = getProfilePic(currentUser.replace('@', '')); 
+        const gifButton = document.getElementById('gif-button');
+        const gifListContainer = document.getElementById('gif-list-container');
+        const gifCarousel = document.getElementById('gif-carousel');
 
         function openCommentOverlay(postId) {
             activeCommentPostId = postId; // Post ID-sinin daxili izlənməsi
@@ -1670,6 +1774,7 @@
             replyingToCommentAuthor = null;
             commentInput.placeholder = 'Şərh yazın...'; // Placeholder-i sıfırla
             sendCommentButton.disabled = true; // Göndər düyməsini əvvəlcədən deaktiv et
+            gifListContainer.style.display = 'none'; // GIF siyahısını gizlət
 
             // Daxili olaraq izlənilən activeCommentPostId istifadə edərək şərhləri render et
             renderComments(activeCommentPostId);
@@ -1696,6 +1801,7 @@
                 commentInput.value = '';
                 commentInput.placeholder = 'Şərh yazın...';
                 sendCommentButton.disabled = true;
+                gifListContainer.style.display = 'none'; // GIF siyahısını bağla
             }, 300);
         }
 
@@ -1724,6 +1830,39 @@
             const wrapperElement = document.createElement('div');
             wrapperElement.className = isReply ? 'reply-item' : 'comment-item';
             wrapperElement.id = `${isReply ? 'reply_' : 'comment_'}${commentId}`;
+            // Mənim şərhimdirsə uzun basma üçün event əlavə et
+            const cleanNickname = commentData.nickname.replace('@', '');
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+
+            if (cleanNickname === cleanCurrentUserNickname) {
+                let pressTimer;
+
+                const startPress = (e) => {
+                    // e.stopPropagation(); // Moved to be conditionally applied if needed, but not here
+                    pressTimer = setTimeout(() => {
+                        deletingComment = commentId;
+                        deletingCommentIsReply = isReply;
+                        deletingParentCommentId = parentCommentId;
+                        document.getElementById("confirmDeleteCommentDialog").style.display = "flex";
+                        wrapperElement.classList.add('deleting'); // Add visual feedback immediately
+                    }, 500); // 0.5 saniyə basılı saxlama
+                };
+
+                const cancelPress = () => {
+                    clearTimeout(pressTimer);
+                    // The 'deleting' class is removed in the finally block of the confirmDeleteCommentYes handler
+                    // to ensure it stays during the dialog.
+                    // wrapperElement.classList.remove('deleting'); 
+                };
+
+                wrapperElement.addEventListener('touchstart', startPress);
+                wrapperElement.addEventListener('touchend', cancelPress);
+                wrapperElement.addEventListener('touchmove', cancelPress);
+                
+                wrapperElement.addEventListener('mousedown', startPress);
+                wrapperElement.addEventListener('mouseup', cancelPress);
+                wrapperElement.addEventListener('mouseleave', cancelPress);
+            }
 
             const profilePic = document.createElement('img');
             profilePic.className = 'profile-pic';
@@ -1765,7 +1904,20 @@
                 };
                 text.appendChild(replySpan);
             }
-            text.appendChild(document.createTextNode(commentData.text));
+
+            // Mətn və ya GIF-i əlavə et
+            if (commentData.isGif) {
+                const gifImg = document.createElement('img');
+                gifImg.src = commentData.text; // GIF URL-i burada saxlanılır
+                gifImg.alt = "GIF";
+                gifImg.style.maxWidth = '100%';
+                gifImg.style.maxHeight = '150px';
+                gifImg.style.borderRadius = '8px';
+                gifImg.style.objectFit = 'contain';
+                text.appendChild(gifImg);
+            } else {
+                text.appendChild(document.createTextNode(commentData.text));
+            }
 
 
             const actions = document.createElement('div');
@@ -1852,6 +2004,7 @@
             replyingToCommentAuthor = authorNickname;
             commentInput.placeholder = `@${getUserName(authorNickname)}'a cavab yazın...`;
             commentInput.focus();
+            gifListContainer.style.display = 'none'; // GIF siyahısını gizlət
         }
 
         commentInput.addEventListener('input', () => {
@@ -1883,6 +2036,7 @@
             replyingToCommentId = null;
             replyingToCommentAuthor = null;
             commentInput.placeholder = 'Şərh yazın...';
+            gifListContainer.style.display = 'none'; // Göndərdikdən sonra GIF siyahısını bağla
         });
 
         function toggleCommentLike(commentId) {
@@ -1970,3 +2124,70 @@
                 });
             }
         }
+
+        // GIF funksiyaları
+        function toggleGifList() {
+            if (gifListContainer.style.display === 'flex') {
+                gifListContainer.style.display = 'none';
+                // RE-ENABLE INPUT
+                commentInput.disabled = false; 
+                sendCommentButton.disabled = commentInput.value.trim() === '';
+            } else {
+                gifListContainer.style.display = 'flex';
+                // DISABLE INPUT
+                commentInput.disabled = true;
+                sendCommentButton.disabled = true;
+                renderGifList(); // Siyahını hər açıldığında yenidən render et
+            }
+        }
+
+        function renderGifList() {
+            gifCarousel.innerHTML = ''; // Köhnə GIF-ləri təmizlə
+            const gifKeys = Object.keys(allGifs);
+            if (gifKeys.length === 0) {
+                gifCarousel.innerHTML = '<p style="text-align: center; color: #aaa; padding: 10px;">GIF yoxdur.</p>';
+                return;
+            }
+
+            gifKeys.forEach(gifId => {
+                const gifUrl = allGifs[gifId];
+                const gifItem = document.createElement('div');
+                gifItem.className = 'gif-item';
+                gifItem.innerHTML = `<img src="${gifUrl}" alt="GIF" onerror="this.onerror=null;this.src='https://placehold.co/120x90/333/666?text=GIF+Not+Found';" />`;
+                gifItem.onclick = () => selectGif(gifUrl);
+                gifCarousel.appendChild(gifItem);
+            });
+        }
+
+        function selectGif(gifUrl) {
+            if (!activeCommentPostId) {
+                showAlertDialog("GIF göndərmək üçün aktiv post yoxdur.");
+                return;
+            }
+
+            const newComment = {
+                nickname: currentUser,
+                text: gifUrl, // GIF URL-i burada saxlanılır
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                profilePic: getProfilePic(currentUser.replace('@', '')),
+                isGif: true // Bu şərhin bir GIF olduğunu göstərmək üçün
+            };
+
+            if (replyingToCommentId && replyingToCommentAuthor) {
+                newComment.replyToNickname = replyingToCommentAuthor;
+                commentsDb.ref(`comments/${activeCommentPostId}/${replyingToCommentId}/replies`).push(newComment);
+            } else {
+                commentsDb.ref(`comments/${activeCommentPostId}`).push(newComment);
+            }
+
+            commentInput.value = '';
+            sendCommentButton.disabled = true;
+            replyingToCommentId = null;
+            replyingToCommentAuthor = null;
+            commentInput.placeholder = 'Şərh yazın...';
+            toggleGifList(); // GIF seçildikdən sonra siyahını bağla
+            commentInput.disabled = false; // Şərh inputunu yenidən aktiv et
+        }
+
+        // GIF düyməsinə klikləmə hadisəsi
+        gifButton.addEventListener('click', toggleGifList);
