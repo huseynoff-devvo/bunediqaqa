@@ -897,3 +897,43 @@
             background-color: #383838;
             color: #ddd;
         }
+
+        /* Yeni Reklam Stili */
+        .ad-container {
+            /* background: #282828; */
+            border-radius: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            /* border: 1px solid #444; */
+            padding: 15px;
+            text-align: center;
+        }
+
+        .ad-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .ad-text {
+            margin-top: -10px;
+            font-size: 1.1em;
+            color: #eee;
+            margin-bottom: -15px;
+        }
+
+        .ad-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .ad-button:hover {
+            background: #0056b3;
+        }
