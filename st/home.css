@@ -115,9 +115,15 @@
             display: flex;
             align-items: center;
             margin-top: 10px;
+            justify-content: space-between; /* Yeni: Düymələr arasında boşluq üçün */
         }
         
-        .like-button, .comment-button {
+        .post-actions-left { /* Yeni: Sol tərəfdəki düymələri qruplaşdırmaq üçün */
+            display: flex;
+            align-items: center;
+        }
+
+        .like-button, .comment-button, .bookmark-button { /* Bookmark düyməsi əlavə edildi */
             background: none;
             border: none;
             color: white;
@@ -134,12 +140,12 @@
             color: #ff4d4d;
         }
 
-        .like-button .material-icons, .comment-button .material-icons {
-            margin-right: 5px;
+        .bookmark-button.saved { /* Yeni: Yadda saxlanılan düymə üçün stil */
+            color: #FFD700; /* Sarı rəng */
         }
 
-        .like-count {
-            margin-left: 5px;
+        .like-button .material-icons, .comment-button .material-icons, .bookmark-button .material-icons {
+            margin-right: 5px;
         }
 
         .delete-button {
@@ -1104,4 +1110,38 @@
             flex-direction: column;
             align-items: center;
             box-shadow: 0 0 10px #000;
+        }
+
+        /* Yeni: Qeyd Yoxdur Mesajı Stili */
+        #no-saved-posts-message {
+            display: none; /* Varsayılan olaraq gizli */
+            text-align: center;
+            padding: 50px 20px;
+            color: #aaa;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            /* background: #1e1e1e;  */
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        #no-saved-posts-message .material-icons {
+            font-size: 3rem;
+            color: #FFD700; /* Sarı yer işarəsi */
+            margin-bottom: 15px;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        .bookmark-count {
+            font-weight: bold;
+            font-size: 1.1em;
         }
