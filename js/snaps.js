@@ -111,6 +111,7 @@
             const gifButton = document.getElementById('gif-button'); // GIF düyməsi
             const gifListContainer = document.getElementById('gif-list-container'); // GIF siyahısı konteyneri
             const gifCarousel = document.getElementById('gif-carousel'); // GIF karuseli
+            const closeGifListBtn = document.querySelector('.close-gif-list'); // GIF siyahısını bağlama düyməsi
 
 
             // URL parametrləri
@@ -1478,5 +1479,8 @@
 
             // GIF düyməsinə klikləmə hadisəsi
             gifButton.addEventListener('click', toggleGifList);
+
+            // X düyməsinə klikləmə hadisəsi (yeni)
+            closeGifListBtn.addEventListener('click', toggleGifList);
 
         })();
