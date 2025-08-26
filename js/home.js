@@ -30,17 +30,33 @@
             messagingSenderId: "285576525417",
             appId: "1:285576525417:web:515028b392b379122cd4f8"
         };
+        
+        // Yeni: Qeyd edilmiş postlar üçün Firebase konfiqurasiyası
+        const savedPostsFirebaseConfig = {
+            apiKey: "AIzaSyBS58OjagJg-XfIa3Bp-Kj__qK9K9KphhH48",
+            authDomain: "post-save.firebaseapp.com",
+            databaseURL: "https://post-save-default-rtdb.firebaseio.com",
+            projectId: "post-save",
+            storageBucket: "post-save.firebasestorage.app",
+            messagingSenderId: "158669771968",
+            appId: "1:158669771968:web:767ceb35de551631f84925",
+            measurementId: "G-YG79SJZ3PN"
+        };
+
 
         // Ayrı Firebase tətbiplərini ilkinləşdir
         const postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
         const commentsApp = firebase.initializeApp(commentsFirebaseConfig, "commentsApp");
         const gifApp = firebase.initializeApp(gifFirebaseConfig, "gifApp"); // GIF tətbiqini ilkinləşdir
+        const savedPostsApp = firebase.initializeApp(savedPostsFirebaseConfig, "savedPostsApp"); // Yeni: Qeyd edilmiş postlar tətbiqi
 
         const db = postsApp.database(); // Bu, postlar və bəyənmələr üçün istifadə ediləcək
         const commentsDb = commentsApp.database(); // Bu, şərhlər və şərh bəyənmələri üçün istifadə ediləcək
         const gifDb = gifApp.database(); // Bu, GIF-lər üçün istifadə ediləcək
+        const savedPostsDb = savedPostsApp.database(); // Yeni: Qeyd edilmiş postlar üçün istifadə ediləcək
 
         const postsContainer = document.getElementById("posts");
+        const noSavedPostsMessage = document.getElementById("no-saved-posts-message"); // Yeni: Qeyd yoxdur mesajı elementi
         const urlParams = new URLSearchParams(window.location.search);
         const currentUser = urlParams.get("user") || "@huseynoff";
         let currentUserProfilePic = urlParams.get("profile");
@@ -51,7 +67,7 @@
         let commentsCache = {};
         let commentLikesCache = {};
         let deletePostId = null;
-        let dataLoaded = { posts: false, likes: false, tick: false, premium: false, users: false, following: false, stories: false, storyLikes: false, storyReadStatusFromFirebase: false, storyViews: false, comments: false, commentLikes: false, userFollows: false, userFollowing: false, gifs: false };
+        let dataLoaded = { posts: false, likes: false, tick: false, premium: false, users: false, following: false, stories: false, storyLikes: false, storyReadStatusFromFirebase: false, storyViews: false, comments: false, commentLikes: false, userFollows: false, userFollowing: false, gifs: false, savedPosts: false }; // savedPosts əlavə edildi
         let initialLoadDone = false;
         let activeCommentPostId = null;
         let replyingToCommentId = null;
@@ -63,6 +79,9 @@
         let deletingComment = null; // Silinəcək şərhi izləmək üçün
         let deletingCommentIsReply = false; // Silinəcək şərhin cavab olub olmadığını izləmək üçün
         let deletingParentCommentId = null; // Əgər cavab silinirsə, əsas şərhin ID-si
+        
+        let savedPostsCache = {}; // Yeni: Yadda saxlanılan postları saxlamaq üçün cache
+        let savedPostsByUserCache = {}; // Yeni: Cari istifadəçi tərəfindən yadda saxlanılan postları saxlamaq üçün cache
 
 
         const tickFirebaseConfig = {
@@ -175,12 +194,12 @@
         let currentAdIndex = 0; // Hansı reklamın göstəriləcəyini izləmək üçün
 
         // Cari post filtrini izləmək üçün qlobal dəyişən
-        let currentPostFilter = 'all'; // 'all', 'mine', 'friends'
+        let currentPostFilter = 'all'; // 'all', 'mine', 'saved'
 
         function hideLoaderIfReady() {
             // Yükləyiciyi gizlətmədən əvvəl əsas məlumatların yüklənib-yüklənmədiyini yoxla
             // İlkin göstərmə üçün postlar, bəyənmələr, istifadəçilər və izləmə məlumatları lazımdır
-            if (dataLoaded.posts && dataLoaded.likes && dataLoaded.users && dataLoaded.userFollowing && dataLoaded.gifs) {
+            if (dataLoaded.posts && dataLoaded.likes && dataLoaded.users && dataLoaded.userFollowing && dataLoaded.gifs && dataLoaded.savedPosts) {
                 const loader = document.getElementById("loader");
                 loader.style.opacity = 0;
                 setTimeout(() => {
@@ -307,6 +326,12 @@
         function renderPost(postId, data) {
             const postLikes = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
             const isLikedByUser = likeCache[postId] && likeCache[postId][currentUser];
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+
+            // Yeni: Yer işarəsi (saved posts) məlumatı
+            const postSavedCount = savedPostsCache[postId] ? Object.keys(savedPostsCache[postId]).length : 0;
+            const isPostSavedByUser = savedPostsByUserCache[postId] && savedPostsByUserCache[postId][cleanCurrentUserNickname];
+
 
             const postEl = document.createElement("div");
             postEl.className = "post";
@@ -355,7 +380,7 @@
 
             // Takib etmə düyməsi
             const cleanPostOwnerNickname = data.nickname.replace('@', '');
-            const cleanCurrentUserNickname = currentUser.replace('@', '');
+            
             if (cleanPostOwnerNickname !== cleanCurrentUserNickname) {
                 const followButton = document.createElement('button');
                 followButton.className = 'follow-button';
@@ -396,6 +421,9 @@
             const footer = document.createElement("div");
             footer.className = "post-footer";
             
+            const postActionsLeft = document.createElement("div"); // Yeni: Sol düymə qrupunu saxlamaq üçün div
+            postActionsLeft.className = "post-actions-left";
+
             const likeBtn = document.createElement("button");
             likeBtn.className = "like-button";
             if (isLikedByUser) likeBtn.classList.add("liked");
@@ -415,7 +443,7 @@
                     }
                 });
             });
-            footer.appendChild(likeBtn);
+            postActionsLeft.appendChild(likeBtn); // Sol qrupa əlavə et
 
             // Şərh Düyməsi
             const commentCount = commentsCache[postId] ? Object.keys(commentsCache[postId]).length : 0;
@@ -429,7 +457,24 @@
                 event.stopPropagation();
                 openCommentOverlay(postId);
             });
-            footer.appendChild(commentBtn);
+            postActionsLeft.appendChild(commentBtn); // Sol qrupa əlavə et
+
+            footer.appendChild(postActionsLeft); // Sol qrupu footere əlavə et
+
+            // Yeni: Yer işarəsi (Bookmark) düyməsi
+            const bookmarkBtn = document.createElement("button");
+            bookmarkBtn.className = "bookmark-button";
+            if (isPostSavedByUser) bookmarkBtn.classList.add("saved"); // İstifadəçi yadda saxlayıbsa sarı rəng et
+            bookmarkBtn.innerHTML = `
+                <span class="material-icons">${isPostSavedByUser ? 'bookmark' : 'bookmark_border'}</span>
+                <span class="bookmark-count">${postSavedCount > 0 ? postSavedCount : ''}</span>
+            `;
+            bookmarkBtn.addEventListener("click", (event) => {
+                event.stopPropagation();
+                toggleSavePost(postId);
+            });
+            footer.appendChild(bookmarkBtn); // Sağa əlavə et (margin-left: auto ilə hizalanacaq)
+
 
             if (data.nickname.replace('@', '') === currentUser.replace('@', '')) {
                 const deleteBtn = document.createElement("button");
@@ -502,6 +547,8 @@
                 db.ref("likes/" + deletePostId).remove(); 
                 // Şərhlərin silinməsi üçün 'commentsDb' istifadə et
                 commentsDb.ref("comments/" + deletePostId).remove(); 
+                // Yeni: Qeyd edilmiş postların silinməsi
+                savedPostsDb.ref("savedPosts/" + deletePostId).remove();
                 document.getElementById("confirmDialog").style.display = "none";
                 deletePostId = null;
             }
@@ -617,6 +664,28 @@
             if (commentCountSpan) {
                 const count = commentsCache[postId] ? Object.keys(commentsCache[postId]).length : 0;
                 commentCountSpan.textContent = count;
+            }
+        }
+
+        // Yeni: Bookmark düyməsinin sayını və statusunu yeniləmək üçün funksiya
+        function updateBookmarkInfo(postId) {
+            const postEl = document.getElementById("post_" + postId);
+            if (!postEl) return;
+
+            const bookmarkBtn = postEl.querySelector(".bookmark-button");
+            const bookmarkCountSpan = bookmarkBtn.querySelector(".bookmark-count");
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+
+            const postSavedCount = savedPostsCache[postId] ? Object.keys(savedPostsCache[postId]).length : 0;
+            const isPostSavedByUser = savedPostsByUserCache[postId] && savedPostsByUserCache[postId][cleanCurrentUserNickname];
+
+            bookmarkCountSpan.textContent = postSavedCount > 0 ? postSavedCount : '';
+            if (isPostSavedByUser) {
+                bookmarkBtn.classList.add("saved");
+                bookmarkBtn.querySelector(".material-icons").textContent = "bookmark";
+            } else {
+                bookmarkBtn.classList.remove("saved");
+                bookmarkBtn.querySelector(".material-icons").textContent = "bookmark_border";
             }
         }
         
@@ -1588,6 +1657,26 @@
             hideLoaderIfReady();
         });
         
+        // Yeni: Yadda saxlanılan postlar üçün dinləyici
+        savedPostsDb.ref("savedPosts").on("value", (snapshot) => {
+            savedPostsCache = snapshot.val() || {};
+            dataLoaded.savedPosts = true;
+            // Cari istifadəçinin hansı postları yadda saxladığını yeniləyin
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+            savedPostsByUserCache = {};
+            for (const postId in savedPostsCache) {
+                if (savedPostsCache[postId] && savedPostsCache[postId][cleanCurrentUserNickname]) {
+                    if (!savedPostsByUserCache[postId]) {
+                        savedPostsByUserCache[postId] = {};
+                    }
+                    savedPostsByUserCache[postId][cleanCurrentUserNickname] = true;
+                }
+            }
+            filterPosts(currentPostFilter); // Postları yenidən render etmək üçün
+            hideLoaderIfReady();
+        });
+
+
         // Postların ilkin yüklənməsi
         db.ref("posts").once("value").then(snapshot => { // Postların ilkin yüklənməsi üçün 'db' istifadə et
             const allPosts = snapshot.val() || {};
@@ -1658,9 +1747,10 @@
                 document.getElementById('my-posts-button').classList.add('active');
             } else if (filterType === 'all') {
                 document.getElementById('all-posts-button').classList.add('active');
-            } 
-            // "friends" filtri silindi
-
+            } else if (filterType === 'saved') { // Yeni: Qeydlərim düyməsi
+                document.getElementById('saved-posts-button').classList.add('active');
+            }
+            
             let filteredPostsArray = [];
 
             const cleanCurrentUserNickname = currentUser.replace('@', '');
@@ -1675,9 +1765,8 @@
                     shouldAdd = true;
                 } else if (filterType === 'mine') {
                     shouldAdd = (cleanPostOwnerNickname === cleanCurrentUserNickname);
-                } else if (filterType === 'friends') {
-                    // Cari istifadəçinin post sahibini izləyib-izləmədiyini yoxla
-                    shouldAdd = myFollowing[`@${cleanPostOwnerNickname}`] === '+' || myFollowing[cleanPostOwnerNickname] === '+';
+                } else if (filterType === 'saved') { // Yeni: Yadda saxlanılan postları göstər
+                    shouldAdd = savedPostsByUserCache[postId] && savedPostsByUserCache[postId][cleanCurrentUserNickname];
                 }
 
                 if (shouldAdd) {
@@ -1720,25 +1809,33 @@
             // --- Dəyişiklik burada bitir ---
             
             postsContainer.innerHTML = ''; // Cari postları təmizlə
-            let postCount = 0; // Reklamları saymaq üçün əlavə sayğac
 
-            filteredPostsArray.forEach(post => {
-                postsContainer.appendChild(renderPost(post.id, post.data));
-                postCount++;
+            if (filterType === 'saved' && filteredPostsArray.length === 0) {
+                postsContainer.style.display = 'none'; // Post konteynerini gizlət
+                noSavedPostsMessage.style.display = 'block'; // Mesajı göstər
+            } else {
+                postsContainer.style.display = 'block'; // Post konteynerini göstər
+                noSavedPostsMessage.style.display = 'none'; // Mesajı gizlət
+                let postCount = 0; // Reklamları saymaq üçün əlavə sayğac
 
-                // Hər 7 postdan bir reklam göstər
-                if (ads.length > 0 && postCount % 7 === 0) {
-                    const currentAd = ads[currentAdIndex];
-                    postsContainer.appendChild(createAdElement(currentAd));
-                    currentAdIndex = (currentAdIndex + 1) % ads.length; // Növbəti reklama keç
-                }
-            });
+                filteredPostsArray.forEach(post => {
+                    postsContainer.appendChild(renderPost(post.id, post.data));
+                    postCount++;
+
+                    // Hər 7 postdan bir reklam göstər
+                    if (ads.length > 0 && postCount % 7 === 0) {
+                        const currentAd = ads[currentAdIndex];
+                        postsContainer.appendChild(createAdElement(currentAd));
+                        currentAdIndex = (currentAdIndex + 1) % ads.length; // Növbəti reklama keç
+                    }
+                });
+            }
         }
 
         // Yeni naviqasiya düymələrinə hadisə dinləyiciləri əlavə et
         document.getElementById('my-posts-button').addEventListener('click', () => filterPosts('mine', true)); // Hər dəfə kliklənəndə random sırala
         document.getElementById('all-posts-button').addEventListener('click', () => filterPosts('all', true)); // Hər dəfə kliklənəndə random sırala
-        // document.getElementById('friends-posts-button').addEventListener('click', () => filterPosts('friends')); // "Dostlar" düyməsi silindi
+        document.getElementById('saved-posts-button').addEventListener('click', () => filterPosts('saved', true)); // Yeni: Qeydlərim düyməsi üçün hadisə dinləyicisi
 
 
         // Şərh funksionalı
@@ -2191,3 +2288,18 @@
 
         // GIF düyməsinə klikləmə hadisəsi
         gifButton.addEventListener('click', toggleGifList);
+
+        // Yeni: Postu yadda saxlamaq/yaddaşdan çıxarmaq üçün funksiya
+        function toggleSavePost(postId) {
+            const cleanCurrentUserNickname = currentUser.replace('@', '');
+            const savedPostRef = savedPostsDb.ref(`savedPosts/${postId}/${cleanCurrentUserNickname}`);
+
+            savedPostRef.once("value").then(snap => {
+                const isCurrentlySaved = snap.exists();
+                if (isCurrentlySaved) {
+                    savedPostRef.remove(); // Yaddaşdan çıxar
+                } else {
+                    savedPostRef.set(true); // Yadda saxla
+                }
+            });
+        }
