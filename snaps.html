@@ -40,19 +40,20 @@
             </div>
             <div class="comments-list-content"></div>
         </div>
-        <div id="gif-list-container" class="gif-list-container">
-            <div class="gif-list-header">
-                <h4>GIF Seçin</h4>
-                <button class="close-gif-list">&times;</button>
+        <div class="comment-input-area">
+            <button id="gif-button" class="material-icons gif-button">gif</button>
+            <input type="text" class="comment-input" placeholder="Şərh yazın..." />
+            <button class="send-comment-btn material-icons" disabled>send</button>
+        </div>
+        <!-- GIF List Container -->
+        <div id="gif-list-container">
+            <div id="gif-list-header">
+                <h3>GIF seçin</h3>
+                <span class="material-icons close-gif-list" onclick="toggleGifList()">close</span>
             </div>
-            <div id="gif-list" class="gif-list">
+            <div id="gif-carousel">
                 <!-- GIF-lər buraya yüklənəcək -->
             </div>
-        </div>
-        <div class="comment-input-area">
-            <button class="gif-button material-icons">sentiment_satisfied_alt</button>
-            <input type="text" class="comment-input" placeholder="Şərh yazın..." />
-            <button class="send-comment-btn material-icons">send</button>
         </div>
     </div>
 
