@@ -630,6 +630,10 @@
         margin-left: 10px;
         cursor: pointer;
     }
+    .send-comment-btn:disabled {
+        color: #777;
+        cursor: not-allowed;
+    }
 
     /* Şərh bəyənmələri üçün yeni stillər */
     .comment-like-section {
@@ -722,133 +726,93 @@
         background-color: #555;
     }
 
-    /* GIF düyməsi stilləri */
+    /* GIF butonu üçün stil */
     .gif-button {
         background: none;
         border: none;
-        color: #888;
-        font-size: 1.5rem;
-        margin-right: 10px;
+        color: #4a90e2; /* Mavi rəng */
+        font-size: 24px;
         cursor: pointer;
-        padding: 5px;
-        border-radius: 50%;
-        transition: background-color 0.2s;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        transition: color 0.3s;
     }
-
     .gif-button:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        color: #6da2ed;
     }
 
-    /* GIF siyahısı konteyneri stilləri */
-    .gif-list-container {
+    /* GIF siyahısı üçün stil */
+    #gif-list-container {
         position: absolute;
-        bottom: 58px;
+        bottom: 60px; /* input sahəsinin üstündə yerləşsin */
         left: 0;
         width: 100%;
-        background: #121212;
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-        padding: 10px;
-        box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
-        display: none;
+        background: #1e1e1e;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        border-radius: 10px 10px 0 0;
+        display: none; /* Varsayılan olaraq gizli */
         flex-direction: column;
-        z-index: 1001;
+        z-index: 30001;
     }
 
-    .gif-list-container.open {
-        display: flex;
-    }
-
-    .gif-list-header {
+    #gif-list-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding-bottom: 10px;
+        padding: 10px;
         border-bottom: 1px solid #333;
-        margin-bottom: 10px;
+        background-color:#121212;
     }
 
-    .gif-list-header h4 {
+    #gif-list-header h3 {
         margin: 0;
         font-size: 1rem;
-        color: white;
     }
 
-    .close-gif-list {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
+    #gif-list-header .close-gif-list {
+        font-size: 24px;
         cursor: pointer;
+        color: #aaa;
     }
 
-    .gif-list {
+    #gif-carousel {
         display: flex;
-        overflow-x: auto;
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+        padding: 10px;
         gap: 10px;
-        padding-bottom: 10px;
-        scroll-snap-type: x mandatory;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;  /* IE and Edge */
+        background-color:#121212;
+    }
+    #gif-carousel::-webkit-scrollbar { /* Chrome, Safari, Opera */
+        display: none;
     }
 
-    .gif-list::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .gif-list::-webkit-scrollbar-track {
-        background: #333;
-        border-radius: 3px;
-    }
-
-    .gif-list::-webkit-scrollbar-thumb {
-        background: #555;
-        border-radius: 3px;
-    }
-
-    /* GIF elementi sarğısı və yükləyici stilləri */
-    .gif-item-wrapper {
-        position: relative;
+    .gif-item {
         flex-shrink: 0;
         width: 120px;
-        height: 120px;
+        height: 90px;
+        background: #333;
         border-radius: 8px;
         overflow: hidden;
         cursor: pointer;
-        border: 2px solid transparent;
-        transition: border-color 0.2s;
-        scroll-snap-align: start;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: #3a3a3a;
+        border: 2px solid transparent;
+        transition: border-color 0.2s;
     }
 
-    .gif-item-wrapper:hover {
-        border-color: #38b1f7;
+    .gif-item:hover {
+        border-color: #4a90e2;
     }
 
-    .gif-item-wrapper img {
+    .gif-item img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        display: none;
-    }
-
-    .gif-item-loader {
-        border: 3px solid rgba(255, 255, 255, 0.2);
-        border-top: 3px solid white;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        position: absolute;
-        display: block;
-    }
-
-    /* Əsas GIF siyahısı yükləyicisi */
-    #gif-list-main-loader {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        display: none;
     }
