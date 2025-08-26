@@ -1,5 +1,5 @@
 (function () {
-            // Firebase configuration for reels
+            // Firebase konfiqurasiyaları
             const reelFirebaseConfig = {
                 apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
                 authDomain: "pasyak-reels.firebaseapp.com",
@@ -12,7 +12,6 @@
             const reelApp = firebase.initializeApp(reelFirebaseConfig, 'reelApp');
             const reelDb = reelApp.database();
 
-            // Firebase configuration for user profiles
             const userFirebaseConfig = {
                 apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
                 authDomain: "pasyak-user.firebaseapp.com",
@@ -25,7 +24,6 @@
             const userApp = firebase.initializeApp(userFirebaseConfig, 'userApp');
             const userDb = userApp.database();
 
-            // Firebase configuration for follows
             const followsFirebaseConfig = {
                 apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
                 authDomain: "pasyak-follows.firebaseapp.com",
@@ -39,7 +37,6 @@
             const followsApp = firebase.initializeApp(followsFirebaseConfig, 'followsApp');
             const followsDb = followsApp.database();
 
-            // Firebase configuration for following
             const followingFirebaseConfig = {
                 apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
                 authDomain: "pasyak-following.firebaseapp.com",
@@ -52,7 +49,6 @@
             const followingApp = firebase.initializeApp(followingFirebaseConfig, 'followingApp');
             const followingDb = followingApp.database();
 
-            // Firebase configuration for comments (from user input)
             const commentsFirebaseConfig = {
                 apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
                 authDomain: "reply-eb654.firebaseapp.com",
@@ -65,7 +61,6 @@
             const commentsApp = firebase.initializeApp(commentsFirebaseConfig, 'commentsApp');
             const commentsDb = commentsApp.database();
 
-            // Firebase configuration for comment likes
             const commentLikesFirebaseConfig = {
                 apiKey: "AIzaSyB3Ckrcg-Bw4SAY-OyZiAV-qwiJgT8pmfg",
                 authDomain: "comment-55fc9.firebaseapp.com",
@@ -79,7 +74,6 @@
             const commentLikesApp = firebase.initializeApp(commentLikesFirebaseConfig, 'commentLikesApp');
             const commentLikesDb = commentLikesApp.database();
 
-            // Firebase configuration for GIFS (from user input)
             const gifFirebaseConfig = {
                 apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE",
                 authDomain: "gif-s-53e6d.firebaseapp.com",
@@ -92,8 +86,7 @@
             const gifApp = firebase.initializeApp(gifFirebaseConfig, 'gifApp');
             const gifDb = gifApp.database();
 
-
-            // DOM elements
+            // DOM elementləri
             const app = document.getElementById('app');
             const mySnapsGrid = document.getElementById('my-snaps-grid');
             const mySnapsLoader = document.getElementById('my-snaps-loader');
@@ -119,16 +112,16 @@
             const closeGifListBtn = document.querySelector('.close-gif-list');
 
 
-            // URL parameters
+            // URL parametrləri
             const userFromUrl = window.location.search.match(/user=([^&]+)/)?.[1];
             const currentUser = userFromUrl || "anonim";
             const cleanCurrentUser = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
 
-            // Get current user's full name and profile picture from user database
+            // Cari istifadəçinin tam adı və profil şəkli
             let currentUserName = cleanCurrentUser;
             let currentUserProfilePic = 'https://via.placeholder.com/48';
 
-            // Global variables
+            // Qlobal dəyişənlər
             let allReels = [];
             let currentReels = [];
             let activeIndex = 0;
@@ -140,18 +133,23 @@
             let activeCommentId = null;
             let commentAddedListenerAttached = false;
             let longPressTimer = null;
-            let itemToDelete = null; // Store the comment/reply element to be deleted
+            let itemToDelete = null;
 
-            // Caches to avoid redundant Firebase calls
+            // Firebase çağırışlarının qarşısını almaq üçün keşlər
             const userProfileCache = {};
             const userNameCache = {};
             const userFollowStatusCache = {};
+            let cachedGifs = null;
+            let preloadedGifElements = [];
+            let gifsLoadedInitially = false; 
+
+            // Video preloading üçün diapazon
+            const PRELOAD_RANGE = 2; // Aktiv videodan əvvəl və sonra yüklənəcək videoların sayı
 
             /**
-             * Fetches user profile picture from Firebase.
-             * Caches the result to avoid repeated calls.
-             * @param {string} username - The username to fetch profile picture for.
-             * @returns {Promise<string>} - The URL of the profile picture or a placeholder.
+             * İstifadəçi profil şəklini Firebase-dən gətirir. Nəticəni keşləyir.
+             * @param {string} username - Profil şəklinin gətiriləcəyi istifadəçi adı.
+             * @returns {Promise<string>} - Profil şəklinin URL-i və ya yer tutucu.
              */
             async function fetchUserProfile(username) {
                 const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
@@ -174,10 +172,9 @@
             }
 
             /**
-             * Fetches user's full name from Firebase.
-             * Caches the result to avoid repeated calls.
-             * @param {string} username - The username to fetch name for.
-             * @returns {Promise<string>} - The full name of the user or the cleaned username.
+             * İstifadəçinin tam adını Firebase-dən gətirir. Nəticəni keşləyir.
+             * @param {string} username - Adı gətiriləcək istifadəçi adı.
+             * @returns {Promise<string>} - İstifadəçinin tam adı və ya təmizlənmiş istifadəçi adı.
              */
             async function fetchUserName(username) {
                 const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
@@ -200,10 +197,10 @@
             }
 
             /**
-             * Checks if the current user is following another user.
-             * Caches the result for performance.
-             * @param {string} reelUserNickname - The nickname of the user to check follow status for.
-             * @returns {Promise<boolean>} - True if following, false otherwise.
+             * Cari istifadəçinin başqa bir istifadəçini izləyib-izləmədiyini yoxlayır.
+             * Nəticəni performans üçün keşləyir.
+             * @param {string} reelUserNickname - İzləmə statusunu yoxlamaq üçün istifadəçi ləqəbi.
+             * @returns {Promise<boolean>} - İzləyirsə true, əks halda false.
              */
             async function isFollowing(reelUserNickname) {
                 const cleanReelUserNickname = reelUserNickname.startsWith('@') ? reelUserNickname.substring(1) : reelUserNickname;
@@ -232,9 +229,9 @@
             }
 
             /**
-             * Shuffles an array randomly.
-             * @param {Array} array - The array to shuffle.
-             * @returns {Array} - The shuffled array.
+             * Bir massivi təsadüfi olaraq qarışdırır.
+             * @param {Array} array - Qarışdırılacaq massiv.
+             * @returns {Array} - Qarışdırılmış massiv.
              */
             function shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
@@ -244,7 +241,7 @@
                 return array;
             }
 
-            // Real-time listener for reel likes (updates like count and icon for reels)
+            // Reel bəyənmələri üçün real-time dinləyici (bəyənmə sayını və ikonu yeniləyir)
             reelDb.ref('likes').on('value', (snapshot) => {
                 const likesData = snapshot.val() || {};
                 currentReels.forEach(reel => {
@@ -263,22 +260,29 @@
             });
 
             /**
-             * Initializes the main application by fetching reels data, user profiles,
-             * and rendering the reels.
+             * Əsas tətbiqi işə salır. Reel məlumatlarını, istifadəçi profillərini gətirir
+             * və makaraları göstərir.
              */
             async function initializeApp() {
-                loader.style.display = 'flex';
-                currentUserName = await fetchUserName(cleanCurrentUser);
-                currentUserProfilePic = await fetchUserProfile(cleanCurrentUser);
+                loader.style.display = 'flex'; // Məlumatlar yüklənərkən loaderi göstərin
 
-                const postsData = await reelDb.ref('reels').once('value').then(snapshot => snapshot.val() || {});
+                // `Promise.all` istifadə edərək profil məlumatlarını paralel olaraq yükləyin
+                const [fetchedUserName, fetchedProfilePic, postsDataSnapshot] = await Promise.all([
+                    fetchUserName(cleanCurrentUser),
+                    fetchUserProfile(cleanCurrentUser),
+                    reelDb.ref('reels').once('value')
+                ]);
+
+                currentUserName = fetchedUserName;
+                currentUserProfilePic = fetchedProfilePic;
+
+                const postsData = postsDataSnapshot.val() || {};
                 allReels = Object.keys(postsData).map(key => {
                     let post = JSON.parse(postsData[key]);
                     return { id: key, ...post };
                 });
 
                 await displayReels('snaps');
-                loader.style.display = 'none';
 
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('reply') === 'true' && urlParams.get('post')) {
@@ -289,13 +293,21 @@
                         openComments(postIdFromUrl);
                     }
                 }
+                
+                // GIF-ləri tətbiq başladığı zaman əvvəlcədən yükləyin
+                await preloadAllGifs();
+                gifsLoadedInitially = true;
+
+                loader.style.display = 'none'; // Bütün ilkin yükləmə bitdikdə loaderi gizlədin
             }
 
             async function displayReels(mode, postIdToOpen = null) {
                 if (isAnimating) return;
                 isAnimating = true;
 
-                // Hide all main app views
+                loader.style.display = 'flex'; // Reel rejimi dəyişərkən loaderi göstərin
+
+                // Bütün əsas tətbiq görünüşlərini gizləyin
                 app.style.display = 'none';
                 mySnapsGrid.style.display = 'none';
 
@@ -303,11 +315,11 @@
                     currentReels[activeIndex].video.pause();
                 }
 
-                // Clear the content of all app views
+                // Bütün tətbiq görünüşlərinin məzmununu təmizləyin
                 while (app.firstChild) {
                     app.removeChild(app.firstChild);
                 }
-                // Clear the content of the my-snaps grid, but keep loader and no-snaps message
+                // My-snaps qridinin məzmununu təmizləyin, lakin yükləyici və mesajı saxlayın
                 const mySnapsItems = mySnapsGrid.querySelectorAll('.my-snap-item');
                 mySnapsItems.forEach(item => item.remove());
 
@@ -333,19 +345,19 @@
                     });
                     postsToDisplay = shuffleArray(postsToDisplay);
                 } else if (mode === 'my-snaps') {
-                    // Filter posts for the current user
+                    // Cari istifadəçi üçün postları filterləyin
                     postsToDisplay = allReels.filter(post => {
                         const cleanNickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                         return cleanNickname === cleanCurrentUser;
                     });
 
                     if (postIdToOpen) {
-                        // Open a specific snap in reel view
+                        // Müəyyən bir snapı reel görünüşündə açın
                         app.style.display = 'block';
                         const postToOpen = postsToDisplay.find(p => p.id === postIdToOpen);
                         postsToDisplay = [postToOpen];
                     } else {
-                        // Display the grid view
+                        // Qrid görünüşünü göstərin
                         mySnapsGrid.style.display = 'grid';
                         mySnapsGrid.classList.add('active');
                         app.classList.remove('active');
@@ -357,7 +369,7 @@
                             mySnapsLoader.style.display = 'block';
                             noSnapsMessage.style.display = 'none';
 
-                            // Loop through the posts and create grid items directly
+                            // Postları dövrə vurun və qrid elementləri yaradın
                             postsToDisplay.forEach(post => {
                                 const snapItem = createMySnapItem(post);
                                 mySnapsGrid.appendChild(snapItem);
@@ -369,13 +381,16 @@
 
                 if (mode === 'snaps' || mode === 'friends' || postIdToOpen) {
                     const loadedReels = [];
-                    for (const post of postsToDisplay) {
-                        const profilePicUrl = await fetchUserProfile(post.nickname);
-                        post.profile = profilePicUrl;
-                        const isFollowed = await isFollowing(post.nickname);
-                        const isLiked = likesData[post.id] && likesData[post.id].users && likesData[post.id].users[currentUser];
-                        loadedReels.push({ id: post.id, isFollowed, isLiked, ...post });
-                    }
+                    // Bütün profil şəkillərini və izləmə statuslarını paralel olaraq gətirin
+                    const profileAndFollowPromises = postsToDisplay.map(async post => {
+                        const [profilePicUrl, isFollowed] = await Promise.all([
+                            fetchUserProfile(post.nickname),
+                            isFollowing(post.nickname)
+                        ]);
+                        return { id: post.id, isFollowed, isLiked: likesData[post.id] && likesData[post.id].users && likesData[post.id].users[currentUser], profile: profilePicUrl, ...post };
+                    });
+                    const resolvedPosts = await Promise.all(profileAndFollowPromises);
+                    loadedReels.push(...resolvedPosts);
 
                     loadedReels.forEach(post => {
                         const newReel = createReel(post);
@@ -408,18 +423,19 @@
                         activeReel.element.classList.add('active');
                         activeReel.element.style.transform = 'translateY(0)';
                         activeReel.element.style.opacity = '1';
-                        // Yalnız aktiv videonu ön yükləyin və oynadın
-                        preloadAndPlayVideo(activeIndex);
+                        // Aktiv videonu və ətrafdakı videoları ön yükləyin və oynadın
+                        preloadAndPlayVideosInRange(activeIndex);
                     }
 
                 }
 
                 isAnimating = false;
+                loader.style.display = 'none'; // Reel məzmunu yükləndikdən sonra loaderi gizlədin
             }
 
             initializeApp();
 
-            // Nav-bar event listeners
+            // Naviqasiya düymələrinin hadisə dinləyiciləri
             snapsNav.addEventListener('click', () => {
                 snapsNav.classList.add('active');
                 friendsNav.classList.remove('active');
@@ -441,8 +457,7 @@
                 displayReels('my-snaps');
             });
 
-
-            // Real-time update for follow button visibility
+            // İzləmə düyməsinin görünürlüyü üçün real-time yeniləmə
             followingDb.ref(cleanCurrentUser).on('value', async (snapshot) => {
                 const followingData = snapshot.val() || {};
                 const followingUsers = Object.keys(followingData);
@@ -465,7 +480,7 @@
                 });
             });
 
-            // Function to create a my-snap grid item
+            // My-snap qrid elementi yaratmaq üçün funksiya
             function createMySnapItem(post) {
                 const item = document.createElement('div');
                 item.className = 'my-snap-item';
@@ -507,7 +522,7 @@
                 const info = document.createElement('div');
                 info.className = 'my-snap-info';
 
-                // Get likes and comments count from Firebase
+                // Firebase-dən bəyənmə və şərh sayını alın
                 const likes = document.createElement('div');
                 likes.className = 'icon-text';
                 likes.innerHTML = `<span class="material-icons" style="color:#ff4d4d;">favorite</span><span>0</span>`;
@@ -547,10 +562,9 @@
                 return item;
             }
 
-
             /**
-             * Shows the sound indicator (volume on/off icon).
-             * @param {boolean} muted - True if sound is muted, false otherwise.
+             * Səs göstəricisini göstərir (səs açıq/qapalı ikonu).
+             * @param {boolean} muted - Səs kəsilibsə true, əks halda false.
              */
             function showSoundIndicator(muted) {
                 clearTimeout(indicatorTimeout);
@@ -562,22 +576,33 @@
             }
 
             /**
-             * Yalnız cari videonu ön yükləyin və oynadın.
-             * @param {number} index - Aktiv makaranın indeksi.
+             * Video elementini hazırlayır (src təyin edir, yükləyir).
+             * @param {object} reel - Reel obyekti (video elementi ilə birlikdə).
+             * @param {boolean} shouldPlay - Video yüklənəndən sonra avtomatik oynatılmalıdırmı.
+             * @param {boolean} isCurrentlyActive - Hazırda aktiv olan videodurmu.
              */
-            function preloadAndPlayVideo(index) {
-                const reel = currentReels[index];
-                if (reel && reel.video) {
-                    // Aktiv videonun src atributunu təyin edin (əgər hələ təyin olunmayıbsa)
-                    if (!reel.video.src || reel.video.src !== reel.postVideoUrl) {
-                        reel.video.src = reel.postVideoUrl;
-                    }
-                    reel.video.load(); // Videonu yükləməyə başlayın
+            function prepareVideo(reel, shouldPlay, isCurrentlyActive) {
+                if (!reel || !reel.video || !reel.postVideoUrl) return;
 
-                    reel.video.addEventListener('loadeddata', () => {
-                        reel.video.style.display = 'block';
-                        if (reel.loader) reel.loader.style.display = 'none';
+                if (!reel.video.src || reel.video.src !== reel.postVideoUrl) {
+                    reel.video.src = reel.postVideoUrl;
+                    reel.video.load();
+                }
 
+                // Yükləmə prosesini göstərmək üçün loader-i idarə edin
+                if (reel.video.readyState < 2) { // HAVE_CURRENT_DATA
+                    reel.video.style.display = 'none';
+                    if (reel.loader) reel.loader.style.display = 'block';
+                } else {
+                    reel.video.style.display = 'block';
+                    if (reel.loader) reel.loader.style.display = 'none';
+                }
+
+                // loadeddata hadisəsi yalnız bir dəfə əlavə edilsin
+                const onLoadedData = () => {
+                    reel.video.style.display = 'block';
+                    if (reel.loader) reel.loader.style.display = 'none';
+                    if (shouldPlay) {
                         reel.video.muted = !allVideosSoundOn;
                         reel.video.play().catch(e => {
                             console.error("Video avtomatik başlamadı, səbəb: ", e);
@@ -586,52 +611,87 @@
                                 reel.video.play().then(() => showSoundIndicator(true));
                             }
                         });
-                    }, { once: true });
-
-                    if (reel.video.readyState < 2) {
-                        reel.video.style.display = 'none';
-                        if (reel.loader) reel.loader.style.display = 'block';
-                    } else {
-                        reel.video.style.display = 'block';
-                        if (reel.loader) reel.loader.style.display = 'none';
-                        reel.video.muted = !allVideosSoundOn;
-                        reel.video.play();
                     }
+                    reel.video.removeEventListener('loadeddata', onLoadedData); // Dinləyiciyi silin
+                };
+
+                // Əgər video hələ yüklənməyibsə, loadeddata dinləyicisi əlavə edin
+                if (reel.video.readyState < 2 && isCurrentlyActive) {
+                    reel.video.addEventListener('loadeddata', onLoadedData);
+                } else if (isCurrentlyActive && shouldPlay) {
+                    // Əgər video artıq yüklənibsə və aktivdirsə, dərhal oynatın
+                    onLoadedData();
+                }
+
+                // Aktiv olmayan preloaded videolar üçün səsi bağlayın
+                if (!shouldPlay && reel.video.muted === false) {
+                    reel.video.muted = true;
                 }
             }
 
 
             /**
-             * Plays the video of the currently active reel.
-             * Handles autoplay and muted states.
-             * @param {number} index - The index of the active reel.
+             * Aktiv makaranı və ətrafdakı videoları ön yükləyir və oynadır.
+             * @param {number} activeIndex - Hal-hazırda aktiv olan makaranın indeksi.
              */
-            function playActiveVideo(index) {
-                // Bu funksiya preloadAndPlayVideo ilə əvəz olunur.
-                // Ancaq əvvəlki funksionallığı qorumaq üçün burada saxlanılır.
-                preloadAndPlayVideo(index);
+            function preloadAndPlayVideosInRange(activeIndex) {
+                // Aktiv videonu oynatın
+                prepareVideo(currentReels[activeIndex], true, true);
+
+                // Aktiv videodan sonrakı videoları ön yükləyin
+                for (let i = 1; i <= PRELOAD_RANGE; i++) {
+                    const preloadIndex = activeIndex + i;
+                    if (preloadIndex < currentReels.length) {
+                        prepareVideo(currentReels[preloadIndex], false, false);
+                    }
+                }
+
+                // Aktiv videodan əvvəlki videoları ön yükləyin
+                for (let i = 1; i <= PRELOAD_RANGE; i++) {
+                    const preloadIndex = activeIndex - i;
+                    if (preloadIndex >= 0) {
+                        prepareVideo(currentReels[preloadIndex], false, false);
+                    }
+                }
             }
 
             /**
-             * Pauses videos of inactive reels and resets their playback position.
-             * @param {number} activeIndex - The index of the currently active reel.
+             * Aktiv olmayan videoları dayandırır və oynatma mövqeyini sıfırlayır,
+             * həmçinin preload diapazonundan kənarda olan videoların src-ni silir.
+             * @param {number} activeIndex - Hal-hazırda aktiv olan makaranın indeksi.
              */
             function pauseInactiveVideos(activeIndex) {
                 currentReels.forEach((r, i) => {
-                    if (i !== activeIndex && r.video && !r.video.paused) {
-                        r.video.pause();
-                        r.video.currentTime = 0;
-                        r.video.muted = true;
-                        // Aktiv olmayan videoların src atributunu təmizləyin
-                        r.video.removeAttribute('src');
-                        r.video.load(); // Videonu sıfırlayın
+                    const isWithinPreloadRange = i >= (activeIndex - PRELOAD_RANGE) && i <= (activeIndex + PRELOAD_RANGE);
+
+                    if (r.video) {
+                        if (i !== activeIndex && !isWithinPreloadRange) {
+                            // Preload diapazonundan kənarda olanlar
+                            r.video.pause();
+                            r.video.currentTime = 0;
+                            r.video.muted = true;
+                            r.video.removeAttribute('src');
+                            r.video.load(); // Videonu sıfırlayın
+                            if (r.loader) r.loader.style.display = 'none'; // Loader-i gizlədin
+                        } else if (i !== activeIndex && isWithinPreloadRange) {
+                            // Preload diapazonunda olanlar, lakin aktiv deyil
+                            r.video.pause();
+                            r.video.currentTime = 0; // Oynatma mövqeyini sıfırlayın ki, növbəti dəfə tez başlasın
+                            r.video.muted = true;
+                            if (r.loader) r.loader.style.display = 'none'; // Loader-i gizlədin
+                        } else if (i === activeIndex) {
+                            // Aktiv video, səsi tənzimləyin və loader-i gizlədin
+                            r.video.muted = !allVideosSoundOn;
+                            if (r.loader) r.loader.style.display = 'none';
+                        }
                     }
                 });
             }
 
+
             /**
-             * Handles liking/unliking a reel. Updates Firebase and UI.
-             * @param {string} postId - The ID of the post (reel).
+             * Makaranı bəyənmək/bəyənməmək funksiyası. Firebase və UI-nı yeniləyir.
+             * @param {string} postId - Postun (makaranın) ID-si.
              */
             function handleLikeClick(postId) {
                 const likeUserRef = reelDb.ref(`likes/${postId}/users/${currentUser}`);
@@ -651,8 +711,8 @@
             }
 
             /**
-             * Handles following/unfollowing a user. Updates Firebase and UI.
-             * @param {string} reelUserNickname - The nickname of the user to follow/unfollow.
+             * İstifadəçini izləmək/izləməmək funksiyası. Firebase və UI-nı yeniləyir.
+             * @param {string} reelUserNickname - İzləniləcək/izlənməyəcək istifadəçi ləqəbi.
              */
             async function handleFollowClick(reelUserNickname) {
                 const followerUsername = cleanCurrentUser;
@@ -695,9 +755,9 @@
             }
 
             /**
-             * Creates a new reel element with video and overlay content.
-             * @param {object} post - The post data for the reel.
-             * @returns {object} - An object containing the reel element and other associated DOM elements.
+             * Video və overlay məzmunu ilə yeni bir reel elementi yaradır.
+             * @param {object} post - Reel üçün post məlumatları.
+             * @returns {object} - Reel elementi və digər əlaqəli DOM elementlərini ehtiva edən bir obyekt.
              */
             function createReel(post) {
                 const reel = document.createElement('div');
@@ -713,7 +773,7 @@
                 video.loop = true;
                 video.playsInline = true;
                 video.muted = !allVideosSoundOn;
-                video.style.display = 'none';
+                video.style.display = 'none'; // Başlanğıcda gizlədin
 
                 video.addEventListener('click', () => {
                     allVideosSoundOn = !allVideosSoundOn;
@@ -861,8 +921,8 @@
             }
 
             /**
-             * Sets the active reel based on the provided index, handling transitions.
-             * @param {number} newIndex - The index of the reel to make active.
+             * Təqdim olunan indeksə əsasən aktiv makaranı təyin edir, keçidləri idarə edir.
+             * @param {number} newIndex - Aktiv olacaq makaranın indeksi.
              */
             function setActiveReel(newIndex) {
                 if (isAnimating || newIndex === activeIndex || newIndex < 0 || newIndex >= currentReels.length) return;
@@ -893,13 +953,13 @@
 
                 setTimeout(() => {
                     isAnimating = false;
-                    preloadAndPlayVideo(activeIndex); // Yeni aktiv videonu ön yükləyin və oynadın
+                    preloadAndPlayVideosInRange(activeIndex); // Yeni aktiv videonu və ətrafdakı videoları ön yükləyin və oynadın
                 }, 500);
             }
 
             /**
-             * Handles scrolling between reels based on direction.
-             * @param {string} direction - 'up' or 'down'.
+             * İstiqamətə əsasən makaralar arasında sürüşməni idarə edir.
+             * @param {string} direction - 'up' və ya 'down'.
              */
             function handleScroll(direction) {
                 if (isAnimating || app.style.display === 'none') return;
@@ -925,7 +985,7 @@
                 }
             });
 
-            // Touch event listeners for mobile scrolling
+            // Mobil sürüşmə üçün toxunma hadisə dinləyiciləri
             app.addEventListener('touchstart', e => {
                 if (!isAnimating && e.touches.length === 1) {
                     touchStartY = e.touches[0].clientY;
@@ -949,7 +1009,7 @@
                 }
             });
 
-            /** Closes the comments modal and clears its content. */
+            /** Şərh modalını bağlayır və məzmununu təmizləyir. */
             function closeComments() {
                 commentsContainer.classList.remove('open');
                 commentsList.innerHTML = '';
@@ -967,32 +1027,33 @@
                 }
                 history.replaceState({}, '', newUrl);
 
-                // Remove all previous listeners to prevent multiple events
+                // Təkrarlanan hadisələrin qarşısını almaq üçün bütün əvvəlki dinləyiciləri silin
                 if (activePostId) {
                     const commentsRef = commentsDb.ref(`comments/${activePostId}`);
                     commentsRef.off('child_added');
                     commentsRef.off('child_changed');
+                    commentsRef.off('child_removed');
                 }
                 commentAddedListenerAttached = false;
             }
 
             closeCommentsBtn.addEventListener('click', closeComments);
 
-            sendCommentBtn.addEventListener('click', () => sendComment()); // Update to call sendComment without arguments
+            sendCommentBtn.addEventListener('click', () => sendComment()); // Argumentsiz sendComment funksiyasını çağırın
             commentInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     sendComment();
                 }
             });
 
-            // Checks if the user clears the reply username and resets the reply state
+            // İstifadəçinin cavab istifadəçi adını təmizləməsini yoxlayır və cavab vəziyyətini sıfırlayır
             commentInput.addEventListener('input', () => {
                 if (activeCommentId && !commentInput.value.startsWith('@')) {
                     activeCommentId = null;
                 }
             });
 
-            // Handles browser back/forward button for comments modal
+            // Şərh modalı üçün brauzerin geri/irəli düyməsini idarə edir
             window.addEventListener('popstate', () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('reply') !== 'true' && commentsContainer.classList.contains('open')) {
@@ -1001,12 +1062,12 @@
             });
 
             /**
-             * Adds a comment (or reply) element to the DOM.
-             * @param {object} comment - The comment data.
-             * @param {string|null} parentCommentId - The ID of the parent comment if it's a reply.
+             * DOM-a şərh (və ya cavab) elementi əlavə edir.
+             * @param {object} comment - Şərh məlumatları.
+             * @param {string|null} parentCommentId - Cavabdırsa, əsas şərhin ID-si.
              */
             async function addCommentToDOM(comment, parentCommentId = null) {
-                // Check if the comment already exists in the DOM to avoid duplicates
+                // Təkrarlanmaması üçün şərhin DOM-da artıq mövcud olub-olmadığını yoxlayın
                 const existingElement = document.querySelector(`.comment-item[data-comment-id="${comment.id}"]`);
                 if (existingElement) {
                     return;
@@ -1047,7 +1108,7 @@
                     </div>
                 `;
 
-                // Add like and reply buttons only for main comments
+                // Yalnız əsas şərhlər üçün bəyənmə və cavab düymələrini əlavə edin
                 if (!parentCommentId) {
                     const actionsHtml = `<div class="comment-actions">
                         <button class="reply-button">
@@ -1072,7 +1133,7 @@
                     const likeIcon = commentElement.querySelector('.comment-like-icon');
                     const likeCountSpan = commentElement.querySelector('.comment-like-count');
 
-                    // Real-time listener for reply count
+                    // Cavab sayını real-time dinləyici
                     commentsDb.ref(`comments/${activePostId}/${comment.id}/replies`).on('value', snap => {
                         const count = snap.numChildren();
                         if (count > 0) {
@@ -1083,7 +1144,7 @@
                         }
                     });
 
-                    // Real-time listener for comment likes from the new database
+                    // Yeni verilənlər bazasından şərh bəyənmələri üçün real-time dinləyici
                     commentLikesDb.ref(`comment_likes/${activePostId}/${comment.id}/likes`).on('value', snap => {
                         const likesData = snap.val() || {};
                         const count = likesData.count || 0;
@@ -1097,7 +1158,7 @@
                         }
                     });
 
-                    // Event listener for reply button
+                    // Cavab düyməsi üçün hadisə dinləyicisi
                     replyButton.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         if (repliesList.style.display === 'none' || repliesList.innerHTML === '') {
@@ -1118,7 +1179,7 @@
                         }
                     });
 
-                    // Event listener for like button
+                    // Bəyənmə düyməsi üçün hadisə dinləyicisi
                     likeIcon.parentElement.addEventListener('click', (e) => {
                         e.stopPropagation();
                         handleCommentLikeClick(activePostId, comment.id);
@@ -1128,7 +1189,7 @@
                     commentElement.classList.add('reply-item');
                 }
 
-                // Click listener for comment bubble to trigger reply input
+                // Cavab girişini başlatmaq üçün şərh balonu üçün klik dinləyicisi
                 commentElement.querySelector('.comment-text-bubble').addEventListener('click', (e) => {
                     e.stopPropagation();
 
@@ -1140,13 +1201,13 @@
                     }
                 });
 
-                // Long press event listeners for deletion
+                // Silmə üçün uzun basma hadisə dinləyiciləri
                 commentElement.addEventListener('touchstart', (e) => {
                     if (commentElement.dataset.user === cleanCurrentUser) {
                         longPressTimer = setTimeout(() => {
                             e.preventDefault();
                             showDeleteDialog(commentElement);
-                        }, 500); // 500ms long press
+                        }, 500); // 500ms uzun basma
                     }
                 });
 
@@ -1155,7 +1216,7 @@
                     longPressTimer = null;
                 });
 
-                // Append comment to the correct list (main list or replies list)
+                // Şərhi doğru siyahıya (əsas siyahı və ya cavablar siyahısı) əlavə edin
                 if (parentCommentId) {
                     const parentCommentElement = document.querySelector(`.comment-item[data-comment-id="${parentCommentId}"]`);
                     if (parentCommentElement) {
@@ -1170,9 +1231,9 @@
             }
 
             /**
-             * Handles liking/unliking a specific comment.
-             * @param {string} postId - The ID of the post.
-             * @param {string} commentId - The ID of the comment.
+             * Müəyyən bir şərhi bəyənmək/bəyənməmək funksiyası.
+             * @param {string} postId - Postun ID-si.
+             * @param {string} commentId - Şərhin ID-si.
              */
             async function handleCommentLikeClick(postId, commentId) {
                 const commentLikeUserRef = commentLikesDb.ref(`comment_likes/${postId}/${commentId}/likes/users/${cleanCurrentUser}`);
@@ -1181,11 +1242,11 @@
                 try {
                     const snap = await commentLikeUserRef.once('value');
                     if (snap.exists()) {
-                        // User already liked, so unlike
+                        // İstifadəçi artıq bəyənib, ona görə bəyənməni geri al
                         await commentLikeUserRef.remove();
                         await commentLikeCountRef.transaction(currentCount => (currentCount || 1) - 1);
                     } else {
-                        // User has not liked, so like
+                        // İstifadəçi bəyənməyib, ona görə bəyən
                         await commentLikeUserRef.set(true);
                         await commentLikeCountRef.transaction(currentCount => (currentCount || 0) + 1);
                     }
@@ -1194,38 +1255,37 @@
                 }
             }
 
-
             /**
-             * Opens the comments modal for a specific post.
-             * Shows a loading spinner until all comments are fetched.
-             * @param {string} postId - The ID of the post for which to open comments.
+             * Müəyyən bir post üçün şərh modalını açır.
+             * Bütün şərhlər gətirilənə qədər yükləmə spinnerini göstərir.
+             * @param {string} postId - Şərhləri açılacaq postun ID-si.
              */
             async function openComments(postId) {
                 activePostId = postId;
                 commentsContainer.classList.add('open');
                 gifListContainer.classList.remove('open'); // GIF siyahısını bağlayın
 
-                // Update URL to reflect comments state for better navigation
+                // Daha yaxşı naviqasiya üçün URL-i şərh vəziyyətini əks etdirəcək şəkildə yeniləyin
                 const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`;
                 history.pushState({ postId: postId, user: currentUser }, '', newUrl);
 
-                commentsList.innerHTML = ''; // Clear previous comments
-                commentsLoader.style.display = 'flex'; // Show loading spinner
+                commentsList.innerHTML = ''; // Əvvəlki şərhləri təmizləyin
+                commentsLoader.style.display = 'flex'; // Yükləmə spinnerini göstərin
 
-                // Attach a listener for new comments and replies
+                // Yeni şərhlər və cavablar üçün dinləyici əlavə edin
                 if (!commentAddedListenerAttached) {
                     const commentsRef = commentsDb.ref(`comments/${postId}`);
 
-                    // Listener for new main comments
+                    // Yeni əsas şərhlər üçün dinləyici
                     commentsRef.on('child_added', async (snapshot) => {
                         const newComment = { id: snapshot.key, ...snapshot.val() };
-                        // Ensure we don't add duplicates
+                        // Təkrarlanmaması üçün yoxlayın
                         if (!commentsList.querySelector(`[data-comment-id=\"${newComment.id}\"]`)) {
                             await addCommentToDOM(newComment);
                         }
                     });
 
-                    // Listener for new replies
+                    // Yeni cavablar üçün dinləyici
                     commentsRef.on('child_changed', async (snapshot) => {
                         const updatedComment = { id: snapshot.key, ...snapshot.val() };
                         if (updatedComment.replies) {
@@ -1243,8 +1303,7 @@
                         }
                     });
 
-
-                    // Listener for deleted comments
+                    // Silinmiş şərhlər üçün dinləyici
                     commentsRef.on('child_removed', (snapshot) => {
                         const deletedCommentId = snapshot.key;
                         const elementToRemove = document.querySelector(`.comment-item[data-comment-id="${deletedCommentId}"]`);
@@ -1256,20 +1315,20 @@
                     commentAddedListenerAttached = true;
                 }
 
-                commentsLoader.style.display = 'none'; // Hide loading spinner after initial load
+                commentsLoader.style.display = 'none'; // İlkin yükləmədən sonra yükləmə spinnerini gizləyin
             }
 
             /**
-             * Sends a new comment or reply to Firebase.
-             * Adds the new comment/reply to the DOM immediately.
-             * @param {string} [content=null] - Optional content to send (e.g., a GIF URL). If null, uses commentInput.value.
+             * Firebase-ə yeni bir şərh və ya cavab göndərir.
+             * Yeni şərhi/cavabı dərhal DOM-a əlavə edir.
+             * @param {string} [content=null] - Göndəriləcək əlavə məzmun (məsələn, GIF URL-i). Əgər nullsa, commentInput.value istifadə olunur.
              */
             async function sendComment(content = null) {
                 let commentText;
                 if (content) {
-                    commentText = content; // Use provided content (GIF URL)
+                    commentText = content; // Təqdim olunan məzmundan (GIF URL-i) istifadə edin
                 } else {
-                    commentText = commentInput.value.trim(); // Fallback to input field
+                    commentText = commentInput.value.trim(); // Giriş sahəsindən istifadə edin
                 }
 
                 if (commentText === "" || !activePostId) return;
@@ -1280,7 +1339,7 @@
                     timestamp: Date.now()
                 };
 
-                // Determine if it's a reply based on input content or activeCommentId
+                // Giriş məzmunu və ya activeCommentId-ə əsasən cavab olub olmadığını müəyyənləşdirin
                 const replyToUserMatch = commentText.match(/^@(\w+)/);
                 if (replyToUserMatch && activeCommentId) {
                     const replyRef = commentsDb.ref(`comments/${activePostId}/${activeCommentId}/replies`).push();
@@ -1291,13 +1350,13 @@
                     await newCommentRef.set(newComment);
                 }
 
-                commentInput.value = ''; // Clear input field
+                commentInput.value = ''; // Giriş sahəsini təmizləyin
                 gifListContainer.classList.remove('open'); // GIF siyahısını da bağlayın
             }
 
             /**
-             * Displays the delete confirmation dialog.
-             * @param {HTMLElement} element - The comment or reply element to be deleted.
+             * Silmə təsdiqi dialoqunu göstərir.
+             * @param {HTMLElement} element - Silinəcək şərh və ya cavab elementi.
              */
             function showDeleteDialog(element) {
                 itemToDelete = element;
@@ -1305,7 +1364,7 @@
             }
 
             /**
-             * Hides the delete confirmation dialog.
+             * Silmə təsdiqi dialoqunu gizlədir.
              */
             function hideDeleteDialog() {
                 deleteDialogOverlay.style.display = 'none';
@@ -1313,7 +1372,7 @@
             }
 
             /**
-             * Deletes a comment or reply from Firebase and the DOM.
+             * Firebase-dən şərhi və ya cavabı silir və DOM-dan çıxarır.
              */
             async function deleteItem() {
                 if (!itemToDelete) return;
@@ -1323,24 +1382,24 @@
 
                 try {
                     if (parentId) {
-                        // It's a reply
+                        // Cavabdır
                         const replyRef = commentsDb.ref(`comments/${activePostId}/${parentId}/replies/${commentId}`);
                         await replyRef.remove();
                     } else {
-                        // It's a main comment
+                        // Əsas şərhdir
                         const commentRef = commentsDb.ref(`comments/${activePostId}/${commentId}`);
                         await commentRef.remove();
                     }
-                    console.log("Deletion successful.");
+                    console.log("Silmə uğurlu oldu.");
                     itemToDelete.remove();
                 } catch (e) {
-                    console.error("Deletion failed:", e);
+                    console.error("Silmə uğursuz oldu:", e);
                 } finally {
                     hideDeleteDialog();
                 }
             }
 
-            // Event listeners for the delete dialog buttons
+            // Silmə dialoq düymələri üçün hadisə dinləyiciləri
             confirmDeleteBtn.addEventListener('click', deleteItem);
             cancelDeleteBtn.addEventListener('click', hideDeleteDialog);
             deleteDialogOverlay.addEventListener('click', (e) => {
@@ -1355,7 +1414,7 @@
                     gifListContainer.classList.remove('open');
                 } else {
                     gifListContainer.classList.add('open');
-                    loadGifs();
+                    displayPreloadedGifs(); // Əvvəlcədən yüklənmiş GIF-ləri göstərin
                 }
             });
 
@@ -1363,31 +1422,86 @@
                 gifListContainer.classList.remove('open');
             });
 
-            // GIF-ləri yükləyən funksiya
-            async function loadGifs() {
-                gifList.innerHTML = ''; // Əvvəlki GIF-ləri təmizləyin
+            /**
+             * Bütün GIF-ləri Firebase-dən yükləyir və onları əvvəlcədən yükləyir.
+             * Bu funksiya yalnız bir dəfə, tətbiq başladığı zaman çağırılır.
+             */
+            async function preloadAllGifs() {
+                if (cachedGifs) return; // Əgər GIF-lər artıq yüklənibsə, təkrar yükləməyin
+
                 try {
                     const snapshot = await gifDb.ref('gif').once('value');
-                    const gifsData = snapshot.val();
-                    if (gifsData) {
-                        for (const gifId in gifsData) {
-                            const gifUrl = gifsData[gifId];
-                            const gifItem = document.createElement('div');
-                            gifItem.className = 'gif-item';
-                            gifItem.innerHTML = `<img src="${gifUrl}" alt="GIF">`;
-                            gifItem.addEventListener('click', () => {
-                                // commentInput.value = gifUrl; // Bu sətir silindi
-                                sendComment(gifUrl); // GIF URL-ini birbaşa sendComment funksiyasına göndərin
-                                gifListContainer.classList.remove('open'); // GIF siyahısını bağlayın
-                                commentInput.focus();
-                            });
-                            gifList.appendChild(gifItem);
-                        }
-                    } else {
-                        console.log("Firebase-də GIF tapılmadı.");
-                    }
+                    cachedGifs = snapshot.val();
                 } catch (e) {
                     console.error("GIF-ləri yükləyərkən xəta baş verdi:", e);
+                    return;
+                }
+
+                if (cachedGifs) {
+                    const preloadPromises = [];
+                    const tempPreloadedElements = [];
+
+                    for (const gifId in cachedGifs) {
+                        const gifUrl = cachedGifs[gifId];
+
+                        const gifItemWrapper = document.createElement('div');
+                        gifItemWrapper.className = 'gif-item-wrapper';
+
+                        const loader = document.createElement('div');
+                        loader.className = 'gif-item-loader';
+                        gifItemWrapper.appendChild(loader);
+
+                        const img = document.createElement('img');
+                        img.src = gifUrl;
+                        img.alt = "GIF";
+                        img.style.display = 'none';
+
+                        gifItemWrapper.appendChild(img);
+                        tempPreloadedElements.push(gifItemWrapper);
+
+                        const imgLoadPromise = new Promise((resolve) => {
+                            img.addEventListener('load', () => {
+                                img.style.display = 'block';
+                                loader.style.display = 'none';
+                                resolve();
+                            }, { once: true });
+                            img.addEventListener('error', () => {
+                                console.error(`GIF yüklənə bilmədi: ${gifUrl}`);
+                                loader.style.display = 'none';
+                                img.src = 'https://placehold.co/120x120/333/fff?text=Error';
+                                img.style.display = 'block';
+                                resolve();
+                            }, { once: true });
+                        });
+                        preloadPromises.push(imgLoadPromise);
+
+                        gifItemWrapper.addEventListener('click', () => {
+                            sendComment(gifUrl);
+                            gifListContainer.classList.remove('open');
+                            commentInput.focus();
+                        });
+                    }
+
+                    await Promise.all(preloadPromises);
+                    preloadedGifElements = tempPreloadedElements;
+                } else {
+                    console.log("Firebase-də GIF tapılmadı.");
+                }
+            }
+
+            /**
+             * Əvvəlcədən yüklənmiş GIF-ləri DOM-a əlavə edir.
+             */
+            function displayPreloadedGifs() {
+                if (preloadedGifElements.length > 0) {
+                    gifList.innerHTML = ''; // Əvvəlki elementləri təmizləyin
+                    preloadedGifElements.forEach(element => gifList.appendChild(element.cloneNode(true))); // Klonlayaraq əlavə edin
+                } else {
+                    // Əgər nədənsə ilkin yükləmə uğursuz olubsa, yenidən yükləməyə cəhd edin
+                    preloadAllGifs().then(() => {
+                        gifList.innerHTML = '';
+                        preloadedGifElements.forEach(element => gifList.appendChild(element.cloneNode(true)));
+                    });
                 }
             }
 
