@@ -536,8 +536,7 @@
         .story-likes-list-container, .story-views-list-container {
             position: absolute;
             bottom: 94%;
-            width: 87%;
-            max-height: 205px;
+            width: 100%;
             background: rgba(0, 0, 0, 0.7);
                border-radius:10px 10px 0 0;
             backdrop-filter: blur(10px);
@@ -546,7 +545,6 @@
             overflow-y: auto;
             display: none;
             z-index: 10;
-               left:-1px;
         }
         .story-likes-list-container.show, .story-views-list-container.show {
             display: block;
