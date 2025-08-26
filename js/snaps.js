@@ -74,8 +74,9 @@
             const commentLikesApp = firebase.initializeApp(commentLikesFirebaseConfig, 'commentLikesApp');
             const commentLikesDb = commentLikesApp.database();
 
+            // GIF-lər üçün Firebase konfiqurasiyası
             const gifFirebaseConfig = {
-                apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE",
+                apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE", // Replace with your GIF Firebase API Key
                 authDomain: "gif-s-53e6d.firebaseapp.com",
                 databaseURL: "https://gif-s-53e6d-default-rtdb.firebaseio.com",
                 projectId: "gif-s-53e6d",
@@ -85,6 +86,7 @@
             };
             const gifApp = firebase.initializeApp(gifFirebaseConfig, 'gifApp');
             const gifDb = gifApp.database();
+
 
             // DOM elementləri
             const app = document.getElementById('app');
@@ -106,10 +108,9 @@
             const snapsNav = document.getElementById('snaps-nav');
             const friendsNav = document.getElementById('friends-nav');
             const mySnapsNav = document.getElementById('my-snaps-nav');
-            const gifButton = document.querySelector('.gif-button');
-            const gifListContainer = document.getElementById('gif-list-container');
-            const gifList = document.getElementById('gif-list');
-            const closeGifListBtn = document.querySelector('.close-gif-list');
+            const gifButton = document.getElementById('gif-button'); // GIF düyməsi
+            const gifListContainer = document.getElementById('gif-list-container'); // GIF siyahısı konteyneri
+            const gifCarousel = document.getElementById('gif-carousel'); // GIF karuseli
 
 
             // URL parametrləri
@@ -131,18 +132,17 @@
             let touchStartY = null;
             let activePostId = null;
             let activeCommentId = null;
+            let replyingToCommentAuthor = null; // Cavab verilən şərhin müəllifi
             let commentAddedListenerAttached = false;
             let longPressTimer = null;
             let itemToDelete = null;
+            let allGifs = {}; // GIF-ləri saxlamaq üçün obyekt
 
             // Firebase çağırışlarının qarşısını almaq üçün keşlər
             const userProfileCache = {};
             const userNameCache = {};
             const userFollowStatusCache = {};
-            let cachedGifs = null;
-            let preloadedGifElements = [];
-            let gifsLoadedInitially = false; 
-
+            
             // Video preloading üçün diapazon
             const PRELOAD_RANGE = 2; // Aktiv videodan əvvəl və sonra yüklənəcək videoların sayı
 
@@ -259,6 +259,12 @@
                 });
             });
 
+            // GIF-lər üçün dinləyici
+            gifDb.ref("gif").on("value", (snapshot) => {
+                allGifs = snapshot.val() || {};
+                // GIF list-i render etməyə ehtiyac yoxdur, çünki bu, hər toggleGifList çağırışında edilir.
+            });
+
             /**
              * Əsas tətbiqi işə salır. Reel məlumatlarını, istifadəçi profillərini gətirir
              * və makaraları göstərir.
@@ -294,10 +300,6 @@
                     }
                 }
                 
-                // GIF-ləri tətbiq başladığı zaman əvvəlcədən yükləyin
-                await preloadAllGifs();
-                gifsLoadedInitially = true;
-
                 loader.style.display = 'none'; // Bütün ilkin yükləmə bitdikdə loaderi gizlədin
             }
 
@@ -1013,7 +1015,7 @@
             function closeComments() {
                 commentsContainer.classList.remove('open');
                 commentsList.innerHTML = '';
-                gifListContainer.classList.remove('open'); // GIF siyahısını da bağlayın
+                gifListContainer.style.display = 'none'; // GIF siyahısını da bağlayın
 
                 const searchString = window.location.search;
                 let userParam = null;
@@ -1039,7 +1041,7 @@
 
             closeCommentsBtn.addEventListener('click', closeComments);
 
-            sendCommentBtn.addEventListener('click', () => sendComment()); // Argumentsiz sendComment funksiyasını çağırın
+            sendCommentBtn.addEventListener('click', () => sendComment()); 
             commentInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     sendComment();
@@ -1048,8 +1050,11 @@
 
             // İstifadəçinin cavab istifadəçi adını təmizləməsini yoxlayır və cavab vəziyyətini sıfırlayır
             commentInput.addEventListener('input', () => {
+                sendCommentBtn.disabled = commentInput.value.trim() === '';
                 if (activeCommentId && !commentInput.value.startsWith('@')) {
                     activeCommentId = null;
+                    replyingToCommentAuthor = null;
+                    commentInput.placeholder = 'Şərh yazın...';
                 }
             });
 
@@ -1085,16 +1090,14 @@
                 const userName = await fetchUserName(comment.user);
 
                 let formattedText = comment.text;
-                // GIF URL-ini yoxlayın və GIF olaraq göstərin
-                const gifRegex = /(https?:\/\/.*\.(?:gif|webp|png|jpg|jpeg|svg))/i;
-                const gifMatch = formattedText.match(gifRegex);
-
-                if (gifMatch) {
-                    const gifUrl = gifMatch[0];
-                    formattedText = formattedText.replace(gifRegex, `<img src="${gifUrl}" alt="GIF" style="max-width:100%; border-radius:8px;">`);
+                if (comment.isGif) {
+                    formattedText = `<img src="${comment.text}" alt="GIF" />`;
                 } else {
                     // Hashtag-ləri və cavab verilən istifadəçiləri vurğulayın
                     formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
+                    if (comment.replyToNickname) {
+                        formattedText = `<a href="#" class="reply-user">@${comment.replyToNickname}</a> ${formattedText.replace(`@${comment.replyToNickname}`, '')}`;
+                    }
                     formattedText = formattedText.replace(/@(\w+)/g, '<a href="#" class="reply-user">@$1</a>');
                 }
                 
@@ -1112,7 +1115,7 @@
                 if (!parentCommentId) {
                     const actionsHtml = `<div class="comment-actions">
                         <button class="reply-button">
-                            <span class="reply-text">Cavabla</span>
+                            <span class="reply-text">Cavablar</span>
                             <span class="reply-count"></span>
                         </button>
                         <div class="comment-like-section">
@@ -1198,6 +1201,9 @@
                         commentInput.value = replyText;
                         commentInput.focus();
                         activeCommentId = comment.id;
+                        replyingToCommentAuthor = comment.user;
+                        commentInput.placeholder = `@${userName}'a cavab yazın...`;
+                        sendCommentBtn.disabled = false;
                     }
                 });
 
@@ -1263,7 +1269,7 @@
             async function openComments(postId) {
                 activePostId = postId;
                 commentsContainer.classList.add('open');
-                gifListContainer.classList.remove('open'); // GIF siyahısını bağlayın
+                gifListContainer.style.display = 'none'; // GIF siyahısını bağlayın
 
                 // Daha yaxşı naviqasiya üçün URL-i şərh vəziyyətini əks etdirəcək şəkildə yeniləyin
                 const newUrl = `${window.location.pathname}?user=${currentUser}&reply=true&post=${postId}`;
@@ -1325,8 +1331,11 @@
              */
             async function sendComment(content = null) {
                 let commentText;
+                let isGifComment = false;
+
                 if (content) {
                     commentText = content; // Təqdim olunan məzmundan (GIF URL-i) istifadə edin
+                    isGifComment = true;
                 } else {
                     commentText = commentInput.value.trim(); // Giriş sahəsindən istifadə edin
                 }
@@ -1336,22 +1345,28 @@
                 const newComment = {
                     user: cleanCurrentUser,
                     text: commentText,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    isGif: isGifComment // GIF olub olmadığını qeyd et
                 };
 
                 // Giriş məzmunu və ya activeCommentId-ə əsasən cavab olub olmadığını müəyyənləşdirin
                 const replyToUserMatch = commentText.match(/^@(\w+)/);
                 if (replyToUserMatch && activeCommentId) {
+                    newComment.replyToNickname = replyingToCommentAuthor; // replyingToCommentAuthor istifadə et
                     const replyRef = commentsDb.ref(`comments/${activePostId}/${activeCommentId}/replies`).push();
                     await replyRef.set(newComment);
                     activeCommentId = null;
+                    replyingToCommentAuthor = null;
                 } else {
                     const newCommentRef = commentsDb.ref(`comments/${activePostId}`).push();
                     await newCommentRef.set(newComment);
                 }
 
                 commentInput.value = ''; // Giriş sahəsini təmizləyin
-                gifListContainer.classList.remove('open'); // GIF siyahısını da bağlayın
+                sendCommentBtn.disabled = true; // Göndər düyməsini deaktiv et
+                commentInput.placeholder = 'Şərh yazın...'; // Placeholder-i sıfırla
+                gifListContainer.style.display = 'none'; // GIF siyahısını da bağlayın
+                commentInput.disabled = false; // Şərh inputunu yenidən aktiv et
             }
 
             /**
@@ -1391,7 +1406,7 @@
                         await commentRef.remove();
                     }
                     console.log("Silmə uğurlu oldu.");
-                    itemToDelete.remove();
+                    // DOM-dan silinmə child_removed listener tərəfindən idarə olunacaq.
                 } catch (e) {
                     console.error("Silmə uğursuz oldu:", e);
                 } finally {
@@ -1408,101 +1423,60 @@
                 }
             });
 
-            // GIF funksionallığı
-            gifButton.addEventListener('click', () => {
-                if (gifListContainer.classList.contains('open')) {
-                    gifListContainer.classList.remove('open');
+            // GIF funksiyaları
+            function toggleGifList() {
+                if (gifListContainer.style.display === 'flex') {
+                    gifListContainer.style.display = 'none';
+                    // İNPUTU YENİDƏN AKTİV ET
+                    commentInput.disabled = false; 
+                    sendCommentBtn.disabled = commentInput.value.trim() === '';
                 } else {
-                    gifListContainer.classList.add('open');
-                    displayPreloadedGifs(); // Əvvəlcədən yüklənmiş GIF-ləri göstərin
+                    gifListContainer.style.display = 'flex';
+                    // İNPUTU DEAKTİV ET
+                    commentInput.disabled = true;
+                    sendCommentBtn.disabled = true;
+                    renderGifList(); // Siyahını hər açıldığında yenidən render et
                 }
-            });
+            }
 
-            closeGifListBtn.addEventListener('click', () => {
-                gifListContainer.classList.remove('open');
-            });
-
-            /**
-             * Bütün GIF-ləri Firebase-dən yükləyir və onları əvvəlcədən yükləyir.
-             * Bu funksiya yalnız bir dəfə, tətbiq başladığı zaman çağırılır.
-             */
-            async function preloadAllGifs() {
-                if (cachedGifs) return; // Əgər GIF-lər artıq yüklənibsə, təkrar yükləməyin
-
-                try {
-                    const snapshot = await gifDb.ref('gif').once('value');
-                    cachedGifs = snapshot.val();
-                } catch (e) {
-                    console.error("GIF-ləri yükləyərkən xəta baş verdi:", e);
+            function renderGifList() {
+                gifCarousel.innerHTML = ''; // Köhnə GIF-ləri təmizlə
+                const gifKeys = Object.keys(allGifs);
+                if (gifKeys.length === 0) {
+                    gifCarousel.innerHTML = '<p style="text-align: center; color: #aaa; padding: 10px;">GIF yoxdur.</p>';
                     return;
                 }
 
-                if (cachedGifs) {
-                    const preloadPromises = [];
-                    const tempPreloadedElements = [];
-
-                    for (const gifId in cachedGifs) {
-                        const gifUrl = cachedGifs[gifId];
-
-                        const gifItemWrapper = document.createElement('div');
-                        gifItemWrapper.className = 'gif-item-wrapper';
-
-                        const loader = document.createElement('div');
-                        loader.className = 'gif-item-loader';
-                        gifItemWrapper.appendChild(loader);
-
-                        const img = document.createElement('img');
-                        img.src = gifUrl;
-                        img.alt = "GIF";
-                        img.style.display = 'none';
-
-                        gifItemWrapper.appendChild(img);
-                        tempPreloadedElements.push(gifItemWrapper);
-
-                        const imgLoadPromise = new Promise((resolve) => {
-                            img.addEventListener('load', () => {
-                                img.style.display = 'block';
-                                loader.style.display = 'none';
-                                resolve();
-                            }, { once: true });
-                            img.addEventListener('error', () => {
-                                console.error(`GIF yüklənə bilmədi: ${gifUrl}`);
-                                loader.style.display = 'none';
-                                img.src = 'https://placehold.co/120x120/333/fff?text=Error';
-                                img.style.display = 'block';
-                                resolve();
-                            }, { once: true });
-                        });
-                        preloadPromises.push(imgLoadPromise);
-
-                        gifItemWrapper.addEventListener('click', () => {
-                            sendComment(gifUrl);
-                            gifListContainer.classList.remove('open');
-                            commentInput.focus();
-                        });
-                    }
-
-                    await Promise.all(preloadPromises);
-                    preloadedGifElements = tempPreloadedElements;
-                } else {
-                    console.log("Firebase-də GIF tapılmadı.");
-                }
+                gifKeys.forEach(gifId => {
+                    const gifUrl = allGifs[gifId];
+                    const gifItem = document.createElement('div');
+                    gifItem.className = 'gif-item';
+                    gifItem.innerHTML = `<img src="${gifUrl}" alt="GIF" onerror="this.onerror=null;this.src='https://placehold.co/120x90/333/666?text=GIF+Not+Found';" />`;
+                    gifItem.onclick = () => selectGif(gifUrl);
+                    gifCarousel.appendChild(gifItem);
+                });
             }
 
-            /**
-             * Əvvəlcədən yüklənmiş GIF-ləri DOM-a əlavə edir.
-             */
-            function displayPreloadedGifs() {
-                if (preloadedGifElements.length > 0) {
-                    gifList.innerHTML = ''; // Əvvəlki elementləri təmizləyin
-                    preloadedGifElements.forEach(element => gifList.appendChild(element.cloneNode(true))); // Klonlayaraq əlavə edin
-                } else {
-                    // Əgər nədənsə ilkin yükləmə uğursuz olubsa, yenidən yükləməyə cəhd edin
-                    preloadAllGifs().then(() => {
-                        gifList.innerHTML = '';
-                        preloadedGifElements.forEach(element => gifList.appendChild(element.cloneNode(true)));
-                    });
+            function selectGif(gifUrl) {
+                if (!activePostId) {
+                    // Alert dialog olsaydı: showAlertDialog("GIF göndərmək üçün aktiv post yoxdur.");
+                    console.error("GIF göndərmək üçün aktiv post yoxdur.");
+                    return;
                 }
+
+                // sendComment funksiyasına GIF URL-i göndər
+                sendComment(gifUrl);
+
+                commentInput.value = '';
+                sendCommentBtn.disabled = true;
+                activeCommentId = null;
+                replyingToCommentAuthor = null;
+                commentInput.placeholder = 'Şərh yazın...';
+                toggleGifList(); // GIF seçildikdən sonra siyahını bağla
+                commentInput.disabled = false; // Şərh inputunu yenidən aktiv et
             }
+
+            // GIF düyməsinə klikləmə hadisəsi
+            gifButton.addEventListener('click', toggleGifList);
 
         })();
