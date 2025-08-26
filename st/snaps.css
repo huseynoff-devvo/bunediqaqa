@@ -1,4 +1,5 @@
-* {
+/* Bütün elementlər üçün əsas sıfırlamalar və istifadəçi seçimi deaktivasiyası */
+    * {
         outline: none !important;
         box-shadow: none !important;
         -webkit-tap-highlight-color: transparent;
@@ -14,6 +15,7 @@
         -ms-user-select: none;
     }
 
+    /* HTML və body üçün əsas stil tənzimləmələri */
     html,
     body {
         height: 100%;
@@ -23,6 +25,7 @@
         color: white;
     }
 
+    /* Başlanğıc yükləmə ekranı */
     #loader {
         position: fixed;
         top: 0;
@@ -30,12 +33,13 @@
         width: 100%;
         height: 100%;
         background: #121212FF;
-        display: flex;
+        display: flex; /* Yükləmə zamanı görünməsi üçün dəyişdirildi */
         justify-content: center;
         align-items: center;
         z-index: 10000;
     }
 
+    /* Yükləmə spinneri üçün stil */
     .spinner {
         border: 4px solid #333;
         border-top: 4px solid white;
@@ -45,6 +49,7 @@
         animation: spin 1s linear infinite;
     }
 
+    /* "My Snaps" hissəsinin yükləyicisi */
     #my-snaps-loader {
         position: absolute;
         top: 50%;
@@ -53,7 +58,7 @@
         display: none;
     }
 
-    /* New Styles for No Snaps Message */
+    /* "No Snaps" mesajı üçün yeni stillər */
     #no-snaps-message {
         position: absolute;
         top: 50%;
@@ -76,6 +81,7 @@
         color: #aaa;
     }
 
+    /* Görünmə animasiyası */
     @keyframes fadeIn {
         from {
             opacity: 0;
@@ -88,6 +94,7 @@
         }
     }
 
+    /* Fırlanma animasiyası */
     @keyframes spin {
         0% {
             transform: rotate(0deg);
@@ -98,6 +105,7 @@
         }
     }
 
+    /* Əsas tətbiq sahəsi */
     #app {
         height: 100%;
         width: 100vw;
@@ -109,6 +117,7 @@
         display: block;
     }
 
+    /* Reel elementinin ümumi stili */
     .reel {
         position: absolute;
         top: 0;
@@ -126,6 +135,7 @@
         pointer-events: none;
     }
 
+    /* Aktiv reel elementi */
     .reel.active {
         opacity: 1;
         transform: translateY(0);
@@ -133,6 +143,7 @@
         pointer-events: auto;
     }
 
+    /* Video elementinin stili */
     video {
         width: 100%;
         height: 100%;
@@ -143,7 +154,7 @@
         display: none;
     }
 
-    /* New Styles for My Snaps Grid */
+    /* "My Snaps" qrid görünüşü üçün yeni stillər */
     #my-snaps-grid {
         position: absolute;
         top: 60px;
@@ -171,6 +182,7 @@
         display: grid;
     }
 
+    /* "My Snap" qrid elementi stili */
     .my-snap-item {
         position: relative;
         width: 100%;
@@ -194,6 +206,7 @@
         display: block;
     }
 
+    /* "My Snap" üzərindəki overlay stili */
     .my-snap-overlay {
         position: absolute;
         bottom: 0;
@@ -205,6 +218,7 @@
         font-size: 0.9rem;
     }
 
+    /* "My Snap" məlumat stili */
     .my-snap-info {
         display: flex;
         justify-content: space-between;
@@ -222,6 +236,7 @@
         font-size: 1.2rem;
     }
 
+    /* "My Snap" növü etiketinin stili */
     .my-snap-type {
         position: absolute;
         top: 10px;
@@ -233,16 +248,7 @@
         font-weight: bold;
     }
 
-    @keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
+    /* Reel daxilindəki yükləyici stili */
     .reel-loader {
         border: 4px solid rgba(255, 255, 255, 0.2);
         border-top: 4px solid white;
@@ -252,6 +258,7 @@
         animation: spin 1s linear infinite;
     }
 
+    /* Reel üzərindəki overlay stili */
     .overlay {
         position: absolute;
         bottom: 0;
@@ -265,6 +272,7 @@
         flex-direction: column;
     }
 
+    /* Profil məlumat stili */
     .profile-info {
         display: flex;
         align-items: center;
@@ -301,6 +309,7 @@
         color: #aaa;
     }
 
+    /* Takib et düyməsi stili */
     .follow-button {
         background-color: transparent;
         color: white;
@@ -319,6 +328,7 @@
         color: black;
     }
 
+    /* Reel mətn stili */
     .text {
         margin: 6px 0;
         font-size: 1rem;
@@ -330,12 +340,13 @@
         text-decoration: none;
     }
 
+    /* Reel vaxt stili */
     .time {
         font-size: 0.75rem;
         color: #777;
     }
 
-    /* New interaction section styles */
+    /* Yeni qarşılıqlı əlaqə hissəsi stilləri */
     .new-interaction-section {
         display: flex;
         gap: 15px;
@@ -366,6 +377,7 @@
         color: #ff4d4d;
     }
 
+    /* Səs göstəricisi stili */
     #sound-indicator {
         position: fixed;
         top: 50%;
@@ -392,14 +404,13 @@
         color: white;
     }
 
-    /* Nav-bar styling */
+    /* Naviqasiya çubuğu stili */
     .tabs-container {
         display: flex;
         position: fixed;
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
-        /* background-color: #333; */
         border-radius: 25px;
         padding: 5px;
         z-index: 10;
@@ -423,6 +434,7 @@
         position: relative;
     }
 
+    /* Snaps ikon stili */
     #snaps-p {
         position: fixed;
         top: 5px;
@@ -431,13 +443,12 @@
         color: rgba(255, 255, 255, 0.8);
         font-weight: 700;
         font-size: 25px;
-        /* İkon üçün ölçünü artırdım */
         letter-spacing: 1px;
         padding: 5px 12px;
         border-radius: 12px;
     }
 
-    /* New Comment System CSS */
+    /* Şərh sistemi üçün CSS */
     .comments-container {
         position: fixed;
         bottom: 0;
@@ -597,8 +608,8 @@
         align-items: center;
         padding: 10px 15px;
         border-top: 1px solid #333;
-            background-color:#121212;
-        position: relative; /* GIF list üçün */
+        background-color: #121212;
+        position: relative;
     }
 
     .comment-input {
@@ -620,7 +631,7 @@
         cursor: pointer;
     }
 
-    /* New styles for comment likes */
+    /* Şərh bəyənmələri üçün yeni stillər */
     .comment-like-section {
         margin-right: 190px;
         display: flex;
@@ -629,7 +640,6 @@
         cursor: pointer;
         user-select: none;
         margin-left: auto;
-        /* Sağ tərəfə hizalamaq üçün */
     }
 
     .comment-like-icon {
@@ -649,7 +659,7 @@
         font-weight: normal;
     }
 
-    /* Styles for the delete confirmation dialog */
+    /* Silmə təsdiqi dialoqu üçün stillər */
     .delete-dialog-overlay {
         position: fixed;
         top: 0;
@@ -712,7 +722,7 @@
         background-color: #555;
     }
 
-    /* GIF button styles */
+    /* GIF düyməsi stilləri */
     .gif-button {
         background: none;
         border: none;
@@ -729,10 +739,10 @@
         background-color: rgba(255, 255, 255, 0.1);
     }
 
-    /* GIF list container styles */
+    /* GIF siyahısı konteyneri stilləri */
     .gif-list-container {
         position: absolute;
-        bottom: 58px; /* Comment input area-nın üstündə göstərmək üçün */
+        bottom: 58px;
         left: 0;
         width: 100%;
         background: #121212;
@@ -777,9 +787,7 @@
         overflow-x: auto;
         gap: 10px;
         padding-bottom: 10px;
-        /* Sürüşdürmə çubuğu üçün yer */
         scroll-snap-type: x mandatory;
-        /* Daha rahat sürüşdürmə üçün */
     }
 
     .gif-list::-webkit-scrollbar {
@@ -796,7 +804,9 @@
         border-radius: 3px;
     }
 
-    .gif-item {
+    /* GIF elementi sarğısı və yükləyici stilləri */
+    .gif-item-wrapper {
+        position: relative;
         flex-shrink: 0;
         width: 120px;
         height: 120px;
@@ -806,15 +816,39 @@
         border: 2px solid transparent;
         transition: border-color 0.2s;
         scroll-snap-align: start;
-        /* Hər GIF-i başlanğıcda tutmaq üçün */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #3a3a3a;
     }
 
-    .gif-item:hover {
+    .gif-item-wrapper:hover {
         border-color: #38b1f7;
     }
 
-    .gif-item img {
+    .gif-item-wrapper img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: none;
+    }
+
+    .gif-item-loader {
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        position: absolute;
+        display: block;
+    }
+
+    /* Əsas GIF siyahısı yükləyicisi */
+    #gif-list-main-loader {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
     }
