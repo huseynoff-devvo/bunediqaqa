@@ -902,7 +902,7 @@
             const profilePicEl = storyViewer.querySelector(".story-header .story-profile-pic");
             const usernameEl = storyViewer.querySelector(".story-header .username");
             const headerClickHandler = () => {
-                window.location.href = `?other_user=${nickname}`;
+                window.location.href = `?other_user=@${nickname}`;
             };
             profilePicEl.onclick = headerClickHandler;
             usernameEl.onclick = headerClickHandler;
