@@ -980,10 +980,6 @@
                             <img src="${getProfilePic(user)}" alt="${user} profil şəkli" />
                             <span>${getUserName(user)}</span>
                         `;
-                        userDiv.onclick = () => {
-                            window.location.href = `?other_user=@${user}`;
-                            closeStoryViewer();
-                        };
                         listContainer.appendChild(userDiv);
                     });
                 } else {
