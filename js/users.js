@@ -178,6 +178,7 @@
         const modalUserPic = document.getElementById('modalUserPic');
         const modalUsername = document.getElementById('modalUsername');
         const modalNickname = document.getElementById('modalNickname');
+        // Blok düyməsi referansları silindi
 
         modalContentWrapper.innerHTML = ''; // Köhnə məzmunu təmizlə
 
@@ -186,6 +187,29 @@
         modalUserPic.alt = userProfile.nick;
         modalUsername.textContent = userProfile.name;
         modalNickname.textContent = `@${userProfile.nick}`;
+
+        // const cleanNickname = userProfile.nick.startsWith('@') ? userProfile.nick.substring(1) : userProfile.nick;
+        // Blok düyməsinin vəziyyətini yeniləyin məntiqi silindi
+        // if (bannedUsers[cleanNickname]) {
+        //     blockButton.classList.add('blocked');
+        // } else {
+        //     blockButton.classList.remove('blocked');
+        // }
+
+        // Blok düyməsinə klik hadisəsi silindi
+        // blockButton.onclick = async () => {
+        //     if (bannedUsers[cleanNickname]) {
+        //         await db.banned.ref(`banned/${cleanNickname}`).remove();
+        //         blockButton.classList.remove('blocked');
+        //         delete bannedUsers[cleanNickname];
+        //     } else {
+        //         await db.banned.ref(`banned/${cleanNickname}`).set('+');
+        //         blockButton.classList.add('blocked');
+        //         bannedUsers[cleanNickname] = '+';
+        //     }
+        //     processAndRenderContent(); 
+        // };
+
 
         // Headerdəki istifadəçi adına klik hadisəsi
         modalUsername.onclick = () => {
@@ -215,11 +239,6 @@
         modalContentWrapper.appendChild(mediaElement);
 
         modal.classList.add('open');
-
-        // URL-ə ?post=true əlavə et
-        const url = new URL(window.location);
-        url.searchParams.set('post', 'true');
-        history.pushState({}, '', url);
     }
 
     // Tam ekran modalını bağlayan funksiya
@@ -227,11 +246,6 @@
         document.getElementById('fullscreenModal').classList.remove('open');
         const modalContentWrapper = document.getElementById('fullscreenModal').querySelector('.modal-content-wrapper');
         modalContentWrapper.innerHTML = ''; // Məzmunu təmizlə
-
-        // URL-dən ?post=true parametrini sil
-        const url = new URL(window.location);
-        url.searchParams.delete('post');
-        history.pushState({}, '', url);
     }
     
     // İstifadəçinin postlarını gətirən funksiya (yalnız axtarış nəticələri üçün)
@@ -287,6 +301,29 @@
             <!-- Bloklama düyməsi silindi -->
         `;
         document.getElementById('searchResults').appendChild(userDiv);
+
+        // Blok düyməsi ilə əlaqəli hadisə dinləyiciləri silindi
+        // const blockButton = userDiv.querySelector('.user-card-block-button');
+        // if (bannedUsers[cleanNickname]) {
+        //     blockButton.classList.add('blocked');
+        // } else {
+        //     blockButton.classList.remove('blocked');
+        // }
+
+        // blockButton.addEventListener('click', async (event) => {
+        //     event.stopPropagation();
+        //     const targetNickname = blockButton.dataset.nickname;
+        //     if (bannedUsers[targetNickname]) {
+        //         await db.banned.ref(`banned/${targetNickname}`).remove();
+        //         blockButton.classList.remove('blocked');
+        //         delete bannedUsers[targetNickname];
+        //     } else {
+        //         await db.banned.ref(`banned/${targetNickname}`).set('+');
+        //         blockButton.classList.add('blocked');
+        //         bannedUsers[targetNickname] = '+';
+        //     }
+        //     processAndRenderContent(); 
+        // });
 
         // URL-i dəyişdirmək üçün istifadəçi header-inə klik hadisəsi əlavə edin
         const userHeader = userDiv.querySelector('.user-header');
@@ -405,22 +442,10 @@
         // URL parametrini ilkin axtarış üçün istifadə et
         const urlParams = new URLSearchParams(window.location.search);
         const otherUser = urlParams.get('other');
-        const postParam = urlParams.get('post');
-
         if (otherUser) {
             document.getElementById('searchInput').value = otherUser;
             displayFilteredUsers(otherUser);
-        } else if (postParam === 'true') {
-            // Əgər URL-də ?post=true varsa, modaldan çıxdıqda onu silmək üçün hazır ol
-            // Bu hissə adətən səhifə yüklənəndə birbaşa post modalını açmaq üçün istifadə olunur,
-            // lakin cari kodda post ID yoxdur, ona görə sadəcə parametr silinəcək.
-            // Əgər gələcəkdə post ID də əlavə olunsa, burada postu yükləmək üçün əlavə məntiq ola bilər.
-            const url = new URL(window.location);
-            url.searchParams.delete('post');
-            history.replaceState({}, '', url); // replaceState istifadə et ki, geri düyməsi ilə səhifə dəyişməsin
-            renderPostsAndReelsSection(allContentData); // Bütün postları göstər
-        }
-        else {
+        } else {
             // Axtarış yoxdursa, bütün postları göstər
             renderPostsAndReelsSection(allContentData);
         }
@@ -456,6 +481,11 @@
         processAndRenderContent(); // Premium məlumatları dəyişdikdə emal və render
     });
 
+    // db.banned.ref("banned").on("value", snapshot => { // Banned dinləyicisi silindi
+    //     bannedUsers = snapshot.val() || {};
+    //     processAndRenderContent(); 
+    // });
+
     // Xammal məlumatlarını yeniləyin, sonra debounced emalı çağırın (yalnız postlar üçün)
     db.posts.ref("posts").on("value", snapshot => {
         rawPostsFirebaseData = snapshot.val() || {};
@@ -478,12 +508,3 @@
 
     // Sənəd yükləndikdə ilkin məlumatları yükləyin
     document.addEventListener('DOMContentLoaded', loadInitialData);
-
-    // Geri düyməsinə basıldıqda URL parametrlərini yoxla və modalları bağla
-    window.addEventListener('popstate', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const postParam = urlParams.get('post');
-        if (postParam !== 'true' && document.getElementById('fullscreenModal').classList.contains('open')) {
-            closeFullscreenModal();
-        }
-    });
