@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>İstifadəçi Siyahısı</title>
+    <title>Post Akışı</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -11,9 +11,29 @@
     <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/ua.css">
 </head>
 <body>
-<input type="text" id="searchInput" placeholder="İstifadəçi axtar..." />
+<input type="text" id="searchInput" placeholder="Axtarış..." />
 <div id="loadingSpinner"><div class="spinner"></div></div>
-<div id="userList" style="display: none;"></div>
+<div id="mainContent">
+    <div id="searchResults" style="display: none; width: 100%; max-width: 600px; margin-top: 10px;"></div>
+    <div id="postsAndReelsSection" class="content-grid" style="display: none;"></div>
+</div>
+
+<!-- Tam ekran post modalı -->
+<div id="fullscreenModal" class="fullscreen-modal">
+    <div class="modal-header">
+        <img class="profile-pic" id="modalUserPic" src="" alt="Profil Şəkili">
+        <div class="user-info">
+            <div class="username" id="modalUsername"></div>
+            <div class="nickname" id="modalNickname"></div>
+        </div>
+        <button id="blockButton" class="block-button modal-block-button"><span class="material-icons">block</span></button>
+        <button class="modal-close-btn" onclick="closeFullscreenModal()">&times;</button>
+    </div>
+    <div class="modal-content-wrapper">
+        <!-- Məzmun buraya yüklənəcək (yalnız şəkil və ya mətn) -->
+    </div>
+</div>
+
 <script src="https://huseynoff-devvo.github.io/bunediqaqa/js/ua.js"></script>
 </body>
 </html>
