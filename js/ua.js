@@ -8,14 +8,6 @@
             apiKey: "AIzaSyD0uiBSdiQC2bPQssIgQf4kvQmMHDUsO5c",
             databaseURL: "https://pasyak-id-default-rtdb.firebaseio.com"
         },
-        passwords: {
-            apiKey: "AIzaSyC8nJ6jro4wDfJXnleItvDinFVCuI0OAvs",
-            databaseURL: "https://pasyak-pass-default-rtdb.firebaseio.com"
-        },
-        banned: {
-            apiKey: "AIzaSyD_wWa67YMLQI_F0Jidp09Ds_rNB1XB4Cs",
-            databaseURL: "https://pasyak-grou-default-rtdb.firebaseio.com"
-        },
         tick: {
             apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
             databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com"
@@ -24,7 +16,6 @@
             apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
             databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com"
         },
-        // Yeni Firebase konfiqurasiyaları
         posts: {
             apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
             authDomain: "pasyakaaz.firebaseapp.com",
@@ -33,16 +24,6 @@
             storageBucket: "pasyakaaz.firebasestorage.app",
             messagingSenderId: "289629756800",
             appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
-        },
-        reels: {
-            apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
-            authDomain: "pasyak-reels.firebaseapp.com",
-            databaseURL: "https://pasyak-reels-default-rtdb.firebaseio.com",
-            projectId: "pasyak-reels",
-            storageBucket: "pasyak-reels.firebasestorage.app",
-            messagingSenderId: "635054499590",
-            appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
-            measurementId: "G-FW0KJDLF4B"
         },
         postComments: {
             apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
@@ -53,14 +34,15 @@
             messagingSenderId: "988052893147",
             appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
         },
-        reelComments: {
-            apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
-            authDomain: "reply-eb654.firebaseapp.com",
-            databaseURL: "https://reply-eb654-default-rtdb.firebaseio.com",
-            projectId: "reply-eb654",
-            storageBucket: "reply-eb654.firebasestorage.app",
-            messagingSenderId: "292801573334",
-            appId: "1:292801573334:web:2486813d8fe45865d0f477"
+        // Banned istifadəçilər üçün yeni Firebase tətbiqi
+        banned: {
+            apiKey: "AIzaSyD_wWa67YMLQI_F0Jidp09Ds_rNB1XB4Cs",
+            authDomain: "pasyak-grou.firebaseapp.com",
+            databaseURL: "https://pasyak-grou-default-rtdb.firebaseio.com",
+            projectId: "pasyak-grou",
+            storageBucket: "pasyak-grou.firebasestorage.app",
+            messagingSenderId: "741388224524",
+            appId: "1:741388224524:web:e832892e5d3965bd9b8629"
         }
     };
 
@@ -68,62 +50,44 @@
     const apps = {
         users: firebase.initializeApp(firebaseConfigs.users, "users"),
         ids: firebase.initializeApp(firebaseConfigs.ids, "ids"),
-        passwords: firebase.initializeApp(firebaseConfigs.passwords, "passwords"),
-        banned: firebase.initializeApp(firebaseConfigs.banned, "banned"),
         tick: firebase.initializeApp(firebaseConfigs.tick, "tick"),
         premium: firebase.initializeApp(firebaseConfigs.premium, "premium"),
-        // Yeni tətbiqləri başlatın
         posts: firebase.initializeApp(firebaseConfigs.posts, "posts"),
-        reels: firebase.initializeApp(firebaseConfigs.reels, "reels"),
         postComments: firebase.initializeApp(firebaseConfigs.postComments, "postComments"),
-        reelComments: firebase.initializeApp(firebaseConfigs.reelComments, "reelComments")
+        banned: firebase.initializeApp(firebaseConfigs.banned, "banned") // Banned tətbiqini başlat
     };
 
     // Verilənlər bazası referanslarını alın
     const db = {
         users: apps.users.database(),
         ids: apps.ids.database(),
-        passwords: apps.passwords.database(),
-        banned: apps.banned.database(),
         tick: apps.tick.database(),
         premium: apps.premium.database(),
-        // Yeni verilənlər bazası referansları
         posts: apps.posts.database(),
-        reels: apps.reels.database(),
         postComments: apps.postComments.database(),
-        reelComments: apps.reelComments.database()
+        banned: apps.banned.database() // Banned database referansını alın
     };
 
     let allUsers = [];
-    let bannedList = {};
     let tickUsers = {};
     let premiumUsers = {};
+    let bannedUsers = {}; // Banned istifadəçiləri üçün yeni qlobal dəyişən
+    let allContentData = []; // Bütün postlar üçün yeni qlobal dəyişən
     let initialLoadComplete = false;
 
-    // Toast mesajı göstərən funksiya
-    function showToast(msg) {
-        const toast = document.createElement("div");
-        toast.className = "toast";
-        toast.innerText = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
-    }
+    // Firebase-dən gələn xammal məlumatları üçün qlobal dəyişənlər (yalnız postlarla bağlı olanlar qaldı)
+    let rawPostsFirebaseData = {};
+    let rawLikesPostsFirebaseData = {};
+    let rawCommentsPostsFirebaseData = {}; // post şərhləri üçün
 
-    // Təsdiq qutusu göstərən funksiya
-    function showConfirm(msg, onYes) {
-        const box = document.createElement("div");
-        box.className = "confirm-box";
-        box.innerHTML = `<div>${msg}</div>
-            <div class="confirm-buttons">
-                <button class="btn-yes">Bəli</button>
-                <button class="btn-no">Xeyr</button>
-            </div>`;
-        document.body.appendChild(box);
-        box.querySelector(".btn-yes").onclick = () => {
-            onYes();
-            box.remove();
+    // Debounce funksiyası
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), delay);
         };
-        box.querySelector(".btn-no").onclick = () => box.remove();
     }
 
     // Status nişanının URL-ni qaytaran funksiya
@@ -142,262 +106,256 @@
         return null;
     }
 
-    // İstifadəçi postlarının sayını gətirən funksiya
-    async function fetchPostCommentCount(postId) {
-        try {
-            const snapshot = await db.postComments.ref(`comments/${postId}`).once("value");
-            const data = snapshot.val();
-            return data ? Object.keys(data).length : 0;
-        } catch (error) {
-            console.error(`Post ${postId} üçün şərh sayı gətirilərkən xəta:`, error);
-            return 0;
-        }
-    }
+    // Bütün xammal məlumatlarını emal edib `allContentData` yaratmaq və render etmək üçün funksiya
+    const processAndRenderContent = debounce(async () => {
+        if (!initialLoadComplete) return; // İlkin məlumatlar yüklənməyibsə emal etmə
 
-    // Video (reel) şərhlərinin sayını gətirən funksiya
-    async function fetchReelCommentCount(reelId) {
-        try {
-            const snapshot = await db.reelComments.ref(`comments/${reelId}`).once("value");
-            const data = snapshot.val();
-            return data ? Object.keys(data).length : 0;
-        } catch (error) {
-            console.error(`Reel ${reelId} üçün şərh sayı gətirilərkən xəta:`, error);
-            return 0;
-        }
-    }
+        const tempAllContentData = [];
 
-    // İstifadəçinin postlarını gətirən funksiya
-    async function fetchUserPosts(nickname) {
-        const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
-        const postsRef = db.posts.ref("posts");
-        const likesRef = db.posts.ref("likes");
-        
-        const postsSnapshot = await postsRef.once("value");
-        const allPostsData = postsSnapshot.val();
+        // Yalnız Postları emal et
+        for (const postId in rawPostsFirebaseData) {
+            try {
+                const postString = rawPostsFirebaseData[postId];
+                const post = JSON.parse(postString);
+                const userProfile = allUsers.find(u => (u.nick.startsWith('@') ? u.nick.substring(1) : u.nick) === (post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname));
+                if (userProfile) {
+                    // **Bloklanmış istifadəçilərin postlarını süzməyin**
+                    // const cleanNickname = userProfile.nick.startsWith('@') ? userProfile.nick.substring(1) : userProfile.nick;
+                    // if (bannedUsers[cleanNickname]) {
+                    //     continue; 
+                    // }
 
-        const userPosts = [];
-        if (allPostsData) {
-            for (const postId in allPostsData) {
-                try {
-                    const postString = allPostsData[postId];
-                    const post = JSON.parse(postString);
-                    // Ləqəbi @ olmadan müqayisə edin
-                    if (post.nickname && (post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname) === cleanNickname) {
-                        const likesSnapshot = await likesRef.child(postId).once("value");
-                        const likesData = likesSnapshot.val();
-                        const likeCount = likesData ? Object.keys(likesData).length : 0;
-                        const commentCount = await fetchPostCommentCount(postId);
-                        userPosts.push({ id: postId, type: 'post', ...post, likeCount, commentCount });
+                    const likeCount = rawLikesPostsFirebaseData[postId] ? Object.keys(rawLikesPostsFirebaseData[postId]).length : 0;
+                    // Şərh sayını düzgün şəkildə hesablayın
+                    const postComments = rawCommentsPostsFirebaseData[postId];
+                    let totalCommentCount = 0;
+                    if (postComments) {
+                        for (const commentId in postComments) {
+                            totalCommentCount++;
+                            if (postComments[commentId].replies) {
+                                totalCommentCount += Object.keys(postComments[commentId].replies).length;
+                            }
+                        }
                     }
-                } catch (e) {
-                    console.error("Post oxunmadı və ya parse edilə bilmədi:", postId, e);
+                    
+                    if (post.image) {
+                        post.image = post.image.trim(); // Şəkil URL-ni təmizlə
+                    }
+                    tempAllContentData.push({ id: postId, type: 'post', ...post, likeCount, commentCount: totalCommentCount, userProfile });
                 }
+            } catch (e) {
+                console.error("Post oxunmadı və ya parse edilə bilmədi:", postId, e);
             }
         }
-        return userPosts;
-    }
 
-    // İstifadəçinin videolarını (reels) gətirən funksiya
-    async function fetchUserReels(nickname) {
-        const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
-        const reelsRef = db.reels.ref("reels");
-        const likesRef = db.reels.ref("likes");
+        allContentData = tempAllContentData;
+        allContentData.sort(() => Math.random() - 0.5); // Qarışdırın
 
-        const reelsSnapshot = await reelsRef.once("value");
-        const allReelsData = reelsSnapshot.val();
+        const currentSearchValue = document.getElementById("searchInput").value;
+        displayFilteredUsers(currentSearchValue); // Mövcud axtarışa əsasən yenidən render et
+    }, 300); // 300ms gecikmə ilə debounce et
 
-        const userReels = [];
-        if (allReelsData) {
-            for (const reelId in allReelsData) {
-                try {
-                    const reelString = allReelsData[reelId];
-                    const reel = JSON.parse(reelString);
-                     // Ləqəbi @ olmadan müqayisə edin
-                    if (reel.nickname && (reel.nickname.startsWith('@') ? reel.nickname.substring(1) : reel.nickname) === cleanNickname) {
-                        const likesSnapshot = await likesRef.child(reelId).child('users').once("value"); // Likes structure changed
-                        const likesData = likesSnapshot.val();
-                        const likeCount = likesData ? Object.keys(likesData).length : 0;
-                        const commentCount = await fetchReelCommentCount(reelId);
-                        userReels.push({ id: reelId, type: 'reel', ...reel, likeCount, commentCount });
-                    }
-                } catch (e) {
-                    console.error("Video (reel) oxunmadı və ya parse edilə bilmədi:", reelId, e);
-                }
-            }
-        }
-        return userReels;
-    }
-
-    // Məzmun elementini render edən funksiya
-    function renderContentItem(item) {
+    // Məzmun elementini render edən funksiya (ümumi axın üçün)
+    function renderContentItemForFeed(item) {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'content-item';
 
         let mediaHtml = '';
-        // Əgər şəkil və ya video varsa media göstər, yoxdursa mətn göstər
         if (item.type === 'post' && item.image) {
-            mediaHtml = `<img class="content-media" src="${item.image}" alt="Post Şəkili">`;
-        } else if (item.type === 'reel' && item.video) {
-            mediaHtml = `<video class="content-media" src="${item.video}" autoplay loop muted playsinline></video>`;
-        } else if (item.text) { /* Mətn postları üçün əlavə yoxlama */
+            mediaHtml = `<img class="content-media" src="${item.image}" alt="Post Şəkili" onerror="this.src='https://placehold.co/180x180/333/fff?text=Şəkil+Yoxdur';">`;
+        } else if (item.text) { // Sadece text postlar icin
             mediaHtml = `<div class="content-text-only">${item.text}</div>`;
         } else {
-            // Default placeholder if no image, video or text
-            mediaHtml = `<img class="content-media" src="https://placehold.co/160x160/333/fff?text=No+Media" alt="Media Yoxdur">`;
+            mediaHtml = `<img class="content-media" src="https://placehold.co/180x180/333/fff?text=Məzmun+Yoxdur" alt="Məzmun Yoxdur">`;
         }
         
-        // Silmə funksiyasına ötürülən ləqəbin təmiz olduğundan əmin olun
-        const cleanNicknameForDelete = (item.nickname && item.nickname.startsWith('@')) ? item.nickname.substring(1) : item.nickname;
-
         itemDiv.innerHTML = `
             ${mediaHtml}
             <div class="content-stats">
                 <span><span class="material-icons">favorite</span> ${item.likeCount}</span>
                 <span><span class="material-icons">comment</span> ${item.commentCount}</span>
-                <span class="delete-content-icon material-icons" onclick="confirmDeleteContent(event, '${item.id}', '${item.type}', '${cleanNicknameForDelete}')">delete</span>
             </div>
         `;
+
+        itemDiv.addEventListener('click', () => {
+            // Tam ekran modalını açarkən istifadəçi profil məlumatlarını da ötür
+            openFullscreenModal(item, item.userProfile); 
+        });
+
         return itemDiv;
     }
 
-    // İstifadəçi məzmununu göstərən funksiya
-    async function displayUserContent(nickname, contentContainer) {
-        contentContainer.innerHTML = '<div class="spinner" style="margin: 20px auto;"></div>'; // Yükləmə fırlayıcısı
-        
-        try {
-            const posts = await fetchUserPosts(nickname);
-            const reels = await fetchUserReels(nickname);
-            
-            const allContent = [...posts, ...reels];
+    // Tam ekran modalını açan funksiya
+    function openFullscreenModal(item, userProfile) {
+        const modal = document.getElementById('fullscreenModal');
+        const modalContentWrapper = modal.querySelector('.modal-content-wrapper');
+        const modalUserPic = document.getElementById('modalUserPic');
+        const modalUsername = document.getElementById('modalUsername');
+        const modalNickname = document.getElementById('modalNickname');
+        const blockButton = document.getElementById('blockButton');
+        const blockIcon = blockButton.querySelector('.material-icons');
 
-            // Məzmunu qarışdırın
-            allContent.sort(() => Math.random() - 0.5);
+        modalContentWrapper.innerHTML = ''; // Köhnə məzmunu təmizlə
 
-            contentContainer.innerHTML = ''; // Yükləmə fırlayıcısını silin
-            if (allContent.length === 0) {
-                contentContainer.innerHTML = '<p style="text-align: center; color: #999;">Bu istifadəçinin postu və ya videosu yoxdur.</p>';
-            } else {
-                const contentGrid = document.createElement('div');
-                contentGrid.className = 'content-grid';
-                allContent.forEach(item => {
-                    contentGrid.appendChild(renderContentItem(item));
-                });
-                contentContainer.appendChild(contentGrid);
-            }
-        } catch (error) {
-            console.error("İstifadəçi məzmunu gətirilərkən xəta:", error);
-            contentContainer.innerHTML = '<p style="text-align: center; color: red;">Məzmun yüklənərkən xəta baş verdi.</p>';
+        // İstifadəçi məlumatlarını doldur
+        modalUserPic.src = userProfile.img.trim();
+        modalUserPic.alt = userProfile.nick;
+        modalUsername.textContent = userProfile.name;
+        modalNickname.textContent = `@${userProfile.nick}`;
+
+        const cleanNickname = userProfile.nick.startsWith('@') ? userProfile.nick.substring(1) : userProfile.nick;
+        // Blok düyməsinin vəziyyətini yeniləyin
+        if (bannedUsers[cleanNickname]) {
+            blockButton.classList.add('blocked');
+        } else {
+            blockButton.classList.remove('blocked');
         }
+
+        // Blok düyməsinə klik hadisəsi
+        blockButton.onclick = async () => {
+            if (bannedUsers[cleanNickname]) {
+                // Blokdan çıxar
+                await db.banned.ref(`banned/${cleanNickname}`).remove();
+                blockButton.classList.remove('blocked');
+                delete bannedUsers[cleanNickname];
+            } else {
+                // Blokla
+                await db.banned.ref(`banned/${cleanNickname}`).set('+');
+                blockButton.classList.add('blocked');
+                bannedUsers[cleanNickname] = '+';
+            }
+            processAndRenderContent(); // Məzmunu yenidən render et
+        };
+
+
+        // Headerdəki istifadəçi adına klik hadisəsi
+        modalUsername.onclick = () => {
+            const url = new URL(window.location);
+            url.searchParams.set('other', userProfile.nick);
+            history.pushState({}, '', url);
+            closeFullscreenModal(); // Modalı bağla
+            document.getElementById('searchInput').value = userProfile.nick; // Axtarış sahəsini doldur
+            displayFilteredUsers(userProfile.nick); // Axtarış nəticələrini göstər
+        };
+
+        let mediaElement;
+        if (item.type === 'post' && item.image) {
+            mediaElement = document.createElement('img');
+            mediaElement.src = item.image;
+            mediaElement.alt = "Post Şəkili";
+            mediaElement.onerror = () => mediaElement.src = 'https://placehold.co/700x500/333/fff?text=Şəkil+Yoxdur';
+        } else if (item.text) { // Sadece text postlar icin
+            mediaElement = document.createElement('div');
+            mediaElement.className = 'modal-text-content';
+            mediaElement.textContent = item.text;
+        } else {
+            mediaElement = document.createElement('img');
+            mediaElement.src = 'https://placehold.co/700x500/333/fff?text=Məzmun+Yoxdur';
+            mediaElement.alt = "Məzmun Yoxdur";
+        }
+        modalContentWrapper.appendChild(mediaElement);
+
+        modal.classList.add('open');
     }
 
-    // Məzmunun silinməsini təsdiqləyən funksiya
-    async function confirmDeleteContent(e, contentId, contentType, nickname) {
-        e.stopPropagation();
-        const message = contentType === 'post' ? `Bu post (${contentId}) silinsin?` : `Bu video (${contentId}) silinsin?`;
-        showConfirm(message, async () => {
-            if (contentType === 'post') {
-                await deletePost(contentId, nickname);
-            } else if (contentType === 'reel') {
-                await deleteReel(contentId, nickname);
+    // Tam ekran modalını bağlayan funksiya
+    function closeFullscreenModal() {
+        document.getElementById('fullscreenModal').classList.remove('open');
+        const modalContentWrapper = document.getElementById('fullscreenModal').querySelector('.modal-content-wrapper');
+        modalContentWrapper.innerHTML = ''; // Məzmunu təmizlə
+    }
+    
+    // İstifadəçinin postlarını gətirən funksiya (yalnız axtarış nəticələri üçün)
+    function fetchUserContent(nickname) { 
+        const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
+        
+        const userContent = [];
+        // Yalnız bu istifadəçiyə aid olan postları (videolar ləğv edildi) filtrele
+        allContentData.forEach(item => {
+            if (item.type === 'post' && item.userProfile && (item.userProfile.nick.startsWith('@') ? item.userProfile.nick.substring(1) : item.userProfile.nick) === cleanNickname) {
+                userContent.push(item);
             }
         });
+        
+        return userContent.sort(() => Math.random() - 0.5); // Məzmunu qarışdır və qaytar
     }
-
-    // Postu silən funksiya
-    async function deletePost(postId, nickname) {
-        const ops = [
-            db.posts.ref(`posts/${postId}`).remove(),
-            db.posts.ref(`likes/${postId}`).remove(), // Postun bəyənmələrini sil
-            db.postComments.ref(`comments/${postId}`).remove(), // Postun şərhlərini sil
-        ];
-        try {
-            await Promise.all(ops);
-            showToast(`Post (${postId}) silindi.`);
-            // Məzmunu yenilə
-            const contentSection = document.getElementById(`content-for-${nickname}`);
-            if (contentSection && contentSection.classList.contains('open')) {
-                await displayUserContent(nickname, contentSection);
-            }
-        } catch (error) {
-            showToast(`Post silinərkən xəta baş verdi: ${error.message}`);
-            console.error("Post silinərkən xəta:", error);
+    
+    // Postlar bölməsini göstərən funksiya
+    function renderPostsAndReelsSection(contentArray) {
+        const postsAndReelsSection = document.getElementById('postsAndReelsSection');
+        postsAndReelsSection.innerHTML = ''; // Köhnə məzmunu təmizlə
+        if (contentArray.length === 0) {
+            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;"></p>';
+        } else {
+            contentArray.forEach(item => {
+                postsAndReelsSection.appendChild(renderContentItemForFeed(item));
+            });
         }
+        postsAndReelsSection.style.display = 'block'; /* Masonry layout için flex veya grid yerine block */
     }
 
-    // Videonu (reeli) silən funksiya
-    async function deleteReel(reelId, nickname) {
-        const ops = [
-            db.reels.ref(`reels/${reelId}`).remove(),
-            db.reels.ref(`likes/${reelId}`).remove(), // Videonun bəyənmələrini sil
-            db.reelComments.ref(`comments/${reelId}`).remove(), // Videonun şərhlərini sil
-        ];
-        try {
-            await Promise.all(ops);
-            showToast(`Video (${reelId}) silindi.`);
-            // Məzmunu yenilə
-            const contentSection = document.getElementById(`content-for-${nickname}`);
-            if (contentSection && contentSection.classList.contains('open')) {
-                await displayUserContent(nickname, contentSection);
-            }
-        } catch (error) {
-            showToast(`Video silinərkən xəta baş verdi: ${error.message}`);
-            console.error("Video silinərkən xəta:", error);
-        }
-    }
+    // İstifadəçini render edən funksiya (axtarış nəticələri üçün)
+    function renderUserCard(user) {
+        const cleanNickname = user.nick.startsWith('@') ? user.nick.substring(1) : user.nick;
+        // **Bloklanmış istifadəçiləri axtarış nəticələrində süzməyin**
+        // if (bannedUsers[cleanNickname]) {
+        //     return;
+        // }
 
-    // İstifadəçini render edən funksiya
-    function renderUser(name, nick, img) {
         const userDiv = document.createElement('div');
-        userDiv.className = 'user';
-        const isBanned = bannedList[nick];
-        const statusBadgeUrl = getStatusBadgeUrl(nick);
+        userDiv.className = 'user-card';
+        const statusBadgeUrl = getStatusBadgeUrl(user.nick);
         const statusBadgeHtml = statusBadgeUrl ? `<img class="status-badge" src="${statusBadgeUrl}" alt="Status" />` : '';
 
         userDiv.innerHTML = `
             <div class="user-header">
-                <img class="profile-pic" src="${img.trim()}" alt="${nick}">
+                <img class="profile-pic" src="${user.img.trim()}" alt="${user.nick}" onerror="this.src='https://placehold.co/55x55/333/fff?text=Şəkil';">
                 <div class="user-info">
                     <div class="username">
-                        ${name}
+                        ${user.name}
                         ${statusBadgeHtml}
                     </div>
-                    <div class="nickname">@${nick}</div>
-                </div>
-                <div class="actions" onclick="event.stopPropagation()">
-                    <span class="material-icons ${isBanned ? 'blocked' : 'unblocked'}" onclick="toggleBlock(event, '${nick}')">${isBanned ? 'block' : 'lock_open'}</span>
-                    <span class="material-icons" onclick="confirmDeleteUser(event, '${nick}')">delete</span>
+                    <div class="nickname">@${user.nick}</div>
                 </div>
             </div>
-            <button class="toggle-content-btn" data-target="content-for-${nick}">Postları və videoları göstər</button>
-            <div class="user-content-section" id="content-for-${nick}">
-                <!-- İstifadəçinin postları və videoları buraya yüklənəcək -->
-            </div>
+            <button class="block-button user-card-block-button" data-nickname="${cleanNickname}">
+                <span class="material-icons">block</span>
+            </button>
         `;
-        document.getElementById('userList').appendChild(userDiv);
+        document.getElementById('searchResults').appendChild(userDiv);
 
-        // URL-i dəyişdirmək üçün bütün istifadəçi div-inə klik hadisəsi əlavə edin
-        userDiv.addEventListener('click', () => {
-            const url = new URL(window.location);
-            url.searchParams.set('other', nick);
-            history.pushState({}, '', url);
+        const blockButton = userDiv.querySelector('.user-card-block-button');
+        if (bannedUsers[cleanNickname]) {
+            blockButton.classList.add('blocked');
+        } else {
+            blockButton.classList.remove('blocked');
+        }
+
+        blockButton.addEventListener('click', async (event) => {
+            event.stopPropagation(); // Kartın öz klik hadisəsini dayandırın
+            const targetNickname = blockButton.dataset.nickname;
+            if (bannedUsers[targetNickname]) {
+                await db.banned.ref(`banned/${targetNickname}`).remove();
+                blockButton.classList.remove('blocked');
+                delete bannedUsers[targetNickname];
+            } else {
+                await db.banned.ref(`banned/${targetNickname}`).set('+');
+                blockButton.classList.add('blocked');
+                bannedUsers[targetNickname] = '+';
+            }
+            processAndRenderContent(); // Məzmunu yenidən render et
         });
 
-        const toggleButton = userDiv.querySelector('.toggle-content-btn');
-        const contentSection = userDiv.querySelector(`#content-for-${nick}`);
-        
-        // Düyməyə klikləmə hadisəsi əlavə edin
-        toggleButton.onclick = async (event) => {
-            event.stopPropagation(); // Parent div-ə (userDiv) klik hadisəsinin yayılmasının qarşısını alır
-            if (contentSection.classList.contains('open')) {
-                contentSection.classList.remove('open');
-                contentSection.innerHTML = ''; // Məzmunu təmizləyin
-                toggleButton.innerText = "Postları və videoları göstər";
-            } else {
-                contentSection.classList.add('open');
-                toggleButton.innerText = "Gizlə";
-                await displayUserContent(nick, contentSection);
-            }
-        };
+        // URL-i dəyişdirmək üçün istifadəçi header-inə klik hadisəsi əlavə edin
+        const userHeader = userDiv.querySelector('.user-header');
+        userHeader.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const url = new URL(window.location);
+            url.searchParams.set('other', user.nick);
+            history.pushState({}, '', url);
+            document.getElementById('searchInput').value = user.nick; // Axtarış sahəsini doldur
+            displayFilteredUsers(user.nick); // Axtarış nəticələrini göstər
+        });
     }
 
     // Yükləmə fırlayıcısını göstər/gizlə
@@ -405,137 +363,125 @@
         document.getElementById('loadingSpinner').style.display = state ? 'flex' : 'none';
     }
 
-    // İstifadəçi siyahısını göstər/gizlə
-    function showUserList(state) {
-        document.getElementById('userList').style.display = state ? 'block' : 'none';
+    // Axtarış nəticələri siyahısını göstər/gizlə
+    function showSearchResults(state) {
+        document.getElementById('searchResults').style.display = state ? 'block' : 'none';
     }
 
-    // İstifadəçi siyahısını təmizlə
-    function clearUserList() {
-        document.getElementById('userList').innerHTML = '';
+    // Axtarış nəticələri siyahısını təmizlə
+    function clearSearchResults() {
+        document.getElementById('searchResults').innerHTML = '';
     }
-    
+
     // Axtarış açar sözünə görə istifadəçiləri filtrləyib göstər
     function displayFilteredUsers(keyword) {
-        const filtered = allUsers.filter(user =>
-            user.nick.toLowerCase().includes(keyword.toLowerCase()) ||
-            user.name.toLowerCase().includes(keyword.toLowerCase())
-        );
-        clearUserList();
-        filtered.forEach(user => {
-            renderUser(user.name, user.nick, user.img);
-        });
-    }
+        clearSearchResults();
+        const postsAndReelsSection = document.getElementById('postsAndReelsSection');
+        postsAndReelsSection.style.display = 'none'; // Əvvəlcə postsAndReelsSection-u gizlət
 
-    // Hər hansı bir məlumat dəyişikliyindən sonra çağırıla bilən tək render funksiyası
-    function render() {
-        if (initialLoadComplete) {
-            const currentSearchValue = document.getElementById("searchInput").value;
-            displayFilteredUsers(currentSearchValue);
-        }
-    }
-
-    // Ləqəbə görə ID gətirən funksiya
-    async function getIdByNick(nick) {
-        const snapshot = await db.ids.ref("id_info").once("value");
-        const data = snapshot.val();
-        for (let id in data) {
-            try {
-                const [savedNick] = JSON.parse(data[id]);
-                if (savedNick === nick) return id;
-            } catch (e) {
-                console.error("ID məlumatı oxunmadı və ya parse edilə bilmədi:", id, e);
-            }
-        }
-        return null;
-    }
-
-    // İstifadəçini silməyi təsdiqlə
-    function confirmDeleteUser(e, nick) {
-        e.stopPropagation();
-        showConfirm(`${nick} istifadəçisi silinsin?`, () => deleteUser(nick));
-    }
-
-    // İstifadəçini silən funksiya
-    async function deleteUser(nick) {
-        const userId = await getIdByNick(nick);
-        if (!userId) {
-            showToast("ID tapılmadı.");
+        if (keyword.trim() === '') {
+            // Axtarış sahəsi boşdursa, bütün postları göstər
+            showSearchResults(false);
+            renderPostsAndReelsSection(allContentData); // Bütün məzmunu göstər
             return;
         }
 
-        const ops = [
-            db.users.ref("Users/" + nick).remove(),
-            db.ids.ref("id_info/" + userId).remove(),
-            db.passwords.ref("passwords/" + nick).remove(),
-            db.banned.ref("banned/" + nick).remove(),
-            db.tick.ref("tick/" + nick).remove(),
-            db.premium.ref("premium/" + nick).remove(),
-            // Postları və videoları silmək üçün əlavə əməliyyatlar (əgər lazım olarsa)
-            // Bu əməliyyatlar biraz daha mürəkkəbdir, çünki nickname ilə axtarış tələb edir.
-            // Hələlik tətbiq edilməyib.
-        ];
+        const filteredUsers = allUsers.filter(user => {
+            // **Bloklanmış istifadəçiləri axtarış filtrlərində süzməyin**
+            // const cleanNickname = user.nick.startsWith('@') ? user.nick.substring(1) : user.nick;
+            // if (bannedUsers[cleanNickname]) {
+            //     return false;
+            // }
+            return user.nick.toLowerCase().includes(keyword.toLowerCase()) ||
+                   user.name.toLowerCase().includes(keyword.toLowerCase());
+        });
+        
+        if (filteredUsers.length > 0) {
+            filteredUsers.forEach(user => {
+                renderUserCard(user);
+            });
+            showSearchResults(true);
 
-        try {
-            await Promise.all(ops);
-            showToast(`${nick} silindi`);
-        } catch (error) {
-            showToast(`Silinmə zamanı xəta baş verdi: ${error.message}`);
-        }
-    }
+            // Paylaşımları olan bütün axtarış nəticəsi istifadəçilərinin məzmununu yığ
+            let combinedFilteredContent = [];
+            filteredUsers.forEach(user => {
+                const userContent = fetchUserContent(user.nick); // Artıq sadəcə postları gətirir
+                combinedFilteredContent = combinedFilteredContent.concat(userContent);
+            });
+            // Təkrarlanmanı silin (əgər varsa, nadir hallarda ola bilər) və qarışdırın
+            const uniqueCombinedContent = Array.from(new Set(combinedFilteredContent.map(item => item.id)))
+                                          .map(id => combinedFilteredContent.find(item => item.id === id));
+            uniqueCombinedContent.sort(() => Math.random() - 0.5);
 
-    // Blok statusunu dəyişən funksiya
-    async function toggleBlock(e, nick) {
-        e.stopPropagation();
-        const isBanned = bannedList[nick];
-        if (isBanned) {
-            await db.banned.ref("banned/" + nick).remove();
-            showToast(`${nick} blokdan çıxarıldı`);
+            renderPostsAndReelsSection(uniqueCombinedContent);
         } else {
-            await db.banned.ref("banned/" + nick).set("+");
-            showToast(`${nick} bloklandı`);
+            showSearchResults(false);
+            renderPostsAndReelsSection([]); // Axtarış nəticəsi yoxdursa, boş göstər
         }
     }
-    
+
     // Bütün ilkin məlumatları gətirən asinxron funksiya
     async function loadInitialData() {
         showLoading(true);
 
-        const usersPromise = db.users.ref("Users").once("value", snapshot => {
-            const data = snapshot.val();
-            allUsers = [];
-            for (let key in data) {
-                try {
-                    const [name, nick, img] = JSON.parse(data[key]);
-                    allUsers.push({ name, nick, img });
-                } catch (e) {
-                    console.error("İstifadəçi oxunmadı:", key);
-                }
+        // Bütün ilkin məlumatları bir dəfəyə gətir (yalnız postlarla bağlı olanlar qaldı)
+        const [
+            usersSnapshot,
+            tickSnapshot,
+            premiumSnapshot,
+            postsSnapshot,
+            likesPostsSnapshot,
+            commentsPostsSnapshot,
+            bannedSnapshot // Banned istifadəçiləri gətir
+        ] = await Promise.all([
+            db.users.ref("Users").once("value"),
+            db.tick.ref("tick").once("value"),
+            db.premium.ref("premium").once("value"),
+            db.posts.ref("posts").once("value"),
+            db.posts.ref("likes").once("value"),
+            db.postComments.ref("comments").once("value"),
+            db.banned.ref("banned").once("value")
+        ]);
+
+        // Qlobal dəyişənləri doldur
+        const usersData = usersSnapshot.val();
+        allUsers = [];
+        for (let key in usersData) {
+            try {
+                const [name, nick, img] = JSON.parse(usersData[key]);
+                allUsers.push({ name, nick, img });
+            } catch (e) {
+                console.error("İstifadəçi oxunmadı:", key);
             }
-        });
-
-        const bannedPromise = db.banned.ref("banned").once("value", snapshot => {
-            bannedList = snapshot.val() || {};
-        });
-
-        const tickPromise = db.tick.ref("tick").once("value", snapshot => {
-            tickUsers = snapshot.val() || {};
-        });
-
-        const premiumPromise = db.premium.ref("premium").once("value", snapshot => {
-            premiumUsers = snapshot.val() || {};
-        });
-        
-        await Promise.all([usersPromise, bannedPromise, tickPromise, premiumPromise]);
+        }
+        tickUsers = tickSnapshot.val() || {};
+        premiumUsers = premiumSnapshot.val() || {};
+        bannedUsers = bannedSnapshot.val() || {}; // Banned istifadəçiləri doldur
+        rawPostsFirebaseData = postsSnapshot.val() || {};
+        rawLikesPostsFirebaseData = likesPostsSnapshot.val() || {};
+        rawCommentsPostsFirebaseData = commentsPostsSnapshot.val() || {}; // post şərhləri üçün
         
         initialLoadComplete = true;
-        render(); // Bütün məlumatlar yükləndikdən sonra ilkin render
+        processAndRenderContent(); // İlkin emal və render
+
+        // URL parametrini ilkin axtarış üçün istifadə et
+        const urlParams = new URLSearchParams(window.location.search);
+        const otherUser = urlParams.get('other');
+        if (otherUser) {
+            document.getElementById('searchInput').value = otherUser;
+            displayFilteredUsers(otherUser);
+        } else {
+            // Axtarış yoxdursa, bütün postları göstər
+            renderPostsAndReelsSection(allContentData);
+        }
+
         showLoading(false);
-        showUserList(true);
     }
     
     // --- Real-time Dinləyicilər ---
-    // Bu dinləyicilər müvafiq qlobal dəyişəni yeniləyəcək və siyahını yenidən render edəcək
+    // Bu dinləyicilər xammal məlumatlarını yeniləyəcək və sonra debounced emal funksiyasını çağıracaq
+    // Yalnız postlarla bağlı olanlar qaldı
+
     db.users.ref("Users").on("value", snapshot => {
         const data = snapshot.val();
         allUsers = [];
@@ -547,22 +493,36 @@
                 console.error("İstifadəçi oxunmadı:", key);
             }
         }
-        render();
-    });
-
-    db.banned.ref("banned").on("value", snapshot => {
-        bannedList = snapshot.val() || {};
-        render();
+        processAndRenderContent(); // İstifadəçi məlumatları dəyişdikdə emal və render
     });
 
     db.tick.ref("tick").on("value", snapshot => {
         tickUsers = snapshot.val() || {};
-        render();
+        processAndRenderContent(); // Tick məlumatları dəyişdikdə emal və render
     });
 
     db.premium.ref("premium").on("value", snapshot => {
         premiumUsers = snapshot.val() || {};
-        render();
+        processAndRenderContent(); // Premium məlumatları dəyişdikdə emal və render
+    });
+
+    db.banned.ref("banned").on("value", snapshot => {
+        bannedUsers = snapshot.val() || {};
+        processAndRenderContent(); // Banned məlumatları dəyişdikdə emal və render
+    });
+
+    // Xammal məlumatlarını yeniləyin, sonra debounced emalı çağırın (yalnız postlar üçün)
+    db.posts.ref("posts").on("value", snapshot => {
+        rawPostsFirebaseData = snapshot.val() || {};
+        processAndRenderContent();
+    });
+    db.posts.ref("likes").on("value", snapshot => {
+        rawLikesPostsFirebaseData = snapshot.val() || {};
+        processAndRenderContent();
+    });
+    db.postComments.ref("comments").on("value", snapshot => {
+        rawCommentsPostsFirebaseData = snapshot.val() || {};
+        processAndRenderContent();
     });
 
     // Axtarış sahəsinin input hadisəsi
