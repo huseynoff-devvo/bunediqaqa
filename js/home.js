@@ -322,6 +322,32 @@
             `;
             return adDiv;
         }
+        
+        // Mətndəki haştagları linkə çevirən funksiya
+        function formatTextWithHashtags(text) {
+            const hashtagRegex = /(#\w+)/g;
+            const parts = text.split(hashtagRegex);
+            const fragment = document.createDocumentFragment();
+
+            parts.forEach(part => {
+                if (part.match(hashtagRegex)) {
+                    const span = document.createElement('span');
+                    span.className = 'hashtag';
+                    span.textContent = part;
+                    span.onclick = (e) => {
+                        e.stopPropagation();
+                        // Haştag üzərinə klikləndikdə nə olacağını burada təyin edə bilərsiniz
+                        // Məsələn, haştag səhifəsinə yönləndirmə
+                        console.log(`Hashtag clicked: ${part}`);
+                        // window.location.href = `?hashtag=${part.substring(1)}`;
+                    };
+                    fragment.appendChild(span);
+                } else {
+                    fragment.appendChild(document.createTextNode(part));
+                }
+            });
+            return fragment;
+        }
 
         function renderPost(postId, data) {
             const postLikes = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
@@ -406,7 +432,7 @@
             if (data.text) {
                 const text = document.createElement("div");
                 text.className = "post-text";
-                text.textContent = data.text;
+                text.appendChild(formatTextWithHashtags(data.text)); // Haştagları formatla
                 postEl.appendChild(text);
             }
 
@@ -2005,7 +2031,7 @@
                 gifImg.style.objectFit = 'contain';
                 text.appendChild(gifImg);
             } else {
-                text.appendChild(document.createTextNode(commentData.text));
+                text.appendChild(formatTextWithHashtags(commentData.text)); // Haştagları formatla
             }
 
 
