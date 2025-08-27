@@ -816,3 +816,27 @@
         height: 100%;
         object-fit: cover;
     }
+
+    /* Yeni silmə düyməsi stili */
+    .delete-snap-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 0, 0, 0.0);
+        color: red;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        font-size: 20px;
+        z-index: 5;
+        transition: background-color 0.2s;
+    }
+
+    .delete-snap-button:hover {
+        background-color: rgba(255, 0, 0, 1);
+    }
