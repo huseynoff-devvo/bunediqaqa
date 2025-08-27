@@ -197,6 +197,11 @@
 
         modalContentWrapper.innerHTML = ''; // Köhnə məzmunu təmizlə
 
+        // URL-ə yalnız ?post=true parametrini əlavə et (postId olmadan)
+        const url = new URL(window.location);
+        url.searchParams.set('post', 'true');
+        history.pushState({ post: true }, '', url); // State olaraq post: true ötür
+
         // İstifadəçi məlumatlarını doldur
         modalUserPic.src = userProfile.img.trim();
         modalUserPic.alt = userProfile.nick;
@@ -232,6 +237,8 @@
         modalUsername.onclick = () => {
             const url = new URL(window.location);
             url.searchParams.set('other', userProfile.nick);
+            // Post modalından çıxarkən post parametrlərini təmizlə
+            url.searchParams.delete('post');
             history.pushState({}, '', url);
             closeFullscreenModal(); // Modalı bağla
             document.getElementById('searchInput').value = userProfile.nick; // Axtarış sahəsini doldur
@@ -263,7 +270,25 @@
         document.getElementById('fullscreenModal').classList.remove('open');
         const modalContentWrapper = document.getElementById('fullscreenModal').querySelector('.modal-content-wrapper');
         modalContentWrapper.innerHTML = ''; // Məzmunu təmizlə
+
+        // URL-dən ?post=true parametrini sil
+        const url = new URL(window.location);
+        url.searchParams.delete('post');
+        history.replaceState({}, '', url);
     }
+
+    // Brauzerin geri düyməsi hadisəsini dinləyin
+    window.addEventListener('popstate', (event) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPostOpen = urlParams.get('post') === 'true';
+        if (!isPostOpen && document.getElementById('fullscreenModal').classList.contains('open')) {
+            // Əgər URL-də post parametri yoxdursa və modal açıqdırsa, modali bağla
+            closeFullscreenModal(); 
+        } 
+        // Qeyd: Yalnız ?post=true parametri ilə müəyyən bir postu açmaq mümkün deyil,
+        // çünki hansı postun açılacağını göstərən bir ID yoxdur.
+        // Odur ki, isPostOpen true olduqda modalı avtomatik açma funksionallığı ləğv edildi.
+    });
     
     // İstifadəçinin postlarını gətirən funksiya (yalnız axtarış nəticələri üçün)
     function fetchUserContent(nickname) { 
@@ -462,15 +487,25 @@
         rawCommentsPostsFirebaseData = commentsPostsSnapshot.val() || {}; // post şərhləri üçün
         
         initialLoadComplete = true;
-        processAndRenderContent(); // İlkin emal və render
+        await processAndRenderContent(); // İlkin emal və render bitənə qədər gözlə
 
         // URL parametrini ilkin axtarış üçün istifadə et
         const urlParams = new URLSearchParams(window.location.search);
         const otherUser = urlParams.get('other');
+        const isPostOpenFromUrl = urlParams.get('post') === 'true'; // Yalnız ?post=true yoxla
+
         if (otherUser) {
             document.getElementById('searchInput').value = otherUser;
             displayFilteredUsers(otherUser);
-        } else {
+        } else if (isPostOpenFromUrl) {
+            // URL-də yalnız ?post=true varsa, hansı postu açacağımızı bilmirik,
+            // çünki postId artıq URL-də deyil.
+            // Bu halda, sadəcə post modalını açmaq mümkün deyil.
+            // Əgər istifadəçi müəyyən bir postun açılmasını istəyirsə, postId lazımdır.
+            // İndi sadəcə səhifənin əsas məzmununu göstərəcəyik.
+            renderPostsAndReelsSection(allContentData);
+        }
+        else {
             // Axtarış yoxdursa, bütün postları göstər
             renderPostsAndReelsSection(allContentData);
         }
