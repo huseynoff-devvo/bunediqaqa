@@ -113,6 +113,11 @@
             const gifCarousel = document.getElementById('gif-carousel'); // GIF karuseli
             const closeGifListBtn = document.querySelector('.close-gif-list'); // GIF siyahısını bağlama düyməsi
 
+            // Yeni əlavə olunan snap silmə dialogu elementləri
+            const deleteSnapDialogOverlay = document.getElementById('delete-snap-dialog-overlay');
+            const confirmDeleteSnapBtn = document.getElementById('confirm-delete-snap');
+            const cancelDeleteSnapBtn = document.getElementById('cancel-delete-snap');
+
 
             // URL parametrləri
             const userFromUrl = window.location.search.match(/user=([^&]+)/)?.[1];
@@ -131,12 +136,13 @@
             let allVideosSoundOn = true;
             let indicatorTimeout = null;
             let touchStartY = null;
-            let activePostId = null;
+            let activePostId = null; // Aktiv postun ID-si (şərhlər üçün)
             let activeCommentId = null;
             let replyingToCommentAuthor = null; // Cavab verilən şərhin müəllifi
             let commentAddedListenerAttached = false;
             let longPressTimer = null;
-            let itemToDelete = null;
+            let itemToDelete = null; // Şərh silmə üçün istifadə olunur
+            let snapToDelete = null; // Snap silmə üçün istifadə olunur
             let allGifs = {}; // GIF-ləri saxlamaq üçün obyekt
 
             // Firebase çağırışlarının qarşısını almaq üçün keşlər
@@ -256,7 +262,7 @@
                     }
 
                     const likeCount = postLikes.count || 0;
-                    reel.likeCount.textContent = likeCount;
+                    reel.likeCount.textContent = likeCount; // Düzəliş edildi: `count` yerinə `likeCount`
                 });
             });
 
@@ -274,35 +280,36 @@
                 loader.style.display = 'flex'; // Məlumatlar yüklənərkən loaderi göstərin
 
                 // `Promise.all` istifadə edərək profil məlumatlarını paralel olaraq yükləyin
-                const [fetchedUserName, fetchedProfilePic, postsDataSnapshot] = await Promise.all([
+                const [fetchedUserName, fetchedProfilePic] = await Promise.all([ // postsDataSnapshot çıxarıldı
                     fetchUserName(cleanCurrentUser),
-                    fetchUserProfile(cleanCurrentUser),
-                    reelDb.ref('reels').once('value')
+                    fetchUserProfile(cleanCurrentUser)
                 ]);
 
                 currentUserName = fetchedUserName;
                 currentUserProfilePic = fetchedProfilePic;
 
-                const postsData = postsDataSnapshot.val() || {};
-                allReels = Object.keys(postsData).map(key => {
-                    let post = JSON.parse(postsData[key]);
-                    return { id: key, ...post };
+                // Reel məlumatları üçün real-time dinləyici əlavə edildi
+                reelDb.ref('reels').on('value', async (snapshot) => {
+                    const postsData = snapshot.val() || {};
+                    allReels = Object.keys(postsData).map(key => {
+                        let post = JSON.parse(postsData[key]);
+                        return { id: key, ...post };
+                    });
+
+                    // Aktiv tabı tapın və yenidən render edin
+                    const currentActiveTabElement = document.querySelector('.tabs-container .tab-button.active');
+                    const currentActiveTab = currentActiveTabElement ? currentActiveTabElement.id.replace('-nav', '') : 'snaps';
+                    
+                    // loader-i burada göstərin, çünki yeniləmə uzun çəkə bilər
+                    loader.style.display = 'flex'; 
+                    await displayReels(currentActiveTab);
+                    loader.style.display = 'none'; // Yeniləmə bitdikdə gizlədin
                 });
-
-                await displayReels('snaps');
-
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('reply') === 'true' && urlParams.get('post')) {
-                    const postIdFromUrl = urlParams.get('post');
-                    const postIndex = currentReels.findIndex(r => r.postId === postIdFromUrl);
-                    if (postIndex !== -1) {
-                        setActiveReel(postIndex);
-                        openComments(postIdFromUrl);
-                    }
-                }
                 
-                loader.style.display = 'none'; // Bütün ilkin yükləmə bitdikdə loaderi gizlədin
+                // İlk yükləmə zamanı loaderi gizlətmək Firebase dinləyicisinin içərisinə köçürüldü
             }
+
+            initializeApp(); // Tətbiqi başladın
 
             async function displayReels(mode, postIdToOpen = null) {
                 if (isAnimating) return;
@@ -333,11 +340,12 @@
                 activeIndex = 0;
 
                 let postsToDisplay = [];
+                // Reel məlumatları real-time dinləyici tərəfindən `allReels` qlobal dəyişəninə yüklənir
                 const likesData = await reelDb.ref('likes').once('value').then(snap => snap.val() || {});
 
                 if (mode === 'snaps') {
                     app.style.display = 'block';
-                    postsToDisplay = shuffleArray(allReels);
+                    postsToDisplay = shuffleArray([...allReels]); // allReels-in bir kopyasını istifadə edin
                 } else if (mode === 'friends') {
                     app.style.display = 'block';
                     const followingSnapshot = await followingDb.ref(cleanCurrentUser).once('value');
@@ -358,7 +366,11 @@
                         // Müəyyən bir snapı reel görünüşündə açın
                         app.style.display = 'block';
                         const postToOpen = postsToDisplay.find(p => p.id === postIdToOpen);
-                        postsToDisplay = [postToOpen];
+                        if (postToOpen) { // Post tapıldıqda əlavə et
+                            postsToDisplay = [postToOpen];
+                        } else { // Post tapılmazsa boş array et
+                            postsToDisplay = []; 
+                        }
                     } else {
                         // Qrid görünüşünü göstərin
                         mySnapsGrid.style.display = 'grid';
@@ -435,8 +447,6 @@
                 isAnimating = false;
                 loader.style.display = 'none'; // Reel məzmunu yükləndikdən sonra loaderi gizlədin
             }
-
-            initializeApp();
 
             // Naviqasiya düymələrinin hadisə dinləyiciləri
             snapsNav.addEventListener('click', () => {
@@ -557,6 +567,17 @@
 
                 overlay.appendChild(info);
                 item.appendChild(overlay);
+
+                // Silmə düyməsi
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'material-icons delete-snap-button';
+                deleteButton.textContent = 'delete';
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Parent click hadisəsini dayandırın
+                    showDeleteSnapDialog(post.id);
+                });
+                item.appendChild(deleteButton);
+
 
                 item.addEventListener('click', () => {
                     displayReels('my-snaps', post.id);
@@ -1371,7 +1392,7 @@
             }
 
             /**
-             * Silmə təsdiqi dialoqunu göstərir.
+             * Şərh silmə təsdiqi dialoqunu göstərir.
              * @param {HTMLElement} element - Silinəcək şərh və ya cavab elementi.
              */
             function showDeleteDialog(element) {
@@ -1380,7 +1401,7 @@
             }
 
             /**
-             * Silmə təsdiqi dialoqunu gizlədir.
+             * Şərh silmə təsdiqi dialoqunu gizlədir.
              */
             function hideDeleteDialog() {
                 deleteDialogOverlay.style.display = 'none';
@@ -1406,21 +1427,80 @@
                         const commentRef = commentsDb.ref(`comments/${activePostId}/${commentId}`);
                         await commentRef.remove();
                     }
-                    console.log("Silmə uğurlu oldu.");
+                    console.log("Şərh silmə uğurlu oldu.");
+                    hideDeleteDialog(); // Silmə əməliyyatından sonra dialoqu DƏRHAL gizlədin
                     // DOM-dan silinmə child_removed listener tərəfindən idarə olunacaq.
                 } catch (e) {
-                    console.error("Silmə uğursuz oldu:", e);
-                } finally {
-                    hideDeleteDialog();
+                    console.error("Şərh silmə uğursuz oldu:", e);
+                    hideDeleteDialog(); // Hata olsa belə dialoqu gizlədin
                 }
             }
 
-            // Silmə dialoq düymələri üçün hadisə dinləyiciləri
+            // Şərh silmə dialoq düymələri üçün hadisə dinləyiciləri
             confirmDeleteBtn.addEventListener('click', deleteItem);
             cancelDeleteBtn.addEventListener('click', hideDeleteDialog);
             deleteDialogOverlay.addEventListener('click', (e) => {
                 if (e.target.id === 'delete-dialog-overlay') {
                     hideDeleteDialog();
+                }
+            });
+
+            // Snap silmə funksiyaları
+            /**
+             * Snap silmə təsdiqi dialoqunu göstərir.
+             * @param {string} postId - Silinəcək snapın ID-si.
+             */
+            function showDeleteSnapDialog(postId) {
+                snapToDelete = postId;
+                deleteSnapDialogOverlay.style.display = 'flex';
+            }
+
+            /**
+             * Snap silmə təsdiqi dialoqunu gizlədir.
+             */
+            function hideDeleteSnapDialog() {
+                deleteSnapDialogOverlay.style.display = 'none';
+                snapToDelete = null;
+            }
+
+            /**
+             * Firebase-dən snapı silir.
+             */
+            async function deleteSnap() {
+                if (!snapToDelete) return;
+
+                const currentSnapId = snapToDelete; // Snap ID-ni saxla
+                try {
+                    // Postu reels node-dan silin
+                    await reelDb.ref(`reels/${currentSnapId}`).remove();
+
+                    // Bəyənmələri silin
+                    await reelDb.ref(`likes/${currentSnapId}`).remove();
+
+                    // Şərhləri silin
+                    await commentsDb.ref(`comments/${currentSnapId}`).remove();
+
+                    // Şərh bəyənmələrini silin
+                    await commentLikesDb.ref(`comment_likes/${currentSnapId}`).remove();
+
+                    console.log("Snap uğurla silindi:", currentSnapId);
+
+                    hideDeleteSnapDialog(); // Silmə əməliyyatından sonra dialoqu DƏRHAL gizlədin
+
+                    // `displayReels` avtomatik olaraq Firebase dinləyicisi tərəfindən çağırılacaq.
+                    // Ona görə bu xətti ləğv etdik: await displayReels('my-snaps');
+                } catch (e) {
+                    console.error("Snap silmə uğursuz oldu:", e);
+                    hideDeleteSnapDialog(); // Hata olsa belə dialoqu gizlədin
+                }
+            }
+
+            // Snap silmə dialoq düymələri üçün hadisə dinləyiciləri
+            confirmDeleteSnapBtn.addEventListener('click', deleteSnap);
+            cancelDeleteSnapBtn.addEventListener('click', hideDeleteSnapDialog);
+            deleteSnapDialogOverlay.addEventListener('click', (e) => {
+                if (e.target.id === 'delete-snap-dialog-overlay') {
+                    hideDeleteSnapDialog();
                 }
             });
 
