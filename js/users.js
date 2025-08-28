@@ -264,7 +264,7 @@
         const postsAndReelsSection = document.getElementById('postsAndReelsSection');
         postsAndReelsSection.innerHTML = ''; // Köhnə məzmunu təmizlə
         if (contentArray.length === 0) {
-            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;">Məzmun tapılmadı.</p>';
+            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;"></p>';
         } else {
             contentArray.forEach(item => {
                 postsAndReelsSection.appendChild(renderContentItemForFeed(item));
