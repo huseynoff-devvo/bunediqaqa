@@ -1113,7 +1113,9 @@
 
                 let formattedText = comment.text;
                 if (comment.isGif) {
-                    formattedText = `<img src="${comment.text}" alt="GIF" />`;
+                    // GIF URL-i üçün təmizləmə əlavə edildi
+                    const cleanedGifUrl = cleanGifUrl(comment.text);
+                    formattedText = `<img src="${cleanedGifUrl}" alt="GIF" />`;
                 } else {
                     // Hashtag-ləri və cavab verilən istifadəçiləri vurğulayın
                     formattedText = formattedText.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
@@ -1505,6 +1507,17 @@
             });
 
             // GIF funksiyaları
+
+            /**
+             * GIF URL-ni təmizləyir, səhv əks-slashları təmizləyir.
+             * @param {string} url - Təmizlənəcək GIF URL-i.
+             * @returns {string} - Təmizlənmiş GIF URL-i.
+             */
+            function cleanGifUrl(url) {
+                return url.replace(/\\/g, ''); // Bütün əks-slashları (escaped or not) boşluqla əvəz et
+            }
+
+
             function toggleGifList() {
                 if (gifListContainer.style.display === 'flex') {
                     gifListContainer.style.display = 'none';
@@ -1529,11 +1542,12 @@
                 }
 
                 gifKeys.forEach(gifId => {
-                    const gifUrl = allGifs[gifId];
+                    const originalGifUrl = allGifs[gifId];
+                    const cleanedGifUrl = cleanGifUrl(originalGifUrl); // URL-i təmizlə
                     const gifItem = document.createElement('div');
                     gifItem.className = 'gif-item';
-                    gifItem.innerHTML = `<img src="${gifUrl}" alt="GIF" onerror="this.onerror=null;this.src='https://placehold.co/120x90/333/666?text=GIF+Not+Found';" />`;
-                    gifItem.onclick = () => selectGif(gifUrl);
+                    gifItem.innerHTML = `<img src="${cleanedGifUrl}" alt="GIF" onerror="this.onerror=null;this.src='https://placehold.co/120x90/333/666?text=GIF+Not+Found';" />`;
+                    gifItem.onclick = () => selectGif(cleanedGifUrl);
                     gifCarousel.appendChild(gifItem);
                 });
             }
