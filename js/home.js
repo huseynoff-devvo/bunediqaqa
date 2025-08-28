@@ -972,6 +972,10 @@
                         `;
                         listContainer.appendChild(userDiv);
                     });
+                     // Əlavə: 5-dən çox istifadəçi varsa, sürüşdürmə mesajı əlavə et
+                    if (users.length > 5) {
+                        listContainer.innerHTML += `<p style="text-align: center; color: #bbb; margin-top: 10px; font-size: 0.8rem;">Aşağı sürüşdürərək daha çoxunu görün.</p>`;
+                    }
                 } else {
                     listContainer.innerHTML += `<p style="text-align: center; color: #aaa; margin-top: 10px;">Heç kim bəyənməyib.</p>`;
                 }
@@ -1004,6 +1008,10 @@
                         `;
                         listContainer.appendChild(userDiv);
                     });
+                    // Əlavə: 5-dən çox istifadəçi varsa, sürüşdürmə mesajı əlavə et
+                    if (users.length > 5) {
+                        listContainer.innerHTML += `<p style="text-align: center; color: #bbb; margin-top: 10px; font-size: 0.8rem;">Aşağı sürüşdürərək daha çoxunu görün.</p>`;
+                    }
                 } else {
                     listContainer.innerHTML += `<p style="text-align: center; color: #aaa; margin-top: 10px;">Heç kim baxmayıb.</p>`;
                 }
@@ -1495,7 +1503,7 @@
                     const postTime = new Date(post.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
                     const nickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (!stories[nickname]) stories[nickname] = [];
-                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime, isImage: true}); // isImage xüsusiyyəti əlavə edildi
+                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime, isImage: true}); // isImage xüsiyyəti əlavə edildi
                 } catch(e) {
                     console.error("Story (postlar) məlumatı oxunarkən xəta:", e);
                 }
@@ -1514,7 +1522,7 @@
                     const postTime = new Date(post.time.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$2/$1/$3 $4:$5')).getTime();
                     const nickname = post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname;
                     if (!stories[nickname]) stories[nickname] = [];
-                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime, isVideo: true}); // isVideo xüsusiyyəti əlavə edildi
+                    stories[nickname].push({...post, storyId: child.key, timestamp: postTime, isVideo: true}); // isVideo xüsiyyəti əlavə edildi
                 } catch(e) {
                     console.error("Story (snap) məlumatı oxunarkən xəta:", e);
                 }
@@ -2268,8 +2276,10 @@
                 const gifUrl = allGifs[gifId];
                 const gifItem = document.createElement('div');
                 gifItem.className = 'gif-item';
-                gifItem.innerHTML = `<img src="${gifUrl}" alt="GIF" onerror="this.onerror=null;this.src='https://placehold.co/120x90/333/666?text=GIF+Not+Found';" />`;
-                gifItem.onclick = () => selectGif(gifUrl);
+                // Düzəliş: GIF URL-dəki əks-slashları təmizləyin
+                const cleanedGifUrl = gifUrl.replace(/\\/g, ''); 
+                gifItem.innerHTML = `<img src="${cleanedGifUrl}" alt="GIF" onerror="this.onerror=null;this.src='https://placehold.co/120x90/333/666?text=GIF+Not+Found';" />`;
+                gifItem.onclick = () => selectGif(cleanedGifUrl); // Təmizlənmiş URL-i ötür
                 gifCarousel.appendChild(gifItem);
             });
         }
@@ -2282,7 +2292,7 @@
 
             const newComment = {
                 nickname: currentUser,
-                text: gifUrl, // GIF URL-i burada saxlanılır
+                text: gifUrl.replace(/\\/g, ''), // Düzəliş: GIF URL-dəki əks-slashları təmizləyin
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
                 profilePic: getProfilePic(currentUser.replace('@', '')),
                 isGif: true // Bu şərhin bir GIF olduğunu göstərmək üçün
