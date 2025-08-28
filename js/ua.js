@@ -74,6 +74,7 @@
     let bannedUsers = {}; // Banned istifadəçiləri üçün yeni qlobal dəyişən
     let allContentData = []; // Bütün postlar üçün yeni qlobal dəyişən
     let initialLoadComplete = false;
+    let openedPostId = null; // Hal-hazırda açıq olan postun ID-si üçün dəyişən
 
     // Firebase-dən gələn xammal məlumatları üçün qlobal dəyişənlər (yalnız postlarla bağlı olanlar qaldı)
     let rawPostsFirebaseData = {};
@@ -119,11 +120,11 @@
                 const post = JSON.parse(postString);
                 const userProfile = allUsers.find(u => (u.nick.startsWith('@') ? u.nick.substring(1) : u.nick) === (post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname));
                 if (userProfile) {
-                    // **Bloklanmış istifadəçilərin postlarını süzməyin**
-                    // const cleanNickname = userProfile.nick.startsWith('@') ? userProfile.nick.substring(1) : userProfile.nick;
-                    // if (bannedUsers[cleanNickname]) {
-                    //     continue; 
-                    // }
+                    // Bloklanmış istifadəçilərin postlarını süzməyin
+                    const cleanNickname = userProfile.nick.startsWith('@') ? userProfile.nick.substring(1) : userProfile.nick;
+                    if (bannedUsers[cleanNickname]) {
+                        continue; 
+                    }
 
                     const likeCount = rawLikesPostsFirebaseData[postId] ? Object.keys(rawLikesPostsFirebaseData[postId]).length : 0;
                     // Şərh sayını düzgün şəkildə hesablayın
@@ -153,6 +154,15 @@
 
         const currentSearchValue = document.getElementById("searchInput").value;
         displayFilteredUsers(currentSearchValue); // Mövcud axtarışa əsasən yenidən render et
+        
+        // Əgər URL-də ?post=true varsa, post modalını aç
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('post') === 'true' && openedPostId) {
+            const postToOpen = allContentData.find(item => item.id === openedPostId);
+            if (postToOpen) {
+                openFullscreenModal(postToOpen, postToOpen.userProfile, false); // URL yenilənmədən aç
+            }
+        }
     }, 300); // 300ms gecikmə ilə debounce et
 
     // Məzmun elementini render edən funksiya (ümumi axın üçün)
@@ -178,22 +188,21 @@
         `;
 
         itemDiv.addEventListener('click', () => {
-            // Tam ekran modalını açarkən istifadəçi profil məlumatlarını da ötür
-            openFullscreenModal(item, item.userProfile); 
+            openedPostId = item.id; // Açılan postun ID-sini qeyd et
+            openFullscreenModal(item, item.userProfile, true); // URL-i yeniləyərək aç
         });
 
         return itemDiv;
     }
 
     // Tam ekran modalını açan funksiya
-    function openFullscreenModal(item, userProfile) {
+    function openFullscreenModal(item, userProfile, updateUrl = true) {
         const modal = document.getElementById('fullscreenModal');
         const modalContentWrapper = modal.querySelector('.modal-content-wrapper');
         const modalUserPic = document.getElementById('modalUserPic');
         const modalUsername = document.getElementById('modalUsername');
         const modalNickname = document.getElementById('modalNickname');
         const blockButton = document.getElementById('blockButton');
-        const blockIcon = blockButton.querySelector('.material-icons');
 
         modalContentWrapper.innerHTML = ''; // Köhnə məzmunu təmizlə
 
@@ -227,7 +236,6 @@
             processAndRenderContent(); // Məzmunu yenidən render et
         };
 
-
         // Headerdəki istifadəçi adına klik hadisəsi
         modalUsername.onclick = () => {
             const url = new URL(window.location);
@@ -256,6 +264,14 @@
         modalContentWrapper.appendChild(mediaElement);
 
         modal.classList.add('open');
+
+        // URL parametrini yeniləyin
+        if (updateUrl) {
+            const url = new URL(window.location);
+            url.searchParams.set('post', 'true');
+            url.searchParams.set('postId', item.id); // Post ID-ni də əlavə et
+            history.pushState({}, '', url);
+        }
     }
 
     // Tam ekran modalını bağlayan funksiya
@@ -263,6 +279,13 @@
         document.getElementById('fullscreenModal').classList.remove('open');
         const modalContentWrapper = document.getElementById('fullscreenModal').querySelector('.modal-content-wrapper');
         modalContentWrapper.innerHTML = ''; // Məzmunu təmizlə
+        openedPostId = null; // Açılan postun ID-sini sıfırla
+
+        // URL parametrini silin
+        const url = new URL(window.location);
+        url.searchParams.delete('post');
+        url.searchParams.delete('postId'); // Post ID-ni də sil
+        history.pushState({}, '', url);
     }
     
     // İstifadəçinin postlarını gətirən funksiya (yalnız axtarış nəticələri üçün)
@@ -285,7 +308,7 @@
         const postsAndReelsSection = document.getElementById('postsAndReelsSection');
         postsAndReelsSection.innerHTML = ''; // Köhnə məzmunu təmizlə
         if (contentArray.length === 0) {
-            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;"></p>';
+            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;">Məzmun tapılmadı.</p>';
         } else {
             contentArray.forEach(item => {
                 postsAndReelsSection.appendChild(renderContentItemForFeed(item));
@@ -297,10 +320,10 @@
     // İstifadəçini render edən funksiya (axtarış nəticələri üçün)
     function renderUserCard(user) {
         const cleanNickname = user.nick.startsWith('@') ? user.nick.substring(1) : user.nick;
-        // **Bloklanmış istifadəçiləri axtarış nəticələrində süzməyin**
-        // if (bannedUsers[cleanNickname]) {
-        //     return;
-        // }
+        // Bloklanmış istifadəçiləri axtarış nəticələrində süzməyin
+        if (bannedUsers[cleanNickname]) {
+            return;
+        }
 
         const userDiv = document.createElement('div');
         userDiv.className = 'user-card';
@@ -387,11 +410,11 @@
         }
 
         const filteredUsers = allUsers.filter(user => {
-            // **Bloklanmış istifadəçiləri axtarış filtrlərində süzməyin**
-            // const cleanNickname = user.nick.startsWith('@') ? user.nick.substring(1) : user.nick;
-            // if (bannedUsers[cleanNickname]) {
-            //     return false;
-            // }
+            // Bloklanmış istifadəçiləri axtarış filtrlərində süzməyin
+            const cleanNickname = user.nick.startsWith('@') ? user.nick.substring(1) : user.nick;
+            if (bannedUsers[cleanNickname]) {
+                return false;
+            }
             return user.nick.toLowerCase().includes(keyword.toLowerCase()) ||
                    user.name.toLowerCase().includes(keyword.toLowerCase());
         });
@@ -467,11 +490,23 @@
         // URL parametrini ilkin axtarış üçün istifadə et
         const urlParams = new URLSearchParams(window.location.search);
         const otherUser = urlParams.get('other');
+        const postParam = urlParams.get('post');
+        const postIdParam = urlParams.get('postId');
+
         if (otherUser) {
             document.getElementById('searchInput').value = otherUser;
             displayFilteredUsers(otherUser);
+        } else if (postParam === 'true' && postIdParam) {
+            // URL-də ?post=true və postId varsa, həmin postu aç
+            openedPostId = postIdParam; // Açılacaq postun ID-sini qeyd et
+            const postToOpen = allContentData.find(item => item.id === postIdParam);
+            if (postToOpen) {
+                openFullscreenModal(postToOpen, postToOpen.userProfile, false); // URL yenilənmədən aç
+            } else {
+                renderPostsAndReelsSection(allContentData); // Post tapılmasa, bütün postları göstər
+            }
         } else {
-            // Axtarış yoxdursa, bütün postları göstər
+            // Axtarış yoxdursa və ya ?post=true yoxdursa, bütün postları göstər
             renderPostsAndReelsSection(allContentData);
         }
 
@@ -533,3 +568,33 @@
 
     // Sənəd yükləndikdə ilkin məlumatları yükləyin
     document.addEventListener('DOMContentLoaded', loadInitialData);
+
+    // İstifadəçi geri düyməsinə basdıqda URL dəyişikliklərini idarə et
+    window.addEventListener('popstate', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const postParam = urlParams.get('post');
+        const postIdParam = urlParams.get('postId');
+
+        if (postParam === 'true' && postIdParam) {
+            // URL-də ?post=true varsa, postu aç
+            openedPostId = postIdParam;
+            const postToOpen = allContentData.find(item => item.id === postIdParam);
+            if (postToOpen && !document.getElementById('fullscreenModal').classList.contains('open')) {
+                openFullscreenModal(postToOpen, postToOpen.userProfile, false); // URL yenilənmədən aç
+            }
+        } else {
+            // URL-də ?post=true yoxdursa, modalı bağla
+            if (document.getElementById('fullscreenModal').classList.contains('open')) {
+                closeFullscreenModal();
+            }
+        }
+
+        const otherUser = urlParams.get('other');
+        if (otherUser) {
+            document.getElementById('searchInput').value = otherUser;
+            displayFilteredUsers(otherUser);
+        } else if (!postParam && !otherUser) { // Əgər heç bir parametr yoxdursa, axtarışı təmizlə
+            document.getElementById('searchInput').value = '';
+            displayFilteredUsers('');
+        }
+    });
