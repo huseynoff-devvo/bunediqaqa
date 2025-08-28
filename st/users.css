@@ -14,7 +14,7 @@
             padding: 10px; /* Ümumi padding-i azaltdım */
             padding-top: 60px; /* Sticky search bar üçün yuxarıdan əlavə boşluq */
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0e0e0e, #1a1a1a); /* Yüngül gradient fon */
+            background: #121212FF; /* Yüngül gradient fon */
             color: #e0e0e0;
             display: flex;
             flex-direction: column;
@@ -419,7 +419,7 @@
             }
             .modal-header {
                 padding: 12px 18px;
-                width: 97%;
+                width: 100%;
                 border-top-left-radius: 15px;
                 border-top-right-radius: 15px;
             }
@@ -436,7 +436,7 @@
                 font-size: 12px;
             }
             .modal-content-wrapper {
-                width: 97%;
+                width: 100%;
                 max-height: 75%;
                 border-bottom-left-radius: 15px;
                 border-bottom-right-radius: 15px;
