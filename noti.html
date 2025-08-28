@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildirişlər</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            top: -10px;
+            font-family: "Inter", sans-serif;
+            background-color: #121212; /* Qara fon */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+            color: #e0e0e0; /* Tünd rejim üçün açıq mətn */
+        }
+        .container {
+            background-color: #1e1e1e; /* Konteyner üçün bir qədər açıq tünd rəng */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Daha tünd kölgə */
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 768px;
+        }
+        .notification-item {
+            display: flex;
+            align-items: flex-start; /* GIF yerləşdirilməsi üçün elementləri yuxarıya hizalayın */
+            padding: 1rem;
+            border: 1px solid #333; /* Daha tünd haşiyə */
+            background-color: #181818; /* Daha tünd bildiriş elementinin fonu */
+            border-radius: 8px; /* Elementlər üçün yuvarlaq künclər */
+            margin-bottom: 0.5rem; /* Elementlər arasında boşluq */
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-item:hover {
+            background-color: #3a3a3a; /* Daha tünd üzərinə gəlmə vəziyyəti */
+        }
+        .profile-pic {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+            border: 1px solid red; /* Tünd rejim üçün açıq mavi haşiyə */
+            flex-shrink: 0; /* Kiçilmənin qarşısını alır */
+        }
+        .loading-spinner {
+            border: 2px solid #333; /* Daha tünd spinner fonu */
+            border-top: 2px solid red; /* Açıq mavi spinner */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            color: #f87171; /* Tünd rejim üçün açıq qırmızı */
+            font-weight: 500;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        /* Tünd mövzuya uyğun mətn rəngləri üçün Tailwind ləğvetmələri */
+        .text-gray-800 { color: #e0e0e0; }
+        .text-gray-500 { color: #b0b0b0; }
+        .text-blue-600 { color: #60a5fa; }
+        .text-gray-200 { color: #e0e0e0; }
+        .text-gray-400 { color: #a0a0a0; }
+        .text-blue-400 { color: #60a5fa; }
+
+        /* Yükləmə üçün üst qat */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212; /* Tünd yarımşəffaf fon */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .gif-display {
+            margin-top: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-[#121212] p-0">
+    <!-- Yükləmə Üst Qatı -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="container bg-[#121212] p-1 rounded-xl shadow-lg hidden -mt-[13px]"> <!-- Konteyner ilk olaraq gizlədilir -->
+        <div id="errorMessage" class="error-message"></div>
+        <div id="notificationsList" class="space-y-4 hidden">
+            <!-- Bildirişlər bura yüklənəcək -->
+        </div>
+    </div>
+
+    <!-- Firebase SDK-ləri -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue, off, set, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // Firebase tətbiqlərinin konfiqurasiyaları
+        const firebaseConfigFollows = {
+            apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
+            authDomain: "pasyak-follows.firebaseapp.com",
+            databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
+            projectId: "pasyak-follows",
+            storageBucket: "pasyak-follows.firebasestorage.app",
+            messagingSenderId: "571115478758",
+            appId: "1:571115478758:web:9b45de3c9169083d9a2527",
+            measurementId: "G-KHDDTM6FC9"
+        };
+
+        const firebaseConfigUser = {
+            apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
+            authDomain: "pasyak-user.firebaseapp.com",
+            databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
+            projectId: "pasyak-user",
+            storageBucket: "pasyak-user.firebasestorage.app",
+            messagingSenderId: "898141218588",
+            appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+        };
+
+        const firebaseConfigPosts = {
+            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
+            authDomain: "pasyakaaz.firebaseapp.com",
+            databaseURL: "https://pasyakaaz-default-rtdb.firebaseio.com",
+            projectId: "pasyakaaz",
+            storageBucket: "pasyakaaz.firebasestorage.app",
+            messagingSenderId: "289629756800",
+            appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+        };
+
+        const firebaseConfigReels = {
+            apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
+            authDomain: "pasyak-reels.firebaseapp.com",
+            databaseURL: "https://pasyak-reels-default-rtdb.firebaseio.com",
+            projectId: "pasyak-reels",
+            storageBucket: "pasyak-reels.firebasestorage.app",
+            messagingSenderId: "635054499590",
+            appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
+            measurementId: "G-FW0KJDLF4B"
+        };
+
+        const firebaseConfigPostComments = {
+            apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
+            authDomain: "gonline-1880b.firebaseapp.com",
+            databaseURL: "https://gonline-1880b-default-rtdb.firebaseio.com",
+            projectId: "gonline-1880b",
+            storageBucket: "gonline-1880b.firebasestorage.app",
+            messagingSenderId: "988052893147",
+            appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
+        };
+
+        const firebaseConfigReelComments = {
+            apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
+            authDomain: "reply-eb654.firebaseapp.com",
+            databaseURL: "https://reply-eb654-default-rtdb.firebaseio.com",
+            projectId: "reply-eb654",
+            storageBucket: "reply-eb654.firebasestorage.app",
+            messagingSenderId: "292801573334",
+            appId: "1:292801573334:web:2486813d8fe45865d0f477"
+        };
+
+        // Yeni bildirişlər verilənlər bazası
+        const firebaseConfigNotificationsDB = {
+            apiKey: "AIzaSyDhQONuhQFdbrfMAEFhmIpap51Bgc3rQXs",
+            authDomain: "noti-s.firebaseapp.com",
+            databaseURL: "https://noti-s-default-rtdb.firebaseio.com", // Verilənlər bazası URL-ni əlavə edin
+            projectId: "noti-s",
+            storageBucket: "noti-s.firebasestorage.app",
+            messagingSenderId: "943123365767",
+            appId: "1:943123365767:web:0830f2f45d39ca2f3ddd22"
+        };
+
+
+        // Firebase tətbiqlərini başlat
+        const appFollows = initializeApp(firebaseConfigFollows, "followsApp");
+        const dbFollows = getDatabase(appFollows);
+
+        const appUser = initializeApp(firebaseConfigUser, "userApp");
+        const dbUser = getDatabase(appUser);
+
+        const appPosts = initializeApp(firebaseConfigPosts, "postsApp");
+        const dbPosts = getDatabase(appPosts);
+
+        const appReels = initializeApp(firebaseConfigReels, "reelsApp");
+        const dbReels = getDatabase(appReels);
+
+        const appPostComments = initializeApp(firebaseConfigPostComments, "postCommentsApp");
+        const dbPostComments = getDatabase(appPostComments);
+
+        const appReelComments = initializeApp(firebaseConfigReelComments, "reelCommentsApp");
+        const dbReelComments = getDatabase(appReelComments);
+        
+        const appNotificationsDB = initializeApp(firebaseConfigNotificationsDB, "notificationsDBApp");
+        const dbNotificationsDB = getDatabase(appNotificationsDB);
+
+        // UI elementləri
+        const notificationsList = document.getElementById("notificationsList");
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        const errorMessageDiv = document.getElementById("errorMessage");
+        const containerDiv = document.querySelector(".container"); // Əsas konteyneri seçin
+
+        // Profil şəkilləri üçün keş (cache)
+        const userProfileCache = {};
+        let activeListeners = [];
+        let allNotifications = new Map(); // Bildirişləri unikal ID ilə saxlamaq üçün Map
+
+        /**
+         * Bütün aktiv Firebase dinləyicilərini dayandırır.
+         */
+        function stopAllListeners() {
+            activeListeners.forEach(listener => off(listener.ref, listener.eventType, listener.callback));
+            activeListeners = [];
+        }
+
+        /**
+         * Kullanıcının profil bilgilerini (özellikle profil resmini) Firebase'den alır.
+         * @param {string} nickname - Kullanıcının @ işareti olmadan ləqəbi.
+         * @returns {Promise<string>} - Profil resminin URL'si veya varsayılan resim URL'si.
+         */
+        async function fetchUserProfile(nickname) {
+            const cleanNickname = nickname.startsWith('@') ? nickname.substring(1) : nickname;
+            if (userProfileCache[cleanNickname]) {
+                return userProfileCache[cleanNickname];
+            }
+
+            try {
+                const userRef = ref(dbUser, `Users/${cleanNickname}`);
+                const snapshot = await new Promise(resolve => onValue(userRef, resolve, { onlyOnce: true }));
+                const userDataString = snapshot.val();
+                if (userDataString) {
+                    const userData = JSON.parse(userDataString);
+                    if (userData && userData[2]) {
+                        userProfileCache[cleanNickname] = userData[2];
+                        return userData[2];
+                    }
+                }
+            } catch (error) {
+                console.error(`Profil məlumatlarını gətirərkən xəta: ${cleanNickname}`, error);
+            }
+            // Varsayılan profil resmi
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1751823255/icon-7797704_640_iled3f.png"; // Varsayılan profil resmi
+        }
+
+        /**
+         * Bildirişləri göstərir.
+         * @param {Map<string, Object>} notificationsMap - Göstəriləcək bildirişlərin Map-i.
+         */
+        function renderNotifications(notificationsMap) {
+            notificationsList.innerHTML = "";
+            const notifications = Array.from(notificationsMap.values());
+
+            if (notifications.length === 0) {
+                notificationsList.innerHTML = `<p class="text-center text-gray-500 text-lg py-4">Heç bir bildiriş tapılmadı.</p>`;
+                return;
+            }
+
+            // Tarixə görə ən yenidən ən köhnəyə sırala
+            notifications.sort((a, b) => b.timestamp - a.timestamp);
+
+            // İlk 50 bildirişi göstər
+            const limitedNotifications = notifications.slice(0, 50);
+
+            limitedNotifications.forEach(notification => {
+                const notificationDiv = document.createElement("div");
+                notificationDiv.className = "notification-item bg-[#181818] hover:bg-[#181818]";
+                
+                let messageText = notification.message;
+                let gifHtml = '';
+
+                if (notification.isGif && notification.gifUrl) {
+                    gifHtml = `<img src="${notification.gifUrl}" alt="GIF" class="gif-display">`;
+                }
+
+                notificationDiv.innerHTML = `
+                    <img src="${notification.initiatorProfilePic}" alt="${notification.initiatorNickname} profil şəkli" class="profile-pic">
+                    <div class="flex-grow">
+                        <p class="text-gray-200 text-base">
+                            <a href="?other=${notification.initiatorNickname.substring(1)}" class="font-semibold text-blue-400 hover:underline">
+                                ${notification.initiatorNickname}
+                            </a>
+                            ${messageText}
+                        </p>
+                        ${gifHtml} <!-- Mətnin altında GIF -->
+                        <p class="text-gray-400 text-sm">${new Date(notification.timestamp).toLocaleString('az-AZ')}</p>
+                    </div>
+                `;
+                notificationsList.appendChild(notificationDiv);
+            });
+        }
+
+        /**
+         * Bildirişləri `noti-s` verilənlər bazasına əlavə edir.
+         * @param {string} targetNickname - Bildirişi alan istifadəçinin ləqəbi (təmiz).
+         * @param {Object} notificationData - Bildiriş məlumatları.
+         * @param {string} uniqueId - Bildiriş üçün unikal ID.
+         */
+        async function addNotificationToFirebase(targetNickname, notificationData, uniqueId) {
+            const userNotificationsRef = ref(dbNotificationsDB, `notifications/${targetNickname}/${uniqueId}`);
+            try {
+                // Təkrarçılığı qarşısını almaq üçün bildirişin artıq mövcud olub-olmadığını yoxlayın
+                const snapshot = await new Promise(resolve => onValue(userNotificationsRef, resolve, { onlyOnce: true }));
+                if (!snapshot.exists()) {
+                    await set(userNotificationsRef, notificationData);
+                }
+            } catch (error) {
+                console.error("Bildirişi Firebase'ə yazarkən xəta:", error);
+            }
+        }
+
+
+        /**
+         * Bildirişləri yükləyir və göstərir (real-time).
+         * @param {string} targetNickname - Bildirişləri göstəriləcək istifadəçinin ləqəbi (məsələn, "@huseynoff").
+         * @param {boolean} displayNothing - Heç nə göstərib-göstərməməyi müəyyənləşdirir.
+         */
+        async function loadNotifications(targetNickname, displayNothing = false) {
+            stopAllListeners(); // Əvvəlki dinləyiciləri dayandır
+            allNotifications.clear(); // Köhnə bildirişləri təmizlə
+
+            notificationsList.innerHTML = "";
+            errorMessageDiv.textContent = "";
+            
+            // UI elementlərini ilkin olaraq gizlət
+            notificationsList.classList.add("hidden");
+            containerDiv.classList.add("hidden"); 
+            // Yükləmə üst qatını həmişə göstər
+            loadingOverlay.classList.remove("hidden");
+
+            const cleanTargetNickname = targetNickname.startsWith('@') ? targetNickname.substring(1) : targetNickname;
+            const formattedTargetNickname = `@${cleanTargetNickname}`;
+
+            if (displayNothing) {
+                console.log("Heç nə göstərilmir. Yalnız yükləmə animasiyası müvəqqəti göstərilir.");
+                // Qısa müddətdən sonra yükləmə üst qatını gizlət və hər şeyi gizli saxla
+                setTimeout(() => {
+                    loadingOverlay.classList.add("hidden");
+                }, 700); // Yükləməni 0.7 saniyə göstər
+                return; // Əlavə emalı və dinləyici əlavə etməyi dayandır
+            }
+            
+            // Əgər displayNothing yoxdursa (?user= halı), bildirişlərin yüklənməsinə davam et
+            // loadingOverlay gizlədiləcək və containerDiv/notificationsList məlumatlar hazır olduqda
+            // notificationsDBListenerCallback içərisində göstəriləcək.
+            
+            // --- Əsas Dinləyici: dbNotificationsDB-dən oxuyun (göstərmək üçün) ---
+            const notificationsDBRef = ref(dbNotificationsDB, `notifications/${cleanTargetNickname}`);
+            const notificationsDBListenerCallback = (snapshot) => {
+                allNotifications.clear();
+                if (snapshot.exists()) {
+                    const storedNotifications = snapshot.val();
+                    Object.keys(storedNotifications).forEach(key => {
+                        const notification = storedNotifications[key];
+                        allNotifications.set(key, { ...notification, id: key });
+                    });
+                }
+                renderNotifications(allNotifications);
+                loadingOverlay.classList.add("hidden"); // İlkin məlumatlar render edildikdən sonra yükləməni gizlət
+                notificationsList.classList.remove("hidden"); // Bildirişlər siyahısını göstər
+                containerDiv.classList.remove("hidden"); // Bildirişlər hazır olduqda konteyneri göstər
+            };
+            const notificationsDBListener = onValue(notificationsDBRef, notificationsDBListenerCallback);
+            activeListeners.push({ref: notificationsDBRef, eventType: 'value', callback: notificationsDBListenerCallback});
+
+
+            // --- İkinci Dinləyicilər: Mənbə DB-lərdən hadisələri aşkar edin və dbNotificationsDB-yə yazın ---
+            // Bu dinləyicilər hədəf istifadəçi üçün bildirişlərin noti-s DB-də düzgün qeyd olunmasını təmin edəcək.
+            // Təkrarçılığı qarşısını almaq üçün unikal ID ilə set() istifadə olunur.
+
+            // 1. Təqibçi bildirişləri (pasyak-follows)
+            const followsRef = ref(dbFollows, cleanTargetNickname);
+            const followsCallback = async (snapshot) => {
+                const followersData = snapshot.val();
+                if (followersData) {
+                    for (const followerNicknameWithAt in followersData) {
+                        const status = followersData[followerNicknameWithAt];
+                        if (status === "+" || status === '"+"') {
+                            const followerNickname = followerNicknameWithAt;
+                            const profilePic = await fetchUserProfile(followerNickname.substring(1));
+                            const uniqueId = `follow_${followerNickname.substring(1)}_${cleanTargetNickname}`;
+                            const notificationData = {
+                                type: 'follow',
+                                timestamp: Date.now(),
+                                initiatorNickname: followerNickname,
+                                targetNickname: formattedTargetNickname,
+                                message: "sizi izləməyə etməyə başladı.",
+                                initiatorProfilePic: profilePic,
+                                isGif: false,
+                                gifUrl: null
+                            };
+                            await addNotificationToFirebase(cleanTargetNickname, notificationData, uniqueId);
+                        }
+                    }
+                }
+            };
+            const followsListener = onValue(followsRef, followsCallback);
+            activeListeners.push({ref: followsRef, eventType: 'value', callback: followsCallback});
+
+
+            // 2. Post bəyənmə bildirişləri (pasyakaaz)
+            const postsRef = ref(dbPosts, 'posts');
+            const postsCallback = async (postsSnapshot) => {
+                const postsData = postsSnapshot.val();
+                if (postsData) {
+                    for (const postId in postsData) {
+                        const postDataString = postsData[postId];
+                        const post = JSON.parse(postDataString);
+                        if (post.nickname === formattedTargetNickname) {
+                            const likesRef = ref(dbPosts, `likes/${postId}`);
+                            const likesCallback = async (likesSnapshot) => {
+                                const likesData = likesSnapshot.val();
+                                if (likesData) {
+                                    for (const likerNickname in likesData) {
+                                        if (likesData[likerNickname] === true && likerNickname !== 'count' && likerNickname !== 'users') {
+                                            const profilePic = await fetchUserProfile(likerNickname.substring(1));
+                                            const uniqueId = `postLike_${postId}_${likerNickname.substring(1)}_${cleanTargetNickname}`;
+                                            const notificationData = {
+                                                type: 'postLike',
+                                                timestamp: Date.now(),
+                                                initiatorNickname: likerNickname,
+                                                targetNickname: formattedTargetNickname,
+                                                message: `postunuzu bəyəndi.`,
+                                                initiatorProfilePic: profilePic,
+                                                postUrl: post.image || '',
+                                                isGif: false,
+                                                gifUrl: null
+                                            };
+                                            await addNotificationToFirebase(cleanTargetNickname, notificationData, uniqueId);
+                                        }
+                                    }
+                                }
+                            };
+                            const likesListener = onValue(likesRef, likesCallback);
+                            activeListeners.push({ref: likesRef, eventType: 'value', callback: likesCallback});
+                        }
+                    }
+                }
+            };
+            const postsListener = onValue(postsRef, postsCallback);
+            activeListeners.push({ref: postsRef, eventType: 'value', callback: postsCallback});
+
+
+            // 3. Video bəyənmə bildirişləri (pasyak-reels)
+            const reelsRef = ref(dbReels, 'reels');
+            const reelsCallback = async (reelsSnapshot) => {
+                const reelsData = reelsSnapshot.val();
+                if (reelsData) {
+                    for (const reelId in reelsData) {
+                        const reelDataString = reelsData[reelId];
+                        const reel = JSON.parse(reelDataString);
+                        if (reel.nickname === formattedTargetNickname) {
+                            const likesRef = ref(dbReels, `likes/${reelId}/users`);
+                            const likesCallback = async (likesSnapshot) => {
+                                const likesData = likesSnapshot.val();
+                                if (likesData) {
+                                    for (const likerNickname in likesData) {
+                                        if (likesData[likerNickname] === true) {
+                                            const profilePic = await fetchUserProfile(likerNickname.substring(1));
+                                            const uniqueId = `reelLike_${reelId}_${likerNickname.substring(1)}_${cleanTargetNickname}`;
+                                            const notificationData = {
+                                                type: 'reelLike',
+                                                timestamp: Date.now(),
+                                                initiatorNickname: likerNickname,
+                                                targetNickname: formattedTargetNickname,
+                                                message: `videonuzu bəyəndi.`,
+                                                initiatorProfilePic: profilePic,
+                                                reelUrl: reel.video || '',
+                                                isGif: false,
+                                                gifUrl: null
+                                            };
+                                            await addNotificationToFirebase(cleanTargetNickname, notificationData, uniqueId);
+                                        }
+                                    }
+                                }
+                            };
+                            const likesListener = onValue(likesRef, likesCallback);
+                            activeListeners.push({ref: likesRef, eventType: 'value', callback: likesCallback});
+                        }
+                    }
+                }
+            };
+            const reelsListener = onValue(reelsRef, reelsCallback);
+            activeListeners.push({ref: reelsRef, eventType: 'value', callback: reelsCallback});
+
+
+            // 4. Post şərh bildirişləri (gonline-1880b)
+            const allPostsRef = ref(dbPosts, 'posts');
+            const allPostsCallback = async (allPostsSnapshot) => {
+                const allPostsData = allPostsSnapshot.val();
+                if (allPostsData) {
+                    for (const postId in allPostsData) {
+                        const postDataString = allPostsData[postId];
+                        const post = JSON.parse(postDataString);
+                        if (post.nickname === formattedTargetNickname) {
+                            const postCommentsRef = ref(dbPostComments, `comments/${postId}`);
+                            const commentsCallback = async (commentsSnapshot) => {
+                                const commentsData = commentsSnapshot.val();
+                                if (commentsData) {
+                                    for (const commentId in commentsData) {
+                                        const comment = commentsData[commentId];
+                                        if (comment.nickname && comment.nickname !== formattedTargetNickname) {
+                                            const profilePic = await fetchUserProfile(comment.nickname.substring(1));
+                                            const uniqueId = `postComment_${postId}_${comment.nickname.substring(1)}_${cleanTargetNickname}_${comment.timestamp}`;
+                                            const notificationData = {
+                                                type: 'postComment',
+                                                timestamp: comment.timestamp || Date.now(),
+                                                initiatorNickname: comment.nickname,
+                                                targetNickname: formattedTargetNickname,
+                                                message: `postunuza şərh yazdı.`,
+                                                initiatorProfilePic: profilePic,
+                                                isGif: comment.isGif || false,
+                                                gifUrl: comment.isGif ? comment.text : null,
+                                            };
+                                            await addNotificationToFirebase(cleanTargetNickname, notificationData, uniqueId);
+                                        }
+                                    }
+                                }
+                            };
+                            const commentsListener = onValue(postCommentsRef, commentsCallback);
+                            activeListeners.push({ref: postCommentsRef, eventType: 'value', callback: commentsCallback});
+                        }
+                    }
+                }
+            };
+            const allPostsListener = onValue(allPostsRef, allPostsCallback);
+            activeListeners.push({ref: allPostsRef, eventType: 'value', callback: allPostsCallback});
+
+
+            // 5. Video şərh bildirişləri (reply-eb654)
+            const allReelsRef = ref(dbReels, 'reels');
+            const allReelsCallback = async (allReelsSnapshot) => {
+                const allReelsData = allReelsSnapshot.val();
+                if (allReelsData) {
+                    for (const reelId in allReelsData) {
+                        const reelDataString = allReelsData[reelId];
+                        const reel = JSON.parse(reelDataString);
+                        if (reel.nickname === formattedTargetNickname) {
+                            const reelCommentsRef = ref(dbReelComments, `comments/${reelId}`);
+                            const commentsCallback = async (commentsSnapshot) => {
+                                const commentsData = commentsSnapshot.val();
+                                if (commentsData) {
+                                    for (const commentId in commentsData) {
+                                        const comment = commentsData[commentId];
+                                        // Əsas səviyyə şərhləri idarə edin
+                                        if (comment.user && `@${comment.user}` !== formattedTargetNickname) {
+                                            const profilePic = await fetchUserProfile(comment.user);
+                                            const uniqueId = `reelComment_${reelId}_${comment.user}_${cleanTargetNickname}_${comment.timestamp}`;
+                                            const notificationData = {
+                                                type: 'reelComment',
+                                                timestamp: comment.timestamp || Date.now(),
+                                                initiatorNickname: `@${comment.user}`,
+                                                targetNickname: formattedTargetNickname,
+                                                message: `videonuza şərh yazdı.`,
+                                                initiatorProfilePic: profilePic,
+                                                isGif: comment.isGif || false,
+                                                gifUrl: comment.isGif ? comment.text : null,
+                                            };
+                                            await addNotificationToFirebase(cleanTargetNickname, notificationData, uniqueId);
+                                        }
+                                        // Cavabları idarə edin
+                                        if (comment.replies) {
+                                            for (const replyId in comment.replies) {
+                                                const reply = comment.replies[replyId];
+                                                if (reply.user && `@${reply.user}` !== formattedTargetNickname) {
+                                                    const profilePic = await fetchUserProfile(reply.user);
+                                                    const uniqueId = `reelCommentReply_${reelId}_${commentId}_${reply.user}_${cleanTargetNickname}_${reply.timestamp}`;
+                                                    const notificationData = {
+                                                        type: 'reelCommentReply',
+                                                        timestamp: reply.timestamp || Date.now(),
+                                                        initiatorNickname: `@${reply.user}`,
+                                                        targetNickname: formattedTargetNickname,
+                                                        message: `videonuza şərhə cavab yazdı.`,
+                                                        initiatorProfilePic: profilePic,
+                                                        isGif: reply.isGif || false,
+                                                        gifUrl: reply.isGif ? reply.text : null,
+                                                    };
+                                                    await addNotificationToFirebase(cleanTargetNickname, notificationData, uniqueId);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            };
+                            const commentsListener = onValue(reelCommentsRef, commentsCallback);
+                            activeListeners.push({ref: reelCommentsRef, eventType: 'value', callback: commentsCallback});
+                        }
+                    }
+                }
+            };
+            const allReelsListener = onValue(allReelsRef, allReelsCallback);
+            activeListeners.push({ref: allReelsRef, eventType: 'value', callback: allReelsCallback});
+            
+        }
+
+        // Səhifə yüklənəndə
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userNickname = urlParams.get('user') || urlParams.get('other'); // Həm 'user', həm də 'other' parametrləri işləyəcək
+            const displayNothing = urlParams.has('other'); 
+
+            if (userNickname) {
+                loadNotifications(userNickname, displayNothing);
+            } else {
+                errorMessageDiv.textContent = "Zəhmət olmasa, URL-də '?user=@ləqəbi' və ya '?other=@ləqəbi' formatında bir istifadəçi ləqəbi təyin edin (məsələn, ?user=huseynoff).";
+                loadingOverlay.classList.add("hidden"); // Ləqəb yoxdursa yükləmə üst qatını gizlət
+                containerDiv.classList.add("hidden"); // Konteyneri gizlət
+            }
+        });
+
+        // Səhifədən çıxarkən dinləyiciləri təmizləyin
+        window.addEventListener('beforeunload', stopAllListeners);
+    </script>
+</body>
+</html>
