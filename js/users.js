@@ -34,7 +34,6 @@
             messagingSenderId: "988052893147",
             appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
         },
-        // Banned istifadəçilər üçün konfiqurasiya silindi
     };
 
     // Firebase tətbiqlərini başlatın
@@ -45,7 +44,6 @@
         premium: firebase.initializeApp(firebaseConfigs.premium, "premium"),
         posts: firebase.initializeApp(firebaseConfigs.posts, "posts"),
         postComments: firebase.initializeApp(firebaseConfigs.postComments, "postComments"),
-        // Banned tətbiqi silindi
     };
 
     // Verilənlər bazası referanslarını alın
@@ -56,15 +54,14 @@
         premium: apps.premium.database(),
         posts: apps.posts.database(),
         postComments: apps.postComments.database(),
-        // Banned database referansı silindi
     };
 
     let allUsers = [];
     let tickUsers = {};
     let premiumUsers = {};
-    // let bannedUsers = {}; // Banned istifadəçiləri üçün qlobal dəyişən silindi
     let allContentData = []; // Bütün postlar üçün yeni qlobal dəyişən
     let initialLoadComplete = false;
+    let openedPostId = null; // Hal-hazırda açıq olan postun ID-si üçün dəyişən
 
     // Firebase-dən gələn xammal məlumatları üçün qlobal dəyişənlər (yalnız postlarla bağlı olanlar qaldı)
     let rawPostsFirebaseData = {};
@@ -110,7 +107,6 @@
                 const post = JSON.parse(postString);
                 const userProfile = allUsers.find(u => (u.nick.startsWith('@') ? u.nick.substring(1) : u.nick) === (post.nickname.startsWith('@') ? post.nickname.substring(1) : post.nickname));
                 if (userProfile) {
-                    // Bloklanmış istifadəçilərin postlarını süzməyin məntiqi silindi
                     const likeCount = rawLikesPostsFirebaseData[postId] ? Object.keys(rawLikesPostsFirebaseData[postId]).length : 0;
                     // Şərh sayını düzgün şəkildə hesablayın
                     const postComments = rawCommentsPostsFirebaseData[postId];
@@ -139,6 +135,15 @@
 
         const currentSearchValue = document.getElementById("searchInput").value;
         displayFilteredUsers(currentSearchValue); // Mövcud axtarışa əsasən yenidən render et
+        
+        // Əgər URL-də ?post=true varsa, post modalını aç
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('post') === 'true' && openedPostId) {
+            const postToOpen = allContentData.find(item => item.id === openedPostId);
+            if (postToOpen) {
+                openFullscreenModal(postToOpen, postToOpen.userProfile, false); // URL yenilənmədən aç
+            }
+        }
     }, 300); // 300ms gecikmə ilə debounce et
 
     // Məzmun elementini render edən funksiya (ümumi axın üçün)
@@ -164,21 +169,20 @@
         `;
 
         itemDiv.addEventListener('click', () => {
-            // Tam ekran modalını açarkən istifadəçi profil məlumatlarını da ötür
-            openFullscreenModal(item, item.userProfile); 
+            openedPostId = item.id; // Açılan postun ID-sini qeyd et
+            openFullscreenModal(item, item.userProfile, true); // URL-i yeniləyərək aç
         });
 
         return itemDiv;
     }
 
     // Tam ekran modalını açan funksiya
-    function openFullscreenModal(item, userProfile) {
+    function openFullscreenModal(item, userProfile, updateUrl = true) {
         const modal = document.getElementById('fullscreenModal');
         const modalContentWrapper = modal.querySelector('.modal-content-wrapper');
         const modalUserPic = document.getElementById('modalUserPic');
         const modalUsername = document.getElementById('modalUsername');
         const modalNickname = document.getElementById('modalNickname');
-        // Blok düyməsi referansları silindi
 
         modalContentWrapper.innerHTML = ''; // Köhnə məzmunu təmizlə
 
@@ -187,29 +191,6 @@
         modalUserPic.alt = userProfile.nick;
         modalUsername.textContent = userProfile.name;
         modalNickname.textContent = `@${userProfile.nick}`;
-
-        // const cleanNickname = userProfile.nick.startsWith('@') ? userProfile.nick.substring(1) : userProfile.nick;
-        // Blok düyməsinin vəziyyətini yeniləyin məntiqi silindi
-        // if (bannedUsers[cleanNickname]) {
-        //     blockButton.classList.add('blocked');
-        // } else {
-        //     blockButton.classList.remove('blocked');
-        // }
-
-        // Blok düyməsinə klik hadisəsi silindi
-        // blockButton.onclick = async () => {
-        //     if (bannedUsers[cleanNickname]) {
-        //         await db.banned.ref(`banned/${cleanNickname}`).remove();
-        //         blockButton.classList.remove('blocked');
-        //         delete bannedUsers[cleanNickname];
-        //     } else {
-        //         await db.banned.ref(`banned/${cleanNickname}`).set('+');
-        //         blockButton.classList.add('blocked');
-        //         bannedUsers[cleanNickname] = '+';
-        //     }
-        //     processAndRenderContent(); 
-        // };
-
 
         // Headerdəki istifadəçi adına klik hadisəsi
         modalUsername.onclick = () => {
@@ -239,6 +220,14 @@
         modalContentWrapper.appendChild(mediaElement);
 
         modal.classList.add('open');
+
+        // URL parametrini yeniləyin
+        if (updateUrl) {
+            const url = new URL(window.location);
+            url.searchParams.set('post', 'true');
+            url.searchParams.set('postId', item.id); // Post ID-ni də əlavə et
+            history.pushState({}, '', url);
+        }
     }
 
     // Tam ekran modalını bağlayan funksiya
@@ -246,6 +235,13 @@
         document.getElementById('fullscreenModal').classList.remove('open');
         const modalContentWrapper = document.getElementById('fullscreenModal').querySelector('.modal-content-wrapper');
         modalContentWrapper.innerHTML = ''; // Məzmunu təmizlə
+        openedPostId = null; // Açılan postun ID-sini sıfırla
+
+        // URL parametrini silin
+        const url = new URL(window.location);
+        url.searchParams.delete('post');
+        url.searchParams.delete('postId'); // Post ID-ni də sil
+        history.pushState({}, '', url);
     }
     
     // İstifadəçinin postlarını gətirən funksiya (yalnız axtarış nəticələri üçün)
@@ -268,7 +264,7 @@
         const postsAndReelsSection = document.getElementById('postsAndReelsSection');
         postsAndReelsSection.innerHTML = ''; // Köhnə məzmunu təmizlə
         if (contentArray.length === 0) {
-            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;"></p>';
+            postsAndReelsSection.innerHTML = '<p style="text-align: center; color: #999;">Məzmun tapılmadı.</p>';
         } else {
             contentArray.forEach(item => {
                 postsAndReelsSection.appendChild(renderContentItemForFeed(item));
@@ -280,7 +276,6 @@
     // İstifadəçini render edən funksiya (axtarış nəticələri üçün)
     function renderUserCard(user) {
         const cleanNickname = user.nick.startsWith('@') ? user.nick.substring(1) : user.nick;
-        // Bloklanmış istifadəçiləri axtarış nəticələrində süzməyin məntiqi silindi
 
         const userDiv = document.createElement('div');
         userDiv.className = 'user-card';
@@ -298,32 +293,8 @@
                     <div class="nickname">@${user.nick}</div>
                 </div>
             </div>
-            <!-- Bloklama düyməsi silindi -->
         `;
         document.getElementById('searchResults').appendChild(userDiv);
-
-        // Blok düyməsi ilə əlaqəli hadisə dinləyiciləri silindi
-        // const blockButton = userDiv.querySelector('.user-card-block-button');
-        // if (bannedUsers[cleanNickname]) {
-        //     blockButton.classList.add('blocked');
-        // } else {
-        //     blockButton.classList.remove('blocked');
-        // }
-
-        // blockButton.addEventListener('click', async (event) => {
-        //     event.stopPropagation();
-        //     const targetNickname = blockButton.dataset.nickname;
-        //     if (bannedUsers[targetNickname]) {
-        //         await db.banned.ref(`banned/${targetNickname}`).remove();
-        //         blockButton.classList.remove('blocked');
-        //         delete bannedUsers[targetNickname];
-        //     } else {
-        //         await db.banned.ref(`banned/${targetNickname}`).set('+');
-        //         blockButton.classList.add('blocked');
-        //         bannedUsers[targetNickname] = '+';
-        //     }
-        //     processAndRenderContent(); 
-        // });
 
         // URL-i dəyişdirmək üçün istifadəçi header-inə klik hadisəsi əlavə edin
         const userHeader = userDiv.querySelector('.user-header');
@@ -366,7 +337,6 @@
         }
 
         const filteredUsers = allUsers.filter(user => {
-            // Bloklanmış istifadəçiləri axtarış filtrlərində süzməyin məntiqi silindi
             return user.nick.toLowerCase().includes(keyword.toLowerCase()) ||
                    user.name.toLowerCase().includes(keyword.toLowerCase());
         });
@@ -407,7 +377,6 @@
             postsSnapshot,
             likesPostsSnapshot,
             commentsPostsSnapshot
-            // bannedSnapshot silindi
         ] = await Promise.all([
             db.users.ref("Users").once("value"),
             db.tick.ref("tick").once("value"),
@@ -415,7 +384,6 @@
             db.posts.ref("posts").once("value"),
             db.posts.ref("likes").once("value"),
             db.postComments.ref("comments").once("value"),
-            // db.banned.ref("banned").once("value") silindi
         ]);
 
         // Qlobal dəyişənləri doldur
@@ -431,7 +399,6 @@
         }
         tickUsers = tickSnapshot.val() || {};
         premiumUsers = premiumSnapshot.val() || {};
-        // bannedUsers = bannedSnapshot.val() || {}; // Banned istifadəçiləri doldurma silindi
         rawPostsFirebaseData = postsSnapshot.val() || {};
         rawLikesPostsFirebaseData = likesPostsSnapshot.val() || {};
         rawCommentsPostsFirebaseData = commentsPostsSnapshot.val() || {}; // post şərhləri üçün
@@ -442,11 +409,23 @@
         // URL parametrini ilkin axtarış üçün istifadə et
         const urlParams = new URLSearchParams(window.location.search);
         const otherUser = urlParams.get('other');
+        const postParam = urlParams.get('post');
+        const postIdParam = urlParams.get('postId');
+
         if (otherUser) {
             document.getElementById('searchInput').value = otherUser;
             displayFilteredUsers(otherUser);
+        } else if (postParam === 'true' && postIdParam) {
+            // URL-də ?post=true və postId varsa, həmin postu aç
+            openedPostId = postIdParam; // Açılacaq postun ID-sini qeyd et
+            const postToOpen = allContentData.find(item => item.id === postIdParam);
+            if (postToOpen) {
+                openFullscreenModal(postToOpen, postToOpen.userProfile, false); // URL yenilənmədən aç
+            } else {
+                renderPostsAndReelsSection(allContentData); // Post tapılmasa, bütün postları göstər
+            }
         } else {
-            // Axtarış yoxdursa, bütün postları göstər
+            // Axtarış yoxdursa və ya ?post=true yoxdursa, bütün postları göstər
             renderPostsAndReelsSection(allContentData);
         }
 
@@ -481,11 +460,6 @@
         processAndRenderContent(); // Premium məlumatları dəyişdikdə emal və render
     });
 
-    // db.banned.ref("banned").on("value", snapshot => { // Banned dinləyicisi silindi
-    //     bannedUsers = snapshot.val() || {};
-    //     processAndRenderContent(); 
-    // });
-
     // Xammal məlumatlarını yeniləyin, sonra debounced emalı çağırın (yalnız postlar üçün)
     db.posts.ref("posts").on("value", snapshot => {
         rawPostsFirebaseData = snapshot.val() || {};
@@ -508,3 +482,33 @@
 
     // Sənəd yükləndikdə ilkin məlumatları yükləyin
     document.addEventListener('DOMContentLoaded', loadInitialData);
+
+    // İstifadəçi geri düyməsinə basdıqda URL dəyişikliklərini idarə et
+    window.addEventListener('popstate', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const postParam = urlParams.get('post');
+        const postIdParam = urlParams.get('postId');
+
+        if (postParam === 'true' && postIdParam) {
+            // URL-də ?post=true varsa, postu aç
+            openedPostId = postIdParam;
+            const postToOpen = allContentData.find(item => item.id === postIdParam);
+            if (postToOpen && !document.getElementById('fullscreenModal').classList.contains('open')) {
+                openFullscreenModal(postToOpen, postToOpen.userProfile, false); // URL yenilənmədən aç
+            }
+        } else {
+            // URL-də ?post=true yoxdursa, modalı bağla
+            if (document.getElementById('fullscreenModal').classList.contains('open')) {
+                closeFullscreenModal();
+            }
+        }
+
+        const otherUser = urlParams.get('other');
+        if (otherUser) {
+            document.getElementById('searchInput').value = otherUser;
+            displayFilteredUsers(otherUser);
+        } else if (!postParam && !otherUser) { // Əgər heç bir parametr yoxdursa, axtarışı təmizlə
+            document.getElementById('searchInput').value = '';
+            displayFilteredUsers('');
+        }
+    });
