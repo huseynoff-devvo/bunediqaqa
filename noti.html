@@ -7,116 +7,230 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            top: -10px;
             font-family: "Inter", sans-serif;
-            background-color: #121212; /* Qara fon */
+            background-color: #121212; /* Darker background */
             display: flex;
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
-            padding: 2rem;
+            padding: 0; /* Padding-i 0 olaraq təyin edin ki, yükləmə overlay-ı tam ekranı əhatə etsin */
             box-sizing: border-box;
-            color: #e0e0e0; /* Tünd rejim üçün açıq mətn */
+            color: #e0e0e0; /* Light text for dark mode */
         }
         .container {
-            background-color: #1e1e1e; /* Konteyner üçün bir qədər açıq tünd rəng */
+            background-color: #121212; /* Slightly lighter dark for container */
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Daha tünd kölgə */
-            padding: 2.5rem;
+            /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); Softer, but noticeable shadow */
+            padding: 1.5rem; /* Slightly less padding for mobile */
             width: 100%;
             max-width: 768px;
+            box-sizing: border-box;
+            /* border: 1px solid #383838; Slightly softer border */
         }
+
+        /* Mobile adjustments for container padding */
+        @media (min-width: 640px) { /* Small screens and up */
+            .container {
+                padding: 2.5rem; /* Original padding for larger screens */
+            }
+        }
+
         .notification-item {
             display: flex;
-            align-items: flex-start; /* GIF yerləşdirilməsi üçün elementləri yuxarıya hizalayın */
-            padding: 1rem;
-            border: 1px solid #333; /* Daha tünd haşiyə */
-            background-color: #181818; /* Daha tünd bildiriş elementinin fonu */
-            border-radius: 8px; /* Elementlər üçün yuvarlaq künclər */
-            margin-bottom: 0.5rem; /* Elementlər arasında boşluq */
+            align-items: flex-start; /* Align items to the top for better content flow */
+            padding: 0.5rem; /* Less internal padding for items on mobile */
+            background-color: #181818; /* Darker notification item background */
+            border-radius: 10px; /* Rounded corners for items */
+            margin-bottom: 0.75rem; /* Less spacing between items on mobile */
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); /* Subtle item shadow */
+            border: 1px solid #333; /* Soft border for items */
+            flex-direction: column; /* Stack items vertically on mobile */
         }
-        .notification-item:last-child {
-            border-bottom: none;
+
+        /* Desktop adjustments for notification item */
+        @media (min-width: 640px) {
+            .notification-item {
+                padding: 1.25rem; /* Original padding for larger screens */
+                margin-bottom: 0.85rem; /* Original spacing for larger screens */
+                flex-direction: row; /* Horizontal layout for larger screens */
+            }
         }
+
         .notification-item:hover {
-            background-color: #3a3a3a; /* Daha tünd üzərinə gəlmə vəziyyəti */
+            background-color: #353535; /* Darker hover state */
+            transform: translateY(-2px); /* Slight lift on hover */
         }
         .profile-pic {
-            width: 48px;
+            width: 48px; /* Slightly smaller profile pic on mobile */
             height: 48px;
             border-radius: 50%;
             object-fit: cover;
-            margin-right: 1rem;
-            border: 1px solid red; /* Tünd rejim üçün açıq mavi haşiyə */
-            flex-shrink: 0; /* Kiçilmənin qarşısını alır */
+            margin-right: 1rem; /* Less spacing on mobile */
+            border: 2px solid #ff4d4d; /* Accent red border */
+            flex-shrink: 0; /* Prevent shrinking */
+            /* margin-bottom: 0.75rem; */ /* Space below pic on mobile */ /* Moved to .profile-and-nickname */
         }
+
+        /* Desktop adjustments for profile pic */
+        @media (min-width: 640px) {
+            .profile-pic {
+                width: 56px; /* Original size for larger screens */
+                height: 56px;
+                margin-right: 1.5rem; /* Original spacing for larger screens */
+                /* margin-bottom: 0; */ /* No bottom margin on desktop */ /* Moved to .profile-and-nickname */
+            }
+        }
+
         .loading-spinner {
-            border: 2px solid #333; /* Daha tünd spinner fonu */
-            border-top: 2px solid red; /* Açıq mavi spinner */
+            border: 2px solid #444; /* Darker spinner background */
+            border-top: 2px solid #ff4d4d; /* Accent red spinner */
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 48px; /* Slightly larger spinner */
+            height: 48px;
             animation: spin 1s linear infinite;
-            margin: 2rem auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         .error-message {
-            color: #f87171; /* Tünd rejim üçün açıq qırmızı */
-            font-weight: 500;
-            margin-top: 1rem;
+            color: #ff4d4d; /* Accent red for error messages */
+            font-weight: 600; /* Bolder error message */
+            margin-top: 1.5rem;
             text-align: center;
         }
-        /* Tünd mövzuya uyğun mətn rəngləri üçün Tailwind ləğvetmələri */
+        /* Tailwind overrides for text colors to fit dark theme */
         .text-gray-800 { color: #e0e0e0; }
         .text-gray-500 { color: #b0b0b0; }
-        .text-blue-600 { color: #60a5fa; }
+        .text-blue-600 { color: #7cb3ff; } /* Lighter blue for links */
         .text-gray-200 { color: #e0e0e0; }
         .text-gray-400 { color: #a0a0a0; }
-        .text-blue-400 { color: #60a5fa; }
+        .text-blue-400 { color: #7cb3ff; margin-left: -8px; } /* Lighter blue for links */
 
-        /* Yükləmə üçün üst qat */
+        /* Overlay for loading */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #121212; /* Tünd yarımşəffaf fon */
+            background-color: #121212; /* Dark semi-transparent background */
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         .gif-display {
-            margin-top: 0.5rem;
+            margin-top: 0.75rem; /* More spacing */
             max-width: 100%;
             height: auto;
             border-radius: 8px;
+            display: block; /* GIF-i yeni sətrə keçirmek üçün */
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        .notification-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            width: 100%; /* Take full width on mobile */
+        }
+
+        @media (min-width: 640px) {
+            .notification-content-wrapper {
+                width: auto; /* Auto width on desktop */
+            }
+        }
+
+        .notification-main-line {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            width: 100%;
+            flex-direction: column; /* Stack vertically on mobile */
+        }
+
+        @media (min-width: 640px) {
+            .notification-main-line {
+                flex-direction: row; /* Horizontal on desktop */
+            }
+        }
+
+        .notification-text-area {
+            flex-grow: 1;
+        }
+        .comment-content {
+            font-size: 0.95rem; /* Slightly larger comment text */
+            line-height: 1.4; /* Better readability */
+            color: #c0c0c0; /* Lighter gray for comment content */
+            padding-left: 0.5rem; /* Indent for comment text */
+            border-left: 2px solid #555; /* Subtle border to visually separate comment */
+            margin-top: 0.5rem;
+        }
+        .source-text { /* New style for displaying post/reel text */
+            font-size: 0.85rem;
+            color: #c0c0c0; /* Lighter text for context */
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: #333;
+            border-radius: 6px;
+            max-width: 100%; /* Full width on mobile */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* margin-left: auto; */ /* Remove auto-margin for mobile stacking */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-style: italic;
+        }
+
+        @media (min-width: 640px) {
+            .source-text {
+                max-width: 180px; /* Original width for desktop */
+                margin-left: auto; /* Align to the right on desktop */
+            }
+        }
+
+        /* Specific style for liked content to make it more distinct */
+        .liked-content-text {
+            font-weight: 500;
+            color: #ffcc00; /* Yellowish color to signify "liked" */
+            margin-left: 0.5rem;
+        }
+
+        .profile-and-nickname {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem; /* Space below nickname on mobile */
+            width: 100%; /* Take full width on mobile */
+        }
+
+        @media (min-width: 640px) {
+            .profile-and-nickname {
+                margin-bottom: 0; /* No bottom margin on desktop */
+                width: auto; /* Auto width on desktop */
+            }
         }
     </style>
 </head>
-<body class="bg-[#121212] p-0">
-    <!-- Yükləmə Üst Qatı -->
+<body class="bg-[#121212] flex items-center justify-center p-0">
+    <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
     </div>
 
-    <div class="container bg-[#121212] p-1 rounded-xl shadow-lg hidden -mt-[13px]"> <!-- Konteyner ilk olaraq gizlədilir -->
+    <div class="container bg-[#121212] p-1 rounded-xl shadow-lg hidden -mt-[15px]"> <!-- Konteyner ilk olaraq gizlədilir -->
         <div id="errorMessage" class="error-message"></div>
         <div id="notificationsList" class="space-y-4 hidden">
             <!-- Bildirişlər bura yüklənəcək -->
         </div>
     </div>
 
-    <!-- Firebase SDK-ləri -->
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, onValue, off, set, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, off, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        // Firebase tətbiqlərinin konfiqurasiyaları
+        // Firebase tətbiplərinin konfiqurasiyaları
         const firebaseConfigFollows = {
             apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
             authDomain: "pasyak-follows.firebaseapp.com",
@@ -183,7 +297,7 @@
         const firebaseConfigNotificationsDB = {
             apiKey: "AIzaSyDhQONuhQFdbrfMAEFhmIpap51Bgc3rQXs",
             authDomain: "noti-s.firebaseapp.com",
-            databaseURL: "https://noti-s-default-rtdb.firebaseio.com", // Verilənlər bazası URL-ni əlavə edin
+            databaseURL: "https://noti-s-default-rtdb.firebaseio.com", 
             projectId: "noti-s",
             storageBucket: "noti-s.firebasestorage.app",
             messagingSenderId: "943123365767",
@@ -191,7 +305,7 @@
         };
 
 
-        // Firebase tətbiqlərini başlat
+        // Firebase tətbiplərini başlat
         const appFollows = initializeApp(firebaseConfigFollows, "followsApp");
         const dbFollows = getDatabase(appFollows);
 
@@ -233,6 +347,35 @@
         }
 
         /**
+         * URL-ə &new parametrini əlavə edir və 5 saniyədən sonra onu silir.
+         */
+        function addAndRemoveNewUrlParam() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('new', 'true');
+            window.history.replaceState({}, '', url.toString());
+
+            setTimeout(() => {
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.delete('new');
+                window.history.replaceState({}, '', newUrl.toString());
+            }, 5000); // 5 saniyə
+        }
+
+        /**
+         * Verilmiş mətni qısaldır, ilk iki sözü saxlayır və sonda "..." əlavə edir.
+         * @param {string} text - Qısaldılacaq mətn.
+         * @returns {string} Qısaldılmış mətn.
+         */
+        function shortenText(text) {
+            if (!text) return '';
+            const words = text.split(' ');
+            if (words.length > 2) {
+                return words.slice(0, 2).join(' ') + '...';
+            }
+            return text;
+        }
+
+        /**
          * Kullanıcının profil bilgilerini (özellikle profil resmini) Firebase'den alır.
          * @param {string} nickname - Kullanıcının @ işareti olmadan ləqəbi.
          * @returns {Promise<string>} - Profil resminin URL'si veya varsayılan resim URL'si.
@@ -270,38 +413,64 @@
             const notifications = Array.from(notificationsMap.values());
 
             if (notifications.length === 0) {
-                notificationsList.innerHTML = `<p class="text-center text-gray-500 text-lg py-4">Heç bir bildiriş tapılmadı.</p>`;
+                notificationsList.innerHTML = `<p class="text-center text-gray-500 text-lg py-4">Bildiriş yoxdur.</p>`;
                 return;
             }
 
             // Tarixə görə ən yenidən ən köhnəyə sırala
             notifications.sort((a, b) => b.timestamp - a.timestamp);
 
-            // İlk 50 bildirişi göstər
+            // Yalnız son 50 bildirişi göstər
             const limitedNotifications = notifications.slice(0, 50);
 
             limitedNotifications.forEach(notification => {
                 const notificationDiv = document.createElement("div");
-                notificationDiv.className = "notification-item bg-[#181818] hover:bg-[#181818]";
-                
+                notificationDiv.className = "notification-item bg-[#181818] hover:bg-[#181818] rounded-lg transition duration-200 ease-in-out";
                 let messageText = notification.message;
-                let gifHtml = '';
+                let contentHtml = ''; // Şərh mətni, GIF üçün
+                let sourceTextElement = ''; // Post və ya video mətni üçün element
 
-                if (notification.isGif && notification.gifUrl) {
-                    gifHtml = `<img src="${notification.gifUrl}" alt="GIF" class="gif-display">`;
+                // Şərh məzmununu idarə et
+                if (notification.type === 'postComment' || notification.type === 'reelComment' || notification.type === 'reelCommentReply') {
+                    // Şərh mətninin əvvəlinə boşluq və "yazdı:" əlavə edirik
+                    messageText = `${notification.message}`; 
+                    if (notification.isGif && notification.gifUrl) {
+                        contentHtml = `<img src="${notification.gifUrl}" alt="GIF" class="gif-display mt-2 ml-0">`; // GIF mətnin altında, sağa sürüşdürülmüş
+                    } else if (notification.commentContent) {
+                        contentHtml = `<p class="text-gray-300 mt-1 comment-content">"${notification.commentContent}"</p>`; // Şərh mətnini göstər, yeni klass ilə
+                    }
+
+                    // Şərhin aid olduğu post/video mətnini göstər
+                    if (notification.postText) {
+                        sourceTextElement = `<p class="source-text">Post: "${shortenText(notification.postText)}"</p>`;
+                    } else if (notification.reelText) {
+                        sourceTextElement = `<p class="source-text">Video: "${shortenText(notification.reelText)}"</p>`;
+                    }
+
+                } else if (notification.type === 'postLike' && notification.postText) {
+                    messageText = `postunuzu bəyəndi. <span class="liked-content-text">"${shortenText(notification.postText)}"</span>`;
+                } else if (notification.type === 'reelLike' && notification.reelText) {
+                    messageText = `snapınızı bəyəndi. <span class="liked-content-text">"${shortenText(notification.reelText)}"</span>`;
                 }
 
+
                 notificationDiv.innerHTML = `
-                    <img src="${notification.initiatorProfilePic}" alt="${notification.initiatorNickname} profil şəkli" class="profile-pic">
-                    <div class="flex-grow">
-                        <p class="text-gray-200 text-base">
-                            <a href="?other=${notification.initiatorNickname.substring(1)}" class="font-semibold text-blue-400 hover:underline">
-                                ${notification.initiatorNickname}
-                            </a>
-                            ${messageText}
-                        </p>
-                        ${gifHtml} <!-- Mətnin altında GIF -->
-                        <p class="text-gray-400 text-sm">${new Date(notification.timestamp).toLocaleString('az-AZ')}</p>
+                    <div class="profile-and-nickname">
+                        <img src="${notification.initiatorProfilePic}" alt="${notification.initiatorNickname} profil şəkli" class="profile-pic">
+                        <a href="?other=${notification.initiatorNickname.substring(1)}" class="font-semibold text-blue-400 hover:underline text-base">
+                            ${notification.initiatorNickname}
+                        </a>
+                    </div>
+                    <div class="notification-content-wrapper">
+                        <div class="notification-main-line">
+                            <p class="text-gray-200 text-base notification-text-area">
+                                ${messageText}
+                            </p>
+                            <!-- sourceTextElement bəyənmələr üçün messageText-in daxilindədir, şərhlər üçün burada -->
+                            ${(notification.type === 'postComment' || notification.type === 'reelComment' || notification.type === 'reelCommentReply') ? sourceTextElement : ''}
+                        </div>
+                        ${contentHtml} <!-- Şərh mətni və ya GIF burada -->
+                        <p class="text-gray-400 text-sm mt-2">${new Date(notification.timestamp).toLocaleString('az-AZ')}</p>
                     </div>
                 `;
                 notificationsList.appendChild(notificationDiv);
@@ -321,6 +490,8 @@
                 const snapshot = await new Promise(resolve => onValue(userNotificationsRef, resolve, { onlyOnce: true }));
                 if (!snapshot.exists()) {
                     await set(userNotificationsRef, notificationData);
+                    // URL-ə &new parametrini əlavə et
+                    addAndRemoveNewUrlParam();
                 }
             } catch (error) {
                 console.error("Bildirişi Firebase'ə yazarkən xəta:", error);
@@ -358,7 +529,6 @@
                 return; // Əlavə emalı və dinləyici əlavə etməyi dayandır
             }
             
-            // Əgər displayNothing yoxdursa (?user= halı), bildirişlərin yüklənməsinə davam et
             // loadingOverlay gizlədiləcək və containerDiv/notificationsList məlumatlar hazır olduqda
             // notificationsDBListenerCallback içərisində göstəriləcək.
             
@@ -375,7 +545,7 @@
                 }
                 renderNotifications(allNotifications);
                 loadingOverlay.classList.add("hidden"); // İlkin məlumatlar render edildikdən sonra yükləməni gizlət
-                notificationsList.classList.remove("hidden"); // Bildirişlər siyahısını göstər
+                notificationsList.classList.remove("hidden"); // Bildirişler siyahısını göstər
                 containerDiv.classList.remove("hidden"); // Bildirişlər hazır olduqda konteyneri göstər
             };
             const notificationsDBListener = onValue(notificationsDBRef, notificationsDBListenerCallback);
@@ -383,8 +553,6 @@
 
 
             // --- İkinci Dinləyicilər: Mənbə DB-lərdən hadisələri aşkar edin və dbNotificationsDB-yə yazın ---
-            // Bu dinləyicilər hədəf istifadəçi üçün bildirişlərin noti-s DB-də düzgün qeyd olunmasını təmin edəcək.
-            // Təkrarçılığı qarşısını almaq üçün unikal ID ilə set() istifadə olunur.
 
             // 1. Təqibçi bildirişləri (pasyak-follows)
             const followsRef = ref(dbFollows, cleanTargetNickname);
@@ -402,7 +570,7 @@
                                 timestamp: Date.now(),
                                 initiatorNickname: followerNickname,
                                 targetNickname: formattedTargetNickname,
-                                message: "sizi izləməyə etməyə başladı.",
+                                message: "sizi izləməyə başladı.",
                                 initiatorProfilePic: profilePic,
                                 isGif: false,
                                 gifUrl: null
@@ -440,7 +608,7 @@
                                                 targetNickname: formattedTargetNickname,
                                                 message: `postunuzu bəyəndi.`,
                                                 initiatorProfilePic: profilePic,
-                                                postUrl: post.image || '',
+                                                postText: post.text || '', // Postun mətni əlavə edildi
                                                 isGif: false,
                                                 gifUrl: null
                                             };
@@ -481,9 +649,9 @@
                                                 timestamp: Date.now(),
                                                 initiatorNickname: likerNickname,
                                                 targetNickname: formattedTargetNickname,
-                                                message: `videonuzu bəyəndi.`,
+                                                message: `snapınızı bəyəndi.`,
                                                 initiatorProfilePic: profilePic,
-                                                reelUrl: reel.video || '',
+                                                reelText: reel.text || '', // Videonun mətni əlavə edildi
                                                 isGif: false,
                                                 gifUrl: null
                                             };
@@ -525,8 +693,10 @@
                                                 timestamp: comment.timestamp || Date.now(),
                                                 initiatorNickname: comment.nickname,
                                                 targetNickname: formattedTargetNickname,
-                                                message: `postunuza şərh yazdı.`,
+                                                message: `postunuza şərh yazdı:`,
                                                 initiatorProfilePic: profilePic,
+                                                postText: post.text || '', // Postun mətni əlavə edildi
+                                                commentContent: comment.isGif ? null : comment.text, // Şərh mətni
                                                 isGif: comment.isGif || false,
                                                 gifUrl: comment.isGif ? comment.text : null,
                                             };
@@ -551,7 +721,7 @@
                 const allReelsData = allReelsSnapshot.val();
                 if (allReelsData) {
                     for (const reelId in allReelsData) {
-                        const reelDataString = allReelsData[reelId];
+                        const reelDataString = reelsData[reelId];
                         const reel = JSON.parse(reelDataString);
                         if (reel.nickname === formattedTargetNickname) {
                             const reelCommentsRef = ref(dbReelComments, `comments/${reelId}`);
@@ -569,8 +739,10 @@
                                                 timestamp: comment.timestamp || Date.now(),
                                                 initiatorNickname: `@${comment.user}`,
                                                 targetNickname: formattedTargetNickname,
-                                                message: `videonuza şərh yazdı.`,
+                                                message: `snapınıza şərh yazdı:`,
                                                 initiatorProfilePic: profilePic,
+                                                reelText: reel.text || '', // Videonun mətni əlavə edildi
+                                                commentContent: comment.isGif ? null : comment.text, // Şərh mətni
                                                 isGif: comment.isGif || false,
                                                 gifUrl: comment.isGif ? comment.text : null,
                                             };
@@ -585,11 +757,13 @@
                                                     const uniqueId = `reelCommentReply_${reelId}_${commentId}_${reply.user}_${cleanTargetNickname}_${reply.timestamp}`;
                                                     const notificationData = {
                                                         type: 'reelCommentReply',
-                                                        timestamp: reply.timestamp || Date.now(),
+                                                        timestamp: reply.timestamp || Date.Now(),
                                                         initiatorNickname: `@${reply.user}`,
                                                         targetNickname: formattedTargetNickname,
-                                                        message: `videonuza şərhə cavab yazdı.`,
+                                                        message: `snapınızda şərhə cavab yazdı:`,
                                                         initiatorProfilePic: profilePic,
+                                                        reelText: reel.text || '', // Videonun mətni əlavə edildi
+                                                        commentContent: reply.isGif ? null : reply.text, // Şərh mətni
                                                         isGif: reply.isGif || false,
                                                         gifUrl: reply.isGif ? reply.text : null,
                                                     };
@@ -614,6 +788,7 @@
         // Səhifə yüklənəndə
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
+            // encodeURIComponent istifadə edilməsinə ehtiyac yoxdur, çünki URL-də @ simvolunu saxlamaq istəyirik
             const userNickname = urlParams.get('user') || urlParams.get('other'); // Həm 'user', həm də 'other' parametrləri işləyəcək
             const displayNothing = urlParams.has('other'); 
 
