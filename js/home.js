@@ -60,7 +60,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const currentUser = urlParams.get("user") || "@?";
         let currentUserProfilePic = urlParams.get("profile");
-        const currentUserName = urlParams.get("name") || "?";
+        const currentUserName = urlParams.get("name") || "";
 
         let likeCache = {};
         let postCache = {};
@@ -291,7 +291,7 @@
             if (cleanNickname === currentUser.replace('@', '') && currentUserProfilePic) {
                 return currentUserProfilePic;
             }
-            return "https://placehold.co/40x40/333333/FFFFFF?text=📸";
+            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1751823255/icon-7797704_640_iled3f.png";
         }
 
         function formatTimestamp(timestamp) {
