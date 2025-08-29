@@ -470,7 +470,6 @@
                             ${(notification.type === 'postComment' || notification.type === 'reelComment' || notification.type === 'reelCommentReply') ? sourceTextElement : ''}
                         </div>
                         ${contentHtml} <!-- Şərh mətni və ya GIF burada -->
-                        <p class="text-gray-400 text-sm mt-2">${new Date(notification.timestamp).toLocaleString('az-AZ')}</p>
                     </div>
                 `;
                 notificationsList.appendChild(notificationDiv);
