@@ -58,9 +58,9 @@
         const postsContainer = document.getElementById("posts");
         const noSavedPostsMessage = document.getElementById("no-saved-posts-message"); // Yeni: Qeyd yoxdur mesajı elementi
         const urlParams = new URLSearchParams(window.location.search);
-        const currentUser = urlParams.get("user") || "@huseynoff";
+        const currentUser = urlParams.get("user") || "@?";
         let currentUserProfilePic = urlParams.get("profile");
-        const currentUserName = urlParams.get("name") || "Hikmet Huseynoff";
+        const currentUserName = urlParams.get("name") || "?";
 
         let likeCache = {};
         let postCache = {};
