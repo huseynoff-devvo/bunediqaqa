@@ -1,97 +1,260 @@
-* {
-            outline: none !important;
-            box-shadow: none !important;
+:root {
+            --bg-color: #121212;
+            --card-bg-color: #282828;
+            --text-color: #f0f0f0;
+            --secondary-text-color: #aaa;
+            --border-color: #383838;
+            --accent-color: #4CAF50;
+            --danger-color: #FF5252;
+        }
+
+        * {
+            box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+
         body {
-            background-color: #181818;
-            color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
-            padding: 10px;
-            margin-top: -30px;
+            padding: 20px 15px;
         }
+
+        #loading-overlay, #confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        #confirm-modal-overlay {
+            display: none;
+        }
+
+        .confirm-modal-box {
+            background-color: var(--card-bg-color);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .confirm-modal-box h3 {
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        .confirm-modal-box p {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+        }
+
+        .confirm-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .confirm-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        #confirm-yes {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        #confirm-yes:hover {
+            background-color: #d64141;
+        }
+
+        #confirm-no {
+            background-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        #confirm-no:hover {
+            background-color: #4a4a4a;
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: none;
+        }
+
         h1 {
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 24px;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            font-weight: 700;
         }
+
         h2 {
-            /* margin-top: 40px; */
-            font-size: 20px;
-            border-bottom: 2px solid #383838;
-            padding-bottom: 5px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            margin-bottom: 15px;
         }
-        #groupList, #recommendedGroups {
+
+        #myGroups, #recommendedGroups {
             display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 15px;
+            flex-direction: column;
+            gap: 12px;
         }
+
         .group-card {
-            background-color: #282828;
+            background-color: var(--card-bg-color);
             border-radius: 12px;
-            width: 100%;
-            padding: 10px;
-            cursor: pointer;
+            padding: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            transition: background-color 0.3s ease;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
+
         .group-card:hover {
             background-color: #383838;
         }
+
         .group-card img {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
+            width: 55px;
+            height: 55px;
+            border-radius: 100px;
             object-fit: cover;
+            border: 2px solid var(--border-color);
         }
-        .group-name {
-            font-size: 18px;
-            font-weight: bold;
-            word-break: break-word;
+
+        .group-info {
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
+
+        .group-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            line-height: 1.2;
+        }
+        
+        .group-id {
+            font-size: 0.6rem;
+            color: #777;
+            margin-top: 2px;
+            /* font-family: monospace;  */
+            word-break: break-all;
+        }
+        
+        .last-message {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+            margin-top: 4px;
+            word-break: break-word;
+        }
+
         .join-button {
-            background-color: #4CAF50;
+            background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
         }
+
         .join-button:hover {
             background-color: #45a049;
         }
-        #loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border: 3px solid #333;
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            z-index: 999;
+        
+        .delete-button {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 24px;
+            margin-left: 8px;
         }
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
+
+        .delete-button:hover {
+            color: #d64141;
         }
+        
+        .empty-state {
+            text-align: center;
+            color: var(--secondary-text-color);
+            padding: 30px;
+            font-size: 1rem;
+        }
+
         .error-message {
             text-align: center;
-            color: #ff6347;
-            margin-top: 20px;
+            color: tomato;
+            padding: 20px;
         }
-        #noGroupsMessage {
-            text-align: center;
-            color: #bbb;
-            margin-top: 20px;
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+            .group-card {
+                padding: 10px;
+                gap: 10px;
+            }
+            .group-card img {
+                width:50px;
+                height: 50px;
+            }
+            .group-name {
+                font-size: 0.9rem;
+            }
+            .last-message {
+                font-size: 0.75rem;
+            }
+            .group-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
         }
