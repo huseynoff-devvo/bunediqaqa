@@ -20,11 +20,25 @@
             appId: "1:243117691435:web:aade1765ddec56ad6bd06e"
         };
 
+        const newMessConfig = {
+             apiKey: "AIzaSyBAZ2ZYIZiizRktqojSYD1He4sWsRi17MI",
+             authDomain: "build-number1.firebaseapp.com",
+             databaseURL: "https://build-number1-default-rtdb.firebaseio.com",
+             projectId: "build-number1",
+             storageBucket: "build-number1.firebasestorage.app",
+             messagingSenderId: "382364951112",
+             appId: "1:382364951112:web:cb4d049d2c66f20a01ee7d"
+        };
+
+
         const readApp = firebase.initializeApp(readConfig, "readApp");
         const readDb = firebase.database(readApp);
 
         const writeApp = firebase.initializeApp(writeConfig, "writeApp");
         const writeDb = firebase.database(writeApp);
+        
+        const newMessApp = firebase.initializeApp(newMessConfig, "newMessApp");
+        const newMessDb = firebase.database(newMessApp);
 
         const myGroupsContainer = document.getElementById('myGroups');
         const recommendedGroupsContainer = document.getElementById('recommendedGroups');
@@ -43,10 +57,11 @@
             myGroupsContainer.innerHTML = '<div class="error-message">Xahiş edirik, URL-də istifadəçi adınızı qeyd edin (məsələn: ?user=@huseynoff).</div>';
             recommendedGroupsContainer.innerHTML = '';
         } else {
-            readDb.ref().on('value', async (snapshot) => {
+            readDb.ref().once('value', async (snapshot) => {
                 await loadGroups(snapshot);
                 loadingOverlay.style.display = 'none';
                 mainContainer.style.display = 'block';
+                setupNewMessageListener();
             });
         }
 
@@ -168,6 +183,8 @@
                 card.onclick = () => {
                     const url = `?user=${encodeURIComponent(currentUser)}&group_id=${encodeURIComponent(group.group_id)}`;
                     window.location.href = `https://huseynoff-devvo.github.io/bunediqaqa/group.html?${url.substring(1)}`;
+                    // Mesaj bildirişini yalnız bu istifadəçi üçün sil
+                    newMessDb.ref('new_message/' + currentUser).remove();
                 };
             } else {
                 card.querySelector('.join-button').onclick = async (event) => {
@@ -235,6 +252,26 @@
             
             confirmModalOverlay.style.display = 'flex';
         }
+
+        function setupNewMessageListener() {
+            // Real-vaxtda cari istifadəçi üçün yeni mesaj bildirişini dinləyir
+            newMessDb.ref('new_message/' + currentUser).on('value', (snapshot) => {
+                const newMessId = snapshot.val();
+                
+                // Bütün qrup kartlarından işarəni sil
+                document.querySelectorAll('.group-card').forEach(card => {
+                    card.classList.remove('new-message');
+                });
+
+                // Əgər yeni mesaj varsa, müvafiq qrupu işarələ
+                if (newMessId) {
+                    const groupCard = document.querySelector(`.group-card[data-group-id="${newMessId}"]`);
+                    if (groupCard) {
+                        groupCard.classList.add('new-message');
+                    }
+                }
+            });
+        }
         
         function setupMessageListener(groupId, currentUser) {
             const messagesRef = writeDb.ref(groupId);
@@ -251,6 +288,24 @@
                         const lastMessageElement = groupCard.querySelector('.last-message');
                         if (lastMessageElement) {
                             lastMessageElement.textContent = formatMessage(lastMessage, currentUser);
+                        }
+                        
+                        // Əgər mesaj cari istifadəçi tərəfindən göndərilməyibsə
+                        if (lastMessage.nickname.toLowerCase() !== currentUser.toLowerCase()) {
+                            // URL-ə &new=true əlavə et
+                            const currentUrl = new URL(window.location.href);
+                            currentUrl.searchParams.set('new', 'true');
+                            history.pushState({}, '', currentUrl.toString());
+
+                            // Yeni mesajı cari istifadəçi üçün Firebase-də qeyd et
+                            newMessDb.ref('new_message/' + currentUser).set(groupId);
+
+                            // 5 saniyə sonra URL-dən sil
+                            setTimeout(() => {
+                               const finalUrl = new URL(window.location.href);
+                               finalUrl.searchParams.delete('new');
+                               history.pushState({}, '', finalUrl.toString());
+                            }, 5000);
                         }
                     }
                 }
