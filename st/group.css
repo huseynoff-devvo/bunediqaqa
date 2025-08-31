@@ -156,7 +156,15 @@
 
         .group-card.new-message {
             border: 1px solid var(--new-message-color);
-            /* animation: pulse 1s infinite alternate; */
+        }
+        
+        .new-message-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--new-message-color);
+            border-radius: 50%;
+            margin-left: auto;
+            flex-shrink: 0;
         }
 
         @keyframes pulse {
