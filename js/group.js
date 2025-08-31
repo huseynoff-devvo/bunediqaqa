@@ -58,7 +58,11 @@
             recommendedGroupsContainer.innerHTML = '';
         } else {
             readDb.ref().once('value', async (snapshot) => {
-                await loadGroups(snapshot);
+                const myGroups = await loadGroups(snapshot);
+                
+                // Səhifə yenilənəndə mövcud bildirişləri təmizləyin
+                await clearNotificationsOnLoad(myGroups);
+
                 loadingOverlay.style.display = 'none';
                 mainContainer.style.display = 'block';
                 setupNewMessageListener();
@@ -72,7 +76,7 @@
                 if (!groupsData || !groupsData.groups) {
                     myGroupsContainer.innerHTML = '<div class="empty-state">Heç bir qrup tapılmadı.</div>';
                     recommendedGroupsContainer.innerHTML = '<div class="empty-state">Heç bir qrup tapılmadı.</div>';
-                    return;
+                    return [];
                 }
 
                 const myGroups = [];
@@ -110,9 +114,19 @@
                     }
                 });
 
+                return myGroups;
+
             } catch (error) {
                 console.error("Qrupları yükləmək xətası:", error);
                 myGroupsContainer.innerHTML = `<div class="error-message">Qrupları yükləyərkən xəta baş verdi. Zəhmət olmasa konsolu yoxlayın.</div>`;
+                return [];
+            }
+        }
+        
+        async function clearNotificationsOnLoad(myGroups) {
+            for (const group of myGroups) {
+                const notificationRef = newMessDb.ref(`new_message/${group.group_id}/${currentUser}`);
+                await notificationRef.set(false);
             }
         }
         
@@ -183,8 +197,10 @@
                 card.onclick = () => {
                     const url = `?user=${encodeURIComponent(currentUser)}&group_id=${encodeURIComponent(group.group_id)}`;
                     window.location.href = `https://huseynoff-devvo.github.io/bunediqaqa/group.html?${url.substring(1)}`;
-                    // Mesaj bildirişini yalnız bu istifadəçi üçün sil
-                    newMessDb.ref('new_message/' + currentUser).remove();
+                    
+                    // İstifadəçi qrupa toxunduqda, onun bildirişini false olaraq qeyd et
+                    const userNotificationRef = newMessDb.ref('new_message/' + group.group_id + '/' + currentUser);
+                    userNotificationRef.set(false);
                 };
             } else {
                 card.querySelector('.join-button').onclick = async (event) => {
@@ -255,21 +271,26 @@
 
         function setupNewMessageListener() {
             // Real-vaxtda cari istifadəçi üçün yeni mesaj bildirişini dinləyir
-            newMessDb.ref('new_message/' + currentUser).on('value', (snapshot) => {
-                const newMessId = snapshot.val();
+            newMessDb.ref('new_message').on('value', (snapshot) => {
+                const notifications = snapshot.val();
                 
-                // Bütün qrup kartlarından işarəni sil
                 document.querySelectorAll('.group-card').forEach(card => {
-                    card.classList.remove('new-message');
-                });
-
-                // Əgər yeni mesaj varsa, müvafiq qrupu işarələ
-                if (newMessId) {
-                    const groupCard = document.querySelector(`.group-card[data-group-id="${newMessId}"]`);
-                    if (groupCard) {
-                        groupCard.classList.add('new-message');
+                    const groupId = card.dataset.groupId;
+                    const hasNotification = notifications && notifications[groupId] && notifications[groupId][currentUser];
+                    
+                    if (hasNotification) {
+                         if (!card.querySelector('.new-message-dot')) {
+                            const dot = document.createElement('div');
+                            dot.className = 'new-message-dot';
+                            card.appendChild(dot);
+                        }
+                    } else {
+                        const dot = card.querySelector('.new-message-dot');
+                        if (dot) {
+                            dot.remove();
+                        }
                     }
-                }
+                });
             });
         }
         
@@ -292,20 +313,9 @@
                         
                         // Əgər mesaj cari istifadəçi tərəfindən göndərilməyibsə
                         if (lastMessage.nickname.toLowerCase() !== currentUser.toLowerCase()) {
-                            // URL-ə &new=true əlavə et
-                            const currentUrl = new URL(window.location.href);
-                            currentUrl.searchParams.set('new', 'true');
-                            history.pushState({}, '', currentUrl.toString());
-
                             // Yeni mesajı cari istifadəçi üçün Firebase-də qeyd et
-                            newMessDb.ref('new_message/' + currentUser).set(groupId);
-
-                            // 5 saniyə sonra URL-dən sil
-                            setTimeout(() => {
-                               const finalUrl = new URL(window.location.href);
-                               finalUrl.searchParams.delete('new');
-                               history.pushState({}, '', finalUrl.toString());
-                            }, 5000);
+                            const userNotificationRef = newMessDb.ref('new_message/' + groupId + '/' + currentUser);
+                            userNotificationRef.set(true);
                         }
                     }
                 }
