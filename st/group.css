@@ -6,6 +6,7 @@
             --border-color: #383838;
             --accent-color: #4CAF50;
             --danger-color: #FF5252;
+            --new-message-color: #e53935;
         }
 
         * {
@@ -153,6 +154,16 @@
             background-color: #383838;
         }
 
+        .group-card.new-message {
+            border: 1px solid var(--new-message-color);
+            /* animation: pulse 1s infinite alternate; */
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
+        }
+
         .group-card img {
             width: 55px;
             height: 55px;
@@ -178,7 +189,6 @@
             font-size: 0.6rem;
             color: #777;
             margin-top: 2px;
-            /* font-family: monospace;  */
             word-break: break-all;
         }
         
