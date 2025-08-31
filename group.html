@@ -3,21 +3,47 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>İstifadəçinin Qrupları</title>
-  <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/group.css">
+    <title>Qruplarım</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/group.css">
 </head>
 <body>
-
-    <div id="loading"></div>
-    <div id="content" style="display:none;">
-        <h1></h1>
-        <div id="groupList"></div>
-        <div id="noGroupsMessage" style="display:none;">Heç bir qrupa qoşulmamısınız.</div>
-
-        <h2>Tövsiyə olunan Qruplar</h2>
-        <div id="recommendedGroups"></div>
-        <div id="noRecommendedGroupsMessage" style="display:center; color: #bbb; margin-top: 20px;">Hazırda heç bir tövsiyə olunan qrup yoxdur.</div>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text"></div>
     </div>
+    
+    <div id="confirm-modal-overlay">
+        <div class="confirm-modal-box">
+            <h3 id="confirm-title">Qrupu silin?</h3>
+            <p id="confirm-message">Bu əməliyyatı geri qaytarmaq mümkün deyil. Davam etmək istədiyinizdən əminsiniz?</p>
+            <div class="confirm-buttons">
+                <button id="confirm-yes">Bəli, sil</button>
+                <button id="confirm-no">Xeyr</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- <h1>Qruplar</h1> -->
+        
+        <!-- <h2>Mənim Qruplarım</h2> -->
+        <div id="myGroups">
+            <div class="empty-state">Yüklənir...</div>
+        </div>
+
+        <h2>Tövsiyə Olunan Qruplar</h2>
+        <div id="recommendedGroups">
+            <div class="empty-state">Yüklənir...</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+
     <script  type="module" src="https://huseynoff-devvo.github.io/bunediqaqa/js/group.js"></script>
 </body>
 </html>
