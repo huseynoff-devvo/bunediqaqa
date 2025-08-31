@@ -1,7 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-        // Qrupları oxumaq üçün Firebase konfiqurasiyası
+// İstifadəçi tərəfindən verilmiş Firebase konfiqurasiyaları
         const readConfig = {
             apiKey: "AIzaSyAiS6VzSxs6tRnYyTuUttSdO5gzQ6osBpc",
             authDomain: "pasyak-group.firebaseapp.com",
@@ -12,10 +9,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
             measurementId: "G-93PCBFG9QK",
             databaseURL: "https://pasyak-group-default-rtdb.firebaseio.com"
         };
-        const readApp = initializeApp(readConfig, "readApp");
-        const readDb = getDatabase(readApp);
-
-        // Mesaj yazmaq üçün Firebase konfiqurasiyası
+        
         const writeConfig = {
             apiKey: "AIzaSyCMUZ-RMaQBZdaF39mpLNq79BCutrANkXA",
             authDomain: "pasyak-mess.firebaseapp.com",
@@ -25,155 +19,240 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
             messagingSenderId: "243117691435",
             appId: "1:243117691435:web:aade1765ddec56ad6bd06e"
         };
-        const writeApp = initializeApp(writeConfig, "writeApp");
-        const writeDb = getDatabase(writeApp);
+
+        const readApp = firebase.initializeApp(readConfig, "readApp");
+        const readDb = firebase.database(readApp);
+
+        const writeApp = firebase.initializeApp(writeConfig, "writeApp");
+        const writeDb = firebase.database(writeApp);
+
+        const myGroupsContainer = document.getElementById('myGroups');
+        const recommendedGroupsContainer = document.getElementById('recommendedGroups');
+        const mainContainer = document.querySelector('.container');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const confirmModalOverlay = document.getElementById('confirm-modal-overlay');
+        const confirmYesBtn = document.getElementById('confirm-yes');
+        const confirmNoBtn = document.getElementById('confirm-no');
         
         const urlParams = new URLSearchParams(window.location.search);
-        const currentUser = urlParams.get("user");
-
-        const groupList = document.getElementById("groupList");
-        const recommendedGroupsList = document.getElementById("recommendedGroups");
-        const loading = document.getElementById("loading");
-        const content = document.getElementById("content");
-        const noGroupsMessage = document.getElementById("noGroupsMessage");
-        const noRecommendedGroupsMessage = document.getElementById("noRecommendedGroupsMessage");
+        const currentUser = urlParams.get('user');
 
         if (!currentUser) {
-            loading.style.display = "none";
-            content.style.display = "block";
-            document.querySelector("h1").style.display = "none";
-            document.querySelector("h2").style.display = "none";
-            document.getElementById("groupList").innerHTML = "<div class='error-message'>URL-də **?user=** parametrini əlavə edin.</div>";
-            throw new Error("İstifadəçi (user) parametri yoxdur!");
+            loadingOverlay.style.display = 'none';
+            mainContainer.style.display = 'block';
+            myGroupsContainer.innerHTML = '<div class="error-message">Xahiş edirik, URL-də istifadəçi adınızı qeyd edin (məsələn: ?user=@huseynoff).</div>';
+            recommendedGroupsContainer.innerHTML = '';
+        } else {
+            readDb.ref().on('value', async (snapshot) => {
+                await loadGroups(snapshot);
+                loadingOverlay.style.display = 'none';
+                mainContainer.style.display = 'block';
+            });
         }
 
-        const userGroupsRef = ref(readDb);
+        async function loadGroups(snapshot) {
+            try {
+                const groupsData = snapshot.val();
+                
+                if (!groupsData || !groupsData.groups) {
+                    myGroupsContainer.innerHTML = '<div class="empty-state">Heç bir qrup tapılmadı.</div>';
+                    recommendedGroupsContainer.innerHTML = '<div class="empty-state">Heç bir qrup tapılmadı.</div>';
+                    return;
+                }
 
-        onValue(userGroupsRef, (snapshot) => {
-            loading.style.display = "none";
-            content.style.display = "block";
-            
-            if (!snapshot.exists()) {
-                noGroupsMessage.style.display = "block";
-                noRecommendedGroupsMessage.style.display = "block"; // Əlavə olundu
+                const myGroups = [];
+                const recommendedGroups = [];
+                
+                const allGroups = groupsData.groups;
+                const admins = groupsData.admins;
+                
+                for (const groupId in allGroups) {
+                    if (allGroups.hasOwnProperty(groupId)) {
+                        const groupMeta = JSON.parse(allGroups[groupId]);
+                        const userStatus = groupsData[groupId] ? groupsData[groupId][currentUser] : null;
+                        
+                        const isAdmin = admins && admins[groupMeta.group_id] && admins[groupMeta.group_id].includes(currentUser);
+
+                        if (userStatus === '1') {
+                            myGroups.push({ ...groupMeta, isAdmin });
+                        } else if (groupMeta.gizli !== 2) {
+                            recommendedGroups.push({ ...groupMeta, isAdmin });
+                        }
+                    }
+                }
+                
+                renderGroups(myGroupsContainer, myGroups, true);
+                renderGroups(recommendedGroupsContainer, recommendedGroups, false);
+                
+                const messagePromises = myGroups.map(group => loadLastMessage(group.group_id));
+                const lastMessages = await Promise.all(messagePromises);
+
+                myGroups.forEach((group, index) => {
+                    const element = document.querySelector(`.group-card[data-group-id="${group.group_id}"] .last-message`);
+                    if (element) {
+                        element.textContent = formatMessage(lastMessages[index], currentUser);
+                        setupMessageListener(group.group_id, currentUser);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Qrupları yükləmək xətası:", error);
+                myGroupsContainer.innerHTML = `<div class="error-message">Qrupları yükləyərkən xəta baş verdi. Zəhmət olmasa konsolu yoxlayın.</div>`;
+            }
+        }
+        
+        function renderGroups(container, groups, isMember) {
+            container.innerHTML = '';
+            if (groups.length === 0) {
+                container.innerHTML = `<div class="empty-state">${isMember ? 'Hələlik heç bir qrupda deyilsiniz.' : 'Tövsiyə olunan qrup yoxdur.'}</div>`;
                 return;
             }
 
-            const data = snapshot.val();
-            const userGroupsIds = new Set();
-            const allGroupsData = data["groups"] || {};
-            
-            groupList.innerHTML = "";
-            recommendedGroupsList.innerHTML = "";
+            groups.forEach(group => {
+                const card = createGroupCard(group, isMember);
+                container.appendChild(card);
+            });
+        }
 
-            for (const key in data) {
-                if (key.trim() === "" || key === "groups") continue;
-                const groupUsers = data[key];
-
-                if (groupUsers && typeof groupUsers === "object") {
-                    const value = groupUsers[currentUser];
-                    if (value !== undefined && value !== "2") {
-                        userGroupsIds.add(key.trim());
-                        
-                        let groupStr = allGroupsData[key.trim()];
-                        if (groupStr) {
-                            try {
-                                const groupObj = JSON.parse(groupStr);
-                                if (groupObj && groupObj.profile_group && groupObj.name) {
-                                    const card = createGroupCard(groupObj, key.trim(), currentUser, false);
-                                    groupList.appendChild(card);
-                                }
-                            } catch (e) {
-                                console.error("JSON parse xətası:", e);
-                            }
-                        }
-                    }
+        async function loadLastMessage(groupId) {
+            try {
+                const messagesRef = writeDb.ref(groupId).orderByKey().limitToLast(1);
+                const snapshot = await messagesRef.once('value');
+                const messages = snapshot.val();
+                if (messages) {
+                    const lastMessageKey = Object.keys(messages)[0];
+                    const lastMessageJson = messages[lastMessageKey];
+                    return JSON.parse(lastMessageJson);
                 }
+                return null;
+            } catch (error) {
+                console.error(`Son mesajı yükləmək xətası (${groupId}):`, error);
+                return null;
             }
-            
-            if (groupList.children.length === 0) {
-                noGroupsMessage.style.display = "block";
+        }
+        
+        function formatMessage(messageData, currentUser) {
+            if (!messageData) {
+                return "Hələ mesaj yoxdur.";
+            }
+            const nickname = messageData.nickname;
+            const message = messageData.message;
+            if (nickname === 'Sistem') {
+                return message;
+            } else if (nickname.toLowerCase() === currentUser.toLowerCase()) {
+                return `Mən: ${message}`;
             } else {
-                noGroupsMessage.style.display = "none";
+                return `${nickname}: ${message}`;
             }
+        }
 
-            let hasRecommendedGroups = false;
-            for (const gid in allGroupsData) {
-                if (!userGroupsIds.has(gid)) { // İstifadəçi bu qrupa qoşulmayıbsa
-                    let groupStr = allGroupsData[gid];
-                    if (groupStr) {
-                        try {
-                            const groupObj = JSON.parse(groupStr);
-                            // Əsas dəyişiklik: gizli dəyəri 2 deyilsə tövsiyə olunan qruplara əlavə et
-                            if (groupObj && groupObj.profile_group && groupObj.name && groupObj.gizli != 2) {
-                                const card = createGroupCard(groupObj, gid, currentUser, true);
-                                recommendedGroupsList.appendChild(card);
-                                hasRecommendedGroups = true;
-                            }
-                        } catch (e) {
-                            console.error("JSON parse xətası:", e);
-                        }
-                    }
-                }
-            }
+        function createGroupCard(group, isMember) {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            card.dataset.groupId = group.group_id;
 
-            if (!hasRecommendedGroups) {
-                noRecommendedGroupsMessage.style.display = "block";
-            } else {
-                noRecommendedGroupsMessage.style.display = "none";
-            }
-
-        }, (error) => {
-            console.error("Firebase oxuma xətası:", error);
-            loading.style.display = "none";
-            content.style.display = "block";
-            document.getElementById("groupList").innerHTML = "<div class='error-message'>Məlumatları yükləmək mümkün olmadı.</div>";
-        });
-
-        function createGroupCard(groupObj, gid, currentUser, isRecommended) {
-            const card = document.createElement("div");
-            card.className = "group-card";
             card.innerHTML = `
-                <img src="${groupObj.profile_group.trim()}" alt="Qrup şəkli" />
-                <div class="group-name">${groupObj.name} <span style="opacity:0.6; font-size:0.85em; margin-left:8px;">#${gid}</span></div>
-                ${isRecommended ? `<button class="join-button" data-group-id="${gid}">Qoşul</button>` : ''}
+                <img src="${group.profile_group}" alt="${group.name} profili">
+                <div class="group-info">
+                    <span class="group-name">${group.name}</span>
+                    <span class="group-id">ID: ${group.group_id}</span>
+                    ${isMember ? `<span class="last-message">Yüklənir...</span>` : ''}
+                </div>
+                <div class="group-actions">
+                    ${!isMember ? '<button class="join-button">Qoşul</button>' : ''}
+                    ${group.isAdmin ? `<button class="delete-button" data-group-id="${group.group_id}"><i class="material-icons">delete</i></button>` : ''}
+                </div>
             `;
-
-            if (isRecommended) {
-                card.querySelector('.join-button').addEventListener('click', (event) => {
-                    event.stopPropagation();
-                    joinGroup(gid, currentUser);
-                });
-            } else {
+            
+            if (isMember) {
                 card.onclick = () => {
-                    window.location.href = `?user=${encodeURIComponent(currentUser)}&group_id=${encodeURIComponent(gid)}`;
+                    const url = `?user=${encodeURIComponent(currentUser)}&group_id=${encodeURIComponent(group.group_id)}`;
+                    window.location.href = `https://huseynoff-devvo.github.io/bunediqaqa/group.html?${url.substring(1)}`;
+                };
+            } else {
+                card.querySelector('.join-button').onclick = async (event) => {
+                    event.stopPropagation();
+                    
+                    try {
+                        const groupMemberRef = readDb.ref(`${group.group_id}/${currentUser}`);
+                        await groupMemberRef.set("1");
+                        
+                        const uniqueId = `${Date.now()}`;
+                        const messageString = JSON.stringify({
+                            "message": `${currentUser} qrupa qoşuldu.`,
+                            "nickname": "Sistem"
+                        });
+                        
+                        const messageNodeRef = writeDb.ref(`${group.group_id}/${uniqueId}`);
+                        await messageNodeRef.set(messageString);
+                        
+                    } catch (error) {
+                        console.error("Qrupa qoşulma xətası:", error);
+                        showConfirmModal("Xəta!", "Qrupa qoşularkən xəta baş verdi.", false);
+                    }
                 };
             }
+            
+            const deleteButton = card.querySelector('.delete-button');
+            if (deleteButton) {
+                deleteButton.onclick = (event) => {
+                    event.stopPropagation();
+                    const groupIdToDelete = event.currentTarget.dataset.groupId;
+                    showConfirmModal("Qrupu silmək", "Bu qrupu silmək istədiyinizə əminsiniz? Bu əməliyyatı geri qaytarmaq mümkün deyil.", true, () => deleteGroup(groupIdToDelete));
+                };
+            }
+
             return card;
         }
 
-        async function joinGroup(gid, currentUser) {
+        async function deleteGroup(groupId) {
             try {
-                // Qrupa qoşulma məlumatını pasyak-group-a yazırıq
-                const groupRef = ref(readDb, `${gid}/${currentUser}`);
-                await set(groupRef, "1");
-
-                // Unikal ID yaradırıq (vaxt + istifadəçi adı)
-                const uniqueId = `${Date.now()}${currentUser}`;
-
-                // Mesajı JSON formatında string kimi hazırlayırıq
-                const messageString = JSON.stringify({
-                    "message": `${currentUser} qrupa qatıldı`,
-                    "nickname": "Sistem"
-                });
-
-                // Hazırlanmış stringi birbaşa unikal ID altında yazırıq
-                const messageNodeRef = ref(writeDb, `${gid}/${uniqueId}`);
-                await set(messageNodeRef, messageString);
-
-                // Qoşulduqdan sonra səhifəni yeniləyirik
-                window.location.reload(); 
+                await readDb.ref(`groups/${groupId}`).remove(); 
+                await readDb.ref(`${groupId}`).remove(); 
+                await readDb.ref(`admins/${groupId}`).remove(); 
+                await writeDb.ref(groupId).remove(); 
+                
             } catch (error) {
-                console.error("Əməliyyat xətası:", error);
+                console.error("Qrupu silmək xətası:", error);
+                showConfirmModal("Xəta!", "Qrupu silərkən xəta baş verdi.", false);
             }
+        }
+        
+        function showConfirmModal(title, message, isDeletable, callback) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            
+            confirmYesBtn.style.display = isDeletable ? 'inline-block' : 'none';
+            confirmYesBtn.onclick = () => {
+                confirmModalOverlay.style.display = 'none';
+                if (callback) callback();
+            };
+
+            confirmNoBtn.textContent = isDeletable ? "Xeyr" : "Bağla";
+            confirmNoBtn.onclick = () => {
+                confirmModalOverlay.style.display = 'none';
+            };
+            
+            confirmModalOverlay.style.display = 'flex';
+        }
+        
+        function setupMessageListener(groupId, currentUser) {
+            const messagesRef = writeDb.ref(groupId);
+            
+            messagesRef.limitToLast(1).on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const messages = snapshot.val();
+                    const lastMessageKey = Object.keys(messages)[0];
+                    const lastMessageJson = messages[lastMessageKey];
+                    const lastMessage = JSON.parse(lastMessageJson);
+                    
+                    const groupCard = document.querySelector(`.group-card[data-group-id="${groupId}"]`);
+                    if (groupCard) {
+                        const lastMessageElement = groupCard.querySelector('.last-message');
+                        if (lastMessageElement) {
+                            lastMessageElement.textContent = formatMessage(lastMessage, currentUser);
+                        }
+                    }
+                }
+            });
         }
