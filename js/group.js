@@ -57,7 +57,7 @@
             myGroupsContainer.innerHTML = '<div class="error-message">Xahiş edirik, URL-də istifadəçi adınızı qeyd edin (məsələn: ?user=@huseynoff).</div>';
             recommendedGroupsContainer.innerHTML = '';
         } else {
-            readDb.ref().once('value', async (snapshot) => {
+            readDb.ref().on('value', async (snapshot) => {
                 const myGroups = await loadGroups(snapshot);
                 
                 // Səhifə yenilənəndə mövcud bildirişləri təmizləyin
