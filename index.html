@@ -1,29 +1,199 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Bütün Postlar + Bəyən Dəstəyi (Canlı)</title>
-    <link rel="stylesheet" href="https://huseynoff-devvo.github.io/bunediqaqa/st/index.css">
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dxymbsg0p/image/upload/v1757092810/vecteezy_cute-lemon-cartoon_47434226_jgnaor.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limon.az | İstifadəçi Şərtləri</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Loading ekranı */
+    #loading {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #0d1117;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeOut 0.5s ease forwards;
+      animation-delay: 1s;
+    }
+
+    .lemon {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      background: #f6d743;
+      border-radius: 50% 50% 45% 55% / 55% 45% 55% 45%;
+      box-shadow: 0 0 25px rgba(246, 215, 67, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: bounce 1s infinite alternate;
+    }
+
+    .eye {
+      position: absolute;
+      width: 12px; height: 12px;
+      background: #0d1117;
+      border-radius: 50%;
+      top: 40px;
+    }
+    .eye.left { left: 35px; }
+    .eye.right { right: 35px; }
+
+    .mouth {
+      position: absolute;
+      bottom: 35px;
+      width: 40px;
+      height: 20px;
+      border-bottom: 4px solid #0d1117;
+      border-radius: 0 0 50% 50%;
+    }
+
+    .hand {
+      position: absolute;
+      right: -25px;
+      top: 50px;
+      width: 25px; height: 25px;
+      background: #f6d743;
+      border-radius: 50%;
+      transform-origin: left center;
+      animation: wave 1s infinite;
+    }
+
+    #loading p {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #00ff84;
+      animation: fadeInText 0.5s ease;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-15px); }
+    }
+    @keyframes wave {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(30deg); }
+      100% { transform: rotate(0deg); }
+    }
+    @keyframes fadeInText {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
+    }
+
+    /* Əsas məzmun */
+    #content {
+      max-width: 900px;
+      margin: auto;
+      /* background: #161b22; */
+      padding: 30px;
+      border-radius: 12px;
+      /* box-shadow: 0 0 20px rgba(0,255,132,0.2); */
+      margin-top: -50px;
+      opacity: 0;
+      animation: appear 0.8s ease forwards;
+      animation-delay: 1s;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+    }
+    header h1 {
+      font-size: 2rem;
+      color: #00ff84;
+    }
+    header p {
+      font-size: 1rem;
+      color: #9ca3af;
+    }
+
+    h2 {
+      color: #00ff84;
+      margin-top: 25px;
+      font-size: 1.2rem;
+    }
+    p {
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    @keyframes appear {
+      to { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
-    <div id="loader">
-        <div class="spinner"></div>
-        <p style="color:white; margin-top: 15px;"></p>
+  <!-- Loading ekranı -->
+  <div id="loading">
+    <div class="lemon">
+      <div class="eye left"></div>
+      <div class="eye right"></div>
+      <div class="mouth"></div>
+      <div class="hand"></div>
     </div>
+    <!-- <p>Limon sizi salamlayır 🍋</p> -->
+  </div>
 
-    <div id="posts"></div>
+  <!-- Əsas kontent -->
+  <div id="content">
+    <header>
+      <h1>limon.az</h1>
+      <p>Azərbaycanın milli sosial media platforması</p>
+    </header>
 
-    <div class="confirm-dialog" id="confirmDialog">
-        <div>Bu postu silmək istəyirsiniz?</div>
-        <div style="margin-top: 10px;">
-            <button class="yes" id="confirmYes">Bəli</button>
-            <button class="no" id="confirmNo">Xeyr</button>
-        </div>
-    </div>
+    <section>
+      <h2>1. Qeydiyyat və Hesab</h2>
+      <p>Limon.az platformasından istifadə etmək üçün qeydiyyat tələb olunur. İstifadəçi qeydiyyat zamanı təqdim etdiyi məlumatların düzgünlüyünə görə məsuliyyət daşıyır.</p>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script src="https://huseynoff-devvo.github.io/bunediqaqa/js/index.js"></script>
+      <h2>2. Məsuliyyət</h2>
+      <p>İstifadəçilər paylaşdıqları bütün məzmunlara görə tam məsuliyyət daşıyırlar. Qanunla qadağan olunmuş, təhqiramiz və ya hüquqları pozan məzmunlar yolverilməzdir.</p>
+
+      <h2>3. Xidmətin İstifadəsi</h2>
+      <p>Platforma yalnız şəxsi və qanuni məqsədlər üçün istifadə edilə bilər. İstifadəçi xidmətlərdən başqa məqsədlərlə istifadə etməyəcəyini qəbul edir.</p>
+
+      <h2>4. Məzmun və Müəllif Hüquqları</h2>
+      <p>Limon.az-da paylaşdığınız məzmun üzərində müəllif hüquqlarınız qorunur, lakin siz həmin məzmunun platformada göstərilməsi və paylaşıla bilməsinə razılıq vermiş sayılırsınız.</p>
+
+      <h2>5. Təhlükəsizlik</h2>
+      <p>İstifadəçi hesabının təhlükəsizliyini qorumaq üçün parol və hesab məlumatlarını üçüncü şəxslərlə paylaşmamalıdır.</p>
+
+      <h2>6. Xidmətin Dəyişdirilməsi</h2>
+      <p>Limon.az xəbərdarlıq etmədən xidmətlərində dəyişiklik edə və ya xidməti dayandıra bilər. Bu halda istifadəçilərin məlumatlarının qorunmasına maksimum diqqət göstərilir.</p>
+
+      <h2>7. Qaydaların Pozulması</h2>
+      <p>İstifadəçi şərtlərinə zidd davranış aşkar edildiyi halda hesab xəbərdarlıq etmədən məhdudlaşdırıla və ya silinə bilər.</p>
+
+      <h2>8. Əlaqə</h2>
+      <p>Sual və ya şikayətlər üçün bizimlə <b>support@limon.az</b> ünvanı vasitəsilə əlaqə saxlayın.</p>
+    </section>
+  </div>
+
+  <footer>
+    © 2025 Limon.az – Azərbaycanın sosial media platforması
+  </footer>
 </body>
 </html>
