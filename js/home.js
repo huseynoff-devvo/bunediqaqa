@@ -1,46 +1,44 @@
 // Postlar və bəyənmələr üçün Firebase konfiqurasiyası (pasyakaaz proyektindən)
         const postsFirebaseConfig = {
-            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YFfx46B_as2w",
-            authDomain: "pasyakaaz.firebaseapp.com",
-            databaseURL: "https://pasyakaaz-default-rtdb.firebaseio.com", // Düzəldilmiş databaseURL
-            projectId: "pasyakaaz",
-            storageBucket: "pasyakaaz.appspot.com",
-            messagingSenderId: "289629756800",
-            appId:  "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+            apiKey: "AIzaSyBub_6Amz990ee-1ug5KXQNPsjI1HtS5x0",
+            authDomain: "posts-974de.firebaseapp.com",
+            projectId: "posts-974de",
+            storageBucket: "posts-974de.firebasestorage.app",
+            messagingSenderId: "40810761225",
+            appId: "1:40810761225:web:fb9937042afd554f44bcd8"
         };
 
         // Şərhlər və şərh bəyənmələri üçün Firebase konfiqurasiyası (gonline-1880b proyektindən)
         const commentsFirebaseConfig = {
-            apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
-            authDomain: "gonline-1880b.firebaseapp.com",
-            databaseURL: "https://gonline-1880b-default-rtdb.firebaseio.com",
-            projectId: "gonline-1880b",
-            storageBucket: "gonline-1880b.firebasestorage.app",
-            messagingSenderId: "988052893147",
-            appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
+            apiKey: "AIzaSyDZ36LJP0iA-X5Ivt9OrR0GOL7Sa6p5KuU",
+            authDomain: "comment-posts-2ac08.firebaseapp.com",
+            projectId: "comment-posts-2ac08",
+            storageBucket: "comment-posts-2ac08.firebasestorage.app",
+            messagingSenderId: "32018634007",
+            appId: "1:32018634007:web:8d6895501c5a678a901352"
         };
 
         // GIF-lər üçün Firebase konfiqurasiyası
         const gifFirebaseConfig = {
-            apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE",
-            authDomain: "gif-s-53e6d.firebaseapp.com",
-            databaseURL: "https://gif-s-53e6d-default-rtdb.firebaseio.com",
-            projectId: "gif-s-53e6d",
-            storageBucket: "gif-s-53e6d.firebasestorage.app",
-            messagingSenderId: "285576525417",
-            appId: "1:285576525417:web:515028b392b379122cd4f8"
+            apiKey: "AIzaSyAhlu3_n59ESLxV6k8Ll4scIRK45CPS4z8",
+            authDomain: "gif-s-a9eca.firebaseapp.com",
+            databaseURL: "https://gif-s-a9eca-default-rtdb.firebaseio.com",
+            projectId: "gif-s-a9eca",
+            storageBucket: "gif-s-a9eca.firebasestorage.app",
+            messagingSenderId: "684950243730",
+            appId: "1:684950243730:web:44d8c3251d10b807ee594b"
         };
         
         // Yeni: Qeyd edilmiş postlar üçün Firebase konfiqurasiyası
         const savedPostsFirebaseConfig = {
-            apiKey: "AIzaSyBS58OjagJg-XfIa3Bp-Kj__qK9K9KphhH48",
-            authDomain: "post-save.firebaseapp.com",
-            databaseURL: "https://post-save-default-rtdb.firebaseio.com",
-            projectId: "post-save",
-            storageBucket: "post-save.firebasestorage.app",
-            messagingSenderId: "158669771968",
-            appId: "1:158669771968:web:767ceb35de551631f84925",
-            measurementId: "G-YG79SJZ3PN"
+            apiKey: "AIzaSyBzlIzk5xg0Wf4i-jOWXxOfPhm6mZ0fuco",
+            authDomain: "post-save-1fcd7.firebaseapp.com",
+            databaseURL: "https://post-save-1fcd7-default-rtdb.firebaseio.com",
+            projectId: "post-save-1fcd7",
+            storageBucket: "post-save-1fcd7.firebasestorage.app",
+            messagingSenderId: "243734688763",
+            appId: "1:243734688763:web:8a0ccc25dbf1ff2dad915e",
+            measurementId: "G-V6BEP937Q8"
         };
 
 
@@ -85,67 +83,62 @@
 
 
         const tickFirebaseConfig = {
-            apiKey: "AIzaSyA2RNLGS-qUkh6zNGtoUMTXJ3jNTfuHoG",
-            authDomain: "pasyak-tick.firebaseapp.com",
-            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
-            projectId: "pasyak-tick",
-            storageBucket: "pasyak-tick.firebasestorage.app",
-            messagingSenderId: "379214418412",
-            appId: "1:379214411637:web:c2c3532a1bda359aacbd1c",
-            measurementId: "G-DW00VF06NR"
+            apiKey: "AIzaSyD1T6HPDf2hbRvEscgIcZDy1Sxy43Hhc4k",
+            authDomain: "limon-tick.firebaseapp.com",
+            projectId: "limon-tick",
+            storageBucket: "limon-tick.firebasestorage.app",
+            messagingSenderId: "842530234373",
+            appId: "1:842530234373:web:e28cdfe0ff4e0f5e22fc6c",
+            measurementId: "G-QYJCF6SVH9"
         };
         const premiumFirebaseConfig = {
-            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsT_Cpd9CXzwyHyc",
-            authDomain: "pasyak-premium.firebaseapp.com",
-            databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
-            projectId: "pasyak-premium",
-            storageBucket: "pasyak-premium.appspot.com",
-            messagingSenderId: "662922654975",
-            appId: "1:662922654975:web:54b78968d4cccba65f88ca",
-            measurementId: "G-QDTGFYXKK"
+            apiKey: "AIzaSyAmvp9zNgLRT1LYGQ6RWI6vgRPAYVcvdYw",
+            authDomain: "limon-premium.firebaseapp.com",
+            projectId: "limon-premium",
+            storageBucket: "limon-premium.firebasestorage.app",
+            messagingSenderId: "124263926092",
+            appId: "1:124263926092:web:f16175fd914b34099be7e9",
+            measurementId: "G-FS7KK4770S"
         };
-        
         const userFirebaseConfig = {
-            apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QWu69ps",
-            authDomain: "pasyak-user.firebaseapp.com",
-            databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
-            projectId: "pasyak-user",
-            storageBucket: "pasyak-user.firebasestorage.app",
-            messagingSenderId: "898141218588",
-            appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+            apiKey: "AIzaSyB2DUu0hgiawkexdHOR4h6DZ9vijv5y-bQ",
+            authDomain: "limon-user.firebaseapp.com",
+            databaseURL: "https://limon-user-default-rtdb.firebaseio.com",
+            projectId: "limon-user",
+            storageBucket: "limon-user.firebasestorage.app",
+            messagingSenderId: "567469231536",
+            appId: "1:567469231536:web:9c7fcb1b36103adfb85a75",
         };
         
         // Yeni Firebase konfiqurasiyaları
         const followsFirebaseConfig = {
-            apiKey: "AIzaSyAZbtUw8id4yyZqrXtsf2FwuZmJ02qxit8",
-            authDomain: "pasyak-follows.firebaseapp.com",
-            databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
-            projectId: "pasyak-follows",
-            storageBucket: "pasyak-follows.firebasestorage.app",
-            messagingSenderId: "571115478758",
-            appId: "1:571115478758:web:9b45de3c9169083d9a2527",
-            measurementId: "G-KHDDTM6FC9"
+            apiKey: "AIzaSyBpkbzgOVBi3GQAzQPSVy7IiNWvZ59s3Y8",
+            authDomain: "pasyak-follow.firebaseapp.com",
+            projectId: "pasyak-follow",
+            storageBucket: "pasyak-follow.firebasestorage.app",
+            messagingSenderId: "543550446057",
+            appId: "1:543550446057:web:e27fe3d5d4030639519378",
+            measurementId: "G-FHP4YSSQD1"
         };
         
         const followingFirebaseConfig = {
-            apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
-            authDomain: "pasyak-following.firebaseapp.com",
-            databaseURL: "https://pasyak-following-default-rtdb.firebaseio.com",
-            projectId: "pasyak-following",
-            storageBucket: "pasyak-following.firebasestorage.app",
-            messagingSenderId: "538884111637",
-            appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
+            apiKey: "AIzaSyCx5eRzSQ1fjSfsLdTWMQJgi8DGm696UtE",
+            authDomain: "pasyak-following-fd47e.firebaseapp.com",
+            projectId: "pasyak-following-fd47e",
+            storageBucket: "pasyak-following-fd47e.firebasestorage.app",
+            messagingSenderId: "843465544263",
+            appId: "1:843465544263:web:f5095e55df279bdbdbd762",
+            measurementId: "G-B290TXF8TT"
         };
 
         const gonlineFirebaseConfig = {
-            apiKey: "AIzaSyBbLAI5r4b97OdNzNE230mMN0QhLBaJY2A",
-            authDomain: "haha-e8466.firebaseapp.com",
-            databaseURL: "https://haha-e8466-default-rtdb.firebaseio.com",
-            projectId: "haha-e8466",
-            storageBucket: "haha-e8466.firebasestorage.app",
-            messagingSenderId: "999082137317",
-            appId: "1:999082137317:web:4a8893fcdc501aea23a60c",
-            measurementId: "G-4RDTRYNJ02"
+            apiKey: "AIzaSyA8x2GSDNtmvo5CzHGwEXATfqCwuRUQzIk",
+            authDomain: "story-d7363.firebaseapp.com",
+            projectId: "story-d7363",
+            storageBucket: "story-d7363.firebasestorage.app",
+            messagingSenderId: "777806383281",
+            appId: "1:777806383281:web:6fe8d99230c2e9107e3a90",
+            measurementId: "G-EM4NKNSLLJ"
         };
 
         const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
@@ -251,11 +244,11 @@
             const isTick = tickUsers[cleanNickname] === "+";
             const isPremium = premiumUsers[cleanNickname] === "+";
             if (isTick && isPremium) {
-                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+                return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium-tick_lls2xj.png";
             } else if (isTick) {
-                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+                return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314188/tick_bpkpy1.png";
             } else if (isPremium) {
-                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+                return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium_rtcvax.png";
             }
             return null;
         }
@@ -376,7 +369,9 @@
 
             const userNameDiv = document.createElement("div");
             userNameDiv.className = "userid";
-            userNameDiv.textContent = getUserName(data.nickname) || data.user || "";
+            userNameDiv.textContent = 
+    "@" + (getUserName(data.nickname) || data.user || "");
+
 
             const statusBadgeUrl = getStatusBadge(data.nickname);
             if (statusBadgeUrl) {
