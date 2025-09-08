@@ -1,4 +1,15 @@
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+ @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+        * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
 
         * {
             outline: none !important;
@@ -84,9 +95,11 @@
 
         .userid {
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
+            color: white;
+            font-weight: bold;
         }
 
         .status-badge {
@@ -96,8 +109,8 @@
         }
 
         .nickname {
-            font-size: 0.8rem;
-            color: #4a90e2;
+            font-size: 0.0rem;
+            color: #1e1e1e;
         }
 
         .post-text {
@@ -201,7 +214,7 @@
         }
 
         .confirm-dialog .yes {
-            background: red;
+            background: #ffcd4c;
             color: white;
         }
 
@@ -236,7 +249,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            background: #e71212;
+            background: #ffcd4c;
             color: white;
             user-select: none;
         }
@@ -354,7 +367,7 @@
             position: absolute;
             bottom: 10px;
             right: 0px;
-            background-color: #ff4d4d;
+            background-color: #ffcd4c;
             color: rgb(255, 255, 255);
             border-radius: 50%;
             width: 20px;
@@ -895,7 +908,7 @@
         .comment-input-area button {
             background: none;
             border: none;
-            color: #e71212;
+            color: #ffcd4c;
             font-size: 24px;
             cursor: pointer;
             padding: 0;
@@ -990,7 +1003,7 @@
         }
 
         .gif-item:hover {
-            border-color: #4a90e2;
+            border-color: #ffcd4c;
         }
 
         .gif-item img {
@@ -1014,7 +1027,7 @@
         }
 
         .follow-button.follow {
-            background-color: #ed1c1c; /* Mavi rəng */
+            background-color: #ffcd4c; /* Mavi rəng */
             color: white;
         }
 
@@ -1053,7 +1066,7 @@
         }
 
         #post-navigation-bar button.active {
-            background-color: #e21616; /* Aktiv düymə rəngi */
+            background-color: #ffcd4c; /* Aktiv düymə rəngi */
             color: white;
         }
 
