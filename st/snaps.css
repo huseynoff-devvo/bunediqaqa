@@ -1,4 +1,14 @@
 /* Bütün elementlər üçün əsas sıfırlamalar və istifadəçi seçimi deaktivasiyası */
+ * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
     * {
         outline: none !important;
         box-shadow: none !important;
@@ -19,7 +29,7 @@
     html,
     body {
         height: 100%;
-        background: #121212FF;
+        background: #101010;
         overflow: auto;
         font-family: Arial, sans-serif;
         color: white;
@@ -32,7 +42,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: #121212FF;
+        background: #101010;
         display: flex; /* Yükləmə zamanı görünməsi üçün dəyişdirildi */
         justify-content: center;
         align-items: center;
@@ -111,7 +121,7 @@
         width: 100vw;
         position: relative;
         overflow: hidden;
-        background: #121212FF;
+        background: #101010;
         scroll-behavior: smooth;
         touch-action: none;
         display: block;
@@ -124,7 +134,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: #121212FF;
+        background: #101010;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -148,7 +158,7 @@
         width: 100%;
         height: 100%;
         object-fit: contain;
-        background: #121212FF;
+        background: #101010;
         user-select: none;
         cursor: pointer;
         display: none;
@@ -167,7 +177,7 @@
         gap: 10px;
         padding: 10px;
         box-sizing: border-box;
-        background: #121212FF;
+        background: #101010;
         z-index: 1;
         transform: translateY(100%);
         opacity: 0;
@@ -608,7 +618,7 @@
         align-items: center;
         padding: 10px 15px;
         border-top: 1px solid #333;
-        background-color: #121212;
+        background-color: #101010;
         position: relative;
     }
 
@@ -764,7 +774,7 @@
         align-items: center;
         padding: 10px;
         border-bottom: 1px solid #333;
-        background-color:#121212;
+        background-color:#101010;
     }
 
     #gif-list-header h3 {
@@ -786,7 +796,7 @@
         gap: 10px;
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none;  /* IE and Edge */
-        background-color:#121212;
+        background-color:#101010;
     }
     #gif-carousel::-webkit-scrollbar { /* Chrome, Safari, Opera */
         display: none;
