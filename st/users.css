@@ -1,4 +1,14 @@
 /* Bütün elementlər üçün vurğulama rəngini silin */
+ * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
         * {
             -webkit-tap-highlight-color: transparent;
             box-sizing: border-box; /* Bütün elementlər üçün box-sizing əlavə edin */
@@ -14,7 +24,7 @@
             padding: 10px; /* Ümumi padding-i azaltdım */
             padding-top: 60px; /* Sticky search bar üçün yuxarıdan əlavə boşluq */
             font-family: 'Inter', sans-serif;
-            background: #121212FF; /* Yüngül gradient fon */
+            background: #101010FF; /* Yüngül gradient fon */
             color: #e0e0e0;
             display: flex;
             flex-direction: column;
@@ -39,7 +49,7 @@
             position: sticky;
             top: 0;
             z-index: 10; /* Digər məzmunun üstündə qalması üçün */
-            background: #121212; /* Sürüşdürmə zamanı fonun görünməsi üçün */
+            background: #101010; /* Sürüşdürmə zamanı fonun görünməsi üçün */
             /* padding-top və padding-bottom dəyərlərini input elementinin öz padding-i idarə edir */
         }
         input[type="text"]:focus {
