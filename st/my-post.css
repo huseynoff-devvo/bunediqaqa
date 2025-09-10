@@ -1,4 +1,14 @@
 /* GLOBAL RESET FOR FOCUS AND TAP HIGHLIGHT */
+ * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
 
