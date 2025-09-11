@@ -1,41 +1,41 @@
 // Firebase tətbiqlərinin ilkin təyin edilməsi
         const postsFirebaseConfig = {
-            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
-            authDomain: "pasyakaaz.firebaseapp.com",
-            projectId: "pasyakaaz",
-            storageBucket: "pasyakaaz.appspot.com",
-            messagingSenderId: "289629756800",
-            appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+            apiKey: "AIzaSyBub_6Amz990ee-1ug5KXQNPsjI1HtS5x0",
+            authDomain: "posts-974de.firebaseapp.com",
+            projectId: "posts-974de",
+            storageBucket: "posts-974de.firebasestorage.app",
+            messagingSenderId: "40810761225",
+            appId: "1:40810761225:web:fb9937042afd554f44bcd8"
         };
         const videosFirebaseConfig = {
-            apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
-            authDomain: "pasyak-reels.firebaseapp.com",
-            databaseURL: "https://pasyak-reels-default-rtdb.firebaseio.com",
-            projectId: "pasyak-reels",
-            storageBucket: "pasyak-reels.firebasestorage.app",
-            messagingSenderId: "635054499590",
-            appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
-            measurementId: "G-FW0KJDLF4B"
+            apiKey: "AIzaSyAUFM05EuSmf7921yMyqpaZSP317Ok2ExE",
+            authDomain: "videos-55ff4.firebaseapp.com",
+            databaseURL: "https://videos-55ff4-default-rtdb.firebaseio.com",
+            projectId: "videos-55ff4",
+            storageBucket: "videos-55ff4.firebasestorage.app",
+            messagingSenderId: "340555774700",
+            appId: "1:340555774700:web:73a1717c95d65d71f303c9",
+            measurementId: "G-3XWY4C8075"
         };
         // Normal postlar üçün şərhlər Firebase konfiqurasiyası
         const postsCommentsFirebaseConfig = {
-            apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
-            authDomain: "gonline-1880b.firebaseapp.com",
-            databaseURL: "https://gonline-1880b-default-rtdb.firebaseio.com",
-            projectId: "gonline-1880b",
-            storageBucket: "gonline-1880b.firebasestorage.app",
-            messagingSenderId: "988052893147",
-            appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
+            apiKey: "AIzaSyDZ36LJP0iA-X5Ivt9OrR0GOL7Sa6p5KuU",
+            authDomain: "comment-posts-2ac08.firebaseapp.com",
+            databaseURL: "https://comment-posts-2ac08-default-rtdb.firebaseio.com",
+            projectId: "comment-posts-2ac08",
+            storageBucket: "comment-posts-2ac08.firebasestorage.app",
+            messagingSenderId: "32018634007",
+            appId: "1:32018634007:web:8d6895501c5a678a901352"
         };
         // Snaps/reels üçün şərhlər Firebase konfiqurasiyası
         const snapCommentsFirebaseConfig = {
-            apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
-            authDomain: "reply-eb654.firebaseapp.com",
-            databaseURL: "https://reply-eb654-default-rtdb.firebaseio.com",
-            projectId: "reply-eb654",
-            storageBucket: "reply-eb654.firebasestorage.app",
-            messagingSenderId: "292801573334",
-            appId: "1:292801573334:web:2486813d8fe45865d0f477"
+            apiKey: "AIzaSyDbosq-6S2vpxm7PmejRF6X3iFFk6rt78o",
+            authDomain: "videos-comment.firebaseapp.com",
+            databaseURL: "https://videos-comment-default-rtdb.firebaseio.com",
+            projectId: "videos-comment",
+            storageBucket: "videos-comment.firebasestorage.app",
+            messagingSenderId: "1056870408654",
+            appId: "1:1056870408654:web:4685500243ba3ff59fcb9f"
         };
 
         const tickFirebaseConfig = {
