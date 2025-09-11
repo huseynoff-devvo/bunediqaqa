@@ -9,6 +9,7 @@ img {
   user-drag: none;       /* brauzerdə sürüklənməsin */
   -webkit-user-drag: none; /* Safari/Chrome üçün */
 }
+
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
 
