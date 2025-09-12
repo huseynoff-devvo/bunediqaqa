@@ -1,44 +1,46 @@
 // Postlar və bəyənmələr üçün Firebase konfiqurasiyası (pasyakaaz proyektindən)
         const postsFirebaseConfig = {
-            apiKey: "AIzaSyBub_6Amz990ee-1ug5KXQNPsjI1HtS5x0",
-            authDomain: "posts-974de.firebaseapp.com",
-            projectId: "posts-974de",
-            storageBucket: "posts-974de.firebasestorage.app",
-            messagingSenderId: "40810761225",
-            appId: "1:40810761225:web:fb9937042afd554f44bcd8"
+            apiKey: "AIzaSyAjW7zigfYvSyF0DXt3ywu-1PqZDHFbKcc",
+            authDomain: "limon-post.firebaseapp.com",
+            databaseURL: "https://limon-post-default-rtdb.firebaseio.com",
+            projectId: "limon-post",
+            storageBucket: "limon-post.firebasestorage.app",
+            messagingSenderId: "213746799645",
+            appId: "1:213746799645:web:3a4eb82131dc2e1b1622f4"
         };
 
         // Şərhlər və şərh bəyənmələri üçün Firebase konfiqurasiyası (gonline-1880b proyektindən)
         const commentsFirebaseConfig = {
-            apiKey: "AIzaSyDZ36LJP0iA-X5Ivt9OrR0GOL7Sa6p5KuU",
-            authDomain: "comment-posts-2ac08.firebaseapp.com",
-            projectId: "comment-posts-2ac08",
-            storageBucket: "comment-posts-2ac08.firebasestorage.app",
-            messagingSenderId: "32018634007",
-            appId: "1:32018634007:web:8d6895501c5a678a901352"
+            apiKey: "AIzaSyBin2WZ96znrq97fWwxQK5LrLRpVtmnMPU",
+            authDomain: "limon-post-comment.firebaseapp.com",
+            databaseURL: "https://limon-post-comment-default-rtdb.firebaseio.com",
+            projectId: "limon-post-comment",
+            storageBucket: "limon-post-comment.firebasestorage.app",
+            messagingSenderId: "276602642114",
+            appId: "1:276602642114:web:7c0608c003c5e0a254e55b"
         };
 
         // GIF-lər üçün Firebase konfiqurasiyası
         const gifFirebaseConfig = {
-            apiKey: "AIzaSyAhlu3_n59ESLxV6k8Ll4scIRK45CPS4z8",
-            authDomain: "gif-s-a9eca.firebaseapp.com",
-            databaseURL: "https://gif-s-a9eca-default-rtdb.firebaseio.com",
-            projectId: "gif-s-a9eca",
-            storageBucket: "gif-s-a9eca.firebasestorage.app",
-            messagingSenderId: "684950243730",
-            appId: "1:684950243730:web:44d8c3251d10b807ee594b"
+            apiKey: "AIzaSyDx-vFR7gyefy9m9lJtpuZgDuTnwANKdUg",
+            authDomain: "gif-s-1.firebaseapp.com",
+            databaseURL: "https://gif-s-1-default-rtdb.firebaseio.com",
+            projectId: "gif-s-1",
+            storageBucket: "gif-s-1.firebasestorage.app",
+            messagingSenderId: "343905670512",
+            appId: "1:343905670512:web:f2aac5349095d54101abb5"
         };
         
         // Yeni: Qeyd edilmiş postlar üçün Firebase konfiqurasiyası
         const savedPostsFirebaseConfig = {
-            apiKey: "AIzaSyBzlIzk5xg0Wf4i-jOWXxOfPhm6mZ0fuco",
-            authDomain: "post-save-1fcd7.firebaseapp.com",
-            databaseURL: "https://post-save-1fcd7-default-rtdb.firebaseio.com",
-            projectId: "post-save-1fcd7",
-            storageBucket: "post-save-1fcd7.firebasestorage.app",
-            messagingSenderId: "243734688763",
-            appId: "1:243734688763:web:8a0ccc25dbf1ff2dad915e",
-            measurementId: "G-V6BEP937Q8"
+            apiKey: "AIzaSyD2F4EtVCLYiL7Kn8zWYc-lXahXpSuMHWI",
+            authDomain: "limons-saved.firebaseapp.com",
+            databaseURL: "https://limons-saved-default-rtdb.firebaseio.com",
+            projectId: "limons-saved",
+            storageBucket: "limons-saved.firebasestorage.app",
+            messagingSenderId: "734311487019",
+            appId: "1:734311487019:web:636e56fc5827f244afbc6e",
+            measurementId: "G-PBDC83V5R2"
         };
 
 
@@ -101,44 +103,47 @@
             measurementId: "G-FS7KK4770S"
         };
         const userFirebaseConfig = {
-            apiKey: "AIzaSyB2DUu0hgiawkexdHOR4h6DZ9vijv5y-bQ",
-            authDomain: "limon-user.firebaseapp.com",
-            databaseURL: "https://limon-user-default-rtdb.firebaseio.com",
-            projectId: "limon-user",
-            storageBucket: "limon-user.firebasestorage.app",
-            messagingSenderId: "567469231536",
-            appId: "1:567469231536:web:9c7fcb1b36103adfb85a75",
+            apiKey: "AIzaSyA6slU31pyfp7tljAB20Vui1gvptSPEv8M",
+            authDomain: "limons-user-e43c0.firebaseapp.com",
+            databaseURL: "https://limons-user-e43c0-default-rtdb.firebaseio.com",
+            projectId: "limons-user-e43c0",
+            storageBucket: "limons-user-e43c0.firebasestorage.app",
+            messagingSenderId: "484283046830",
+            appId: "1:484283046830:web:ad76e2d421b68f22fd063f"
         };
         
         // Yeni Firebase konfiqurasiyaları
         const followsFirebaseConfig = {
-            apiKey: "AIzaSyBpkbzgOVBi3GQAzQPSVy7IiNWvZ59s3Y8",
-            authDomain: "pasyak-follow.firebaseapp.com",
-            projectId: "pasyak-follow",
-            storageBucket: "pasyak-follow.firebasestorage.app",
-            messagingSenderId: "543550446057",
-            appId: "1:543550446057:web:e27fe3d5d4030639519378",
-            measurementId: "G-FHP4YSSQD1"
+            apiKey: "AIzaSyDohN9yaNE5lxQet1I9m8s4zD778OyYVzg",
+            authDomain: "limon-follow.firebaseapp.com",
+            databaseURL: "https://limon-follow-default-rtdb.firebaseio.com",
+            projectId: "limon-follow",
+            storageBucket: "limon-follow.firebasestorage.app",
+            messagingSenderId: "851250357014",
+            appId: "1:851250357014:web:d7b99931c1a86dbbc2e637",
+            measurementId: "G-N63PV11W8Q"
         };
         
         const followingFirebaseConfig = {
-            apiKey: "AIzaSyCx5eRzSQ1fjSfsLdTWMQJgi8DGm696UtE",
-            authDomain: "pasyak-following-fd47e.firebaseapp.com",
-            projectId: "pasyak-following-fd47e",
-            storageBucket: "pasyak-following-fd47e.firebasestorage.app",
-            messagingSenderId: "843465544263",
-            appId: "1:843465544263:web:f5095e55df279bdbdbd762",
-            measurementId: "G-B290TXF8TT"
+            apiKey: "AIzaSyAHuOrVvJwNk3LG9tqvSA5sdOn7zCs9QAc",
+            authDomain: "limon-following.firebaseapp.com",
+            databaseURL: "https://limon-following-default-rtdb.firebaseio.com",
+            projectId: "limon-following",
+            storageBucket: "limon-following.firebasestorage.app",
+            messagingSenderId: "128241854550",
+            appId: "1:128241854550:web:868457b4e76ff7cefb73f7",
+            measurementId: "G-70DTD9NGBF"
         };
 
         const gonlineFirebaseConfig = {
-            apiKey: "AIzaSyA8x2GSDNtmvo5CzHGwEXATfqCwuRUQzIk",
-            authDomain: "story-d7363.firebaseapp.com",
-            projectId: "story-d7363",
-            storageBucket: "story-d7363.firebasestorage.app",
-            messagingSenderId: "777806383281",
-            appId: "1:777806383281:web:6fe8d99230c2e9107e3a90",
-            measurementId: "G-EM4NKNSLLJ"
+            apiKey: "AIzaSyBBBb6YiFrhKigsbADoCGrV_Nbr-rZSPSQ",
+            authDomain: "limons-story.firebaseapp.com",
+            databaseURL: "https://limons-story-default-rtdb.firebaseio.com",
+            projectId: "limons-story",
+            storageBucket: "limons-story.firebasestorage.app",
+            messagingSenderId: "1528253063",
+            appId: "1:1528253063:web:138ee9007df64e2f3a4622",
+            measurementId: "G-H1NL0V75F9"
         };
 
         const tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
