@@ -18,7 +18,7 @@ img {
         }
 
         body {
-            background: #121212;
+            background: #101010;
             color: white;
             font-family: 'Roboto', sans-serif;
             margin: 0;
@@ -33,7 +33,7 @@ img {
             left: 0;
             width: 100%;
             height: 100%;
-            background: #121212;
+            background: #101010;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -314,7 +314,7 @@ img {
             padding: 10px 5px;
             gap: 15px;
             margin-bottom: 10px;
-            background: #121212;
+            background: #101010;
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -379,7 +379,7 @@ img {
             align-items: center;
             font-size: 16px;
             font-weight: bold;
-            border: 2px solid #121212;
+            border: 2px solid #101010;
         }
         
         .story-separator {
@@ -885,7 +885,7 @@ img {
         .comment-input-area {
             display: flex;
             padding: 15px;
-            background: #121212;
+            background: #101010;
             border-top: 1px solid #333;
             align-items: center;
             position: sticky;
@@ -965,7 +965,7 @@ img {
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid #333;
-               background-color:#121212;
+               background-color:#101010;
         }
 
         #gif-list-header h3 {
@@ -987,7 +987,7 @@ img {
             gap: 10px;
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none;  /* IE and Edge */
-               background-color:#121212;
+               background-color:#101010;
         }
         #gif-carousel::-webkit-scrollbar { /* Chrome, Safari, Opera */
             display: none;
