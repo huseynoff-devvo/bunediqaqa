@@ -1,38 +1,53 @@
 // Firebase konfiqurasiyaları
     const firebaseConfigs = {
         users: {
-            apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
-            databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyA6slU31pyfp7tljAB20Vui1gvptSPEv8M",
+            authDomain: "limons-user-e43c0.firebaseapp.com",
+            databaseURL: "https://limons-user-e43c0-default-rtdb.firebaseio.com",
+            projectId: "limons-user-e43c0",
+            storageBucket: "limons-user-e43c0.firebasestorage.app",
+            messagingSenderId: "484283046830",
+            appId: "1:484283046830:web:ad76e2d421b68f22fd063f"
         },
         ids: {
             apiKey: "AIzaSyD0uiBSdiQC2bPQssIgQf4kvQmMHDUsO5c",
             databaseURL: "https://pasyak-id-default-rtdb.firebaseio.com"
         },
         tick: {
-            apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
-            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyD1T6HPDf2hbRvEscgIcZDy1Sxy43Hhc4k",
+            authDomain: "limon-tick.firebaseapp.com",
+            projectId: "limon-tick",
+            storageBucket: "limon-tick.firebasestorage.app",
+            messagingSenderId: "842530234373",
+            appId: "1:842530234373:web:e28cdfe0ff4e0f5e22fc6c",
+            measurementId: "G-QYJCF6SVH9"
         },
         premium: {
-            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
-            databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com"
+           apiKey: "AIzaSyAmvp9zNgLRT1LYGQ6RWI6vgRPAYVcvdYw",
+            authDomain: "limon-premium.firebaseapp.com",
+            projectId: "limon-premium",
+            storageBucket: "limon-premium.firebasestorage.app",
+            messagingSenderId: "124263926092",
+            appId: "1:124263926092:web:f16175fd914b34099be7e9",
+            measurementId: "G-FS7KK4770S"
         },
         posts: {
-            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
-            authDomain: "pasyakaaz.firebaseapp.com",
-            databaseURL: "https://pasyakaaz-default-rtdb.firebaseio.com",
-            projectId: "pasyakaaz",
-            storageBucket: "pasyakaaz.firebasestorage.app",
-            messagingSenderId: "289629756800",
-            appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+            apiKey: "AIzaSyAjW7zigfYvSyF0DXt3ywu-1PqZDHFbKcc",
+            authDomain: "limon-post.firebaseapp.com",
+            databaseURL: "https://limon-post-default-rtdb.firebaseio.com",
+            projectId: "limon-post",
+            storageBucket: "limon-post.firebasestorage.app",
+            messagingSenderId: "213746799645",
+            appId: "1:213746799645:web:3a4eb82131dc2e1b1622f4"
         },
         postComments: {
-            apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
-            authDomain: "gonline-1880b.firebaseapp.com",
-            databaseURL: "https://gonline-1880b-default-rtdb.firebaseio.com",
-            projectId: "gonline-1880b",
-            storageBucket: "gonline-1880b.firebasestorage.app",
-            messagingSenderId: "988052893147",
-            appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
+            apiKey: "AIzaSyBin2WZ96znrq97fWwxQK5LrLRpVtmnMPU",
+            authDomain: "limon-post-comment.firebaseapp.com",
+            databaseURL: "https://limon-post-comment-default-rtdb.firebaseio.com",
+            projectId: "limon-post-comment",
+            storageBucket: "limon-post-comment.firebasestorage.app",
+            messagingSenderId: "276602642114",
+            appId: "1:276602642114:web:7c0608c003c5e0a254e55b"
         },
     };
 
