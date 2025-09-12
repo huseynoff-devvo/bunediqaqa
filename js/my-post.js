@@ -1,62 +1,61 @@
 // Firebase tətbiqlərinin ilkin təyin edilməsi
         const postsFirebaseConfig = {
-            apiKey: "AIzaSyBub_6Amz990ee-1ug5KXQNPsjI1HtS5x0",
-            authDomain: "posts-974de.firebaseapp.com",
-            projectId: "posts-974de",
-            storageBucket: "posts-974de.firebasestorage.app",
-            messagingSenderId: "40810761225",
-            appId: "1:40810761225:web:fb9937042afd554f44bcd8"
+            apiKey: "AIzaSyAjW7zigfYvSyF0DXt3ywu-1PqZDHFbKcc",
+            authDomain: "limon-post.firebaseapp.com",
+            databaseURL: "https://limon-post-default-rtdb.firebaseio.com",
+            projectId: "limon-post",
+            storageBucket: "limon-post.firebasestorage.app",
+            messagingSenderId: "213746799645",
+            appId: "1:213746799645:web:3a4eb82131dc2e1b1622f4"
         };
         const videosFirebaseConfig = {
-            apiKey: "AIzaSyAUFM05EuSmf7921yMyqpaZSP317Ok2ExE",
-            authDomain: "videos-55ff4.firebaseapp.com",
-            databaseURL: "https://videos-55ff4-default-rtdb.firebaseio.com",
-            projectId: "videos-55ff4",
-            storageBucket: "videos-55ff4.firebasestorage.app",
-            messagingSenderId: "340555774700",
-            appId: "1:340555774700:web:73a1717c95d65d71f303c9",
-            measurementId: "G-3XWY4C8075"
+             apiKey: "AIzaSyCI3oZyJXBbZfAFYhhx3mqbtj2lBsVtlVU",
+            authDomain: "limon-video.firebaseapp.com",
+            databaseURL: "https://limon-video-default-rtdb.firebaseio.com",
+            projectId: "limon-video",
+            storageBucket: "limon-video.firebasestorage.app",
+            messagingSenderId: "1027523081229",
+            appId: "1:1027523081229:web:957f99b23a2310a2849144",
+            measurementId: "G-GB4KYL0G9V"
         };
         // Normal postlar üçün şərhlər Firebase konfiqurasiyası
         const postsCommentsFirebaseConfig = {
-            apiKey: "AIzaSyDZ36LJP0iA-X5Ivt9OrR0GOL7Sa6p5KuU",
-            authDomain: "comment-posts-2ac08.firebaseapp.com",
-            databaseURL: "https://comment-posts-2ac08-default-rtdb.firebaseio.com",
-            projectId: "comment-posts-2ac08",
-            storageBucket: "comment-posts-2ac08.firebasestorage.app",
-            messagingSenderId: "32018634007",
-            appId: "1:32018634007:web:8d6895501c5a678a901352"
+             apiKey: "AIzaSyBin2WZ96znrq97fWwxQK5LrLRpVtmnMPU",
+            authDomain: "limon-post-comment.firebaseapp.com",
+            databaseURL: "https://limon-post-comment-default-rtdb.firebaseio.com",
+            projectId: "limon-post-comment",
+            storageBucket: "limon-post-comment.firebasestorage.app",
+            messagingSenderId: "276602642114",
+            appId: "1:276602642114:web:7c0608c003c5e0a254e55b"
         };
         // Snaps/reels üçün şərhlər Firebase konfiqurasiyası
         const snapCommentsFirebaseConfig = {
-            apiKey: "AIzaSyDbosq-6S2vpxm7PmejRF6X3iFFk6rt78o",
-            authDomain: "videos-comment.firebaseapp.com",
-            databaseURL: "https://videos-comment-default-rtdb.firebaseio.com",
-            projectId: "videos-comment",
-            storageBucket: "videos-comment.firebasestorage.app",
-            messagingSenderId: "1056870408654",
-            appId: "1:1056870408654:web:4685500243ba3ff59fcb9f"
+            apiKey: "AIzaSyC6YBAAly4wH6o1981ntYANsJIzK_eph1I",
+            authDomain: "limons-video-comment.firebaseapp.com",
+            databaseURL: "https://limons-video-comment-default-rtdb.firebaseio.com",
+            projectId: "limons-video-comment",
+            storageBucket: "limons-video-comment.firebasestorage.app",
+            messagingSenderId: "1097578178676",
+            appId: "1:1097578178676:web:a4f8be6d55b883f6ea8921"
         };
 
         const tickFirebaseConfig = {
-            apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
-            authDomain: "pasyak-tick.firebaseapp.com",
-            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com",
-            projectId: "pasyak-tick",
-            storageBucket: "pasyak-tick.firebasestorage.app",
-            messagingSenderId: "379214418412",
-            appId: "1:379214418412:web:904dc0357ecd31f54a70c9",
-            measurementId: "G-DW00VF06NR"
+            apiKey: "AIzaSyD1T6HPDf2hbRvEscgIcZDy1Sxy43Hhc4k",
+            authDomain: "limon-tick.firebaseapp.com",
+            projectId: "limon-tick",
+            storageBucket: "limon-tick.firebasestorage.app",
+            messagingSenderId: "842530234373",
+            appId: "1:842530234373:web:e28cdfe0ff4e0f5e22fc6c",
+            measurementId: "G-QYJCF6SVH9"
         };
         const premiumFirebaseConfig = {
-            apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
-            authDomain: "pasyak-premium.firebaseapp.com",
-            databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com",
-            projectId: "pasyak-premium",
-            storageBucket: "pasyak-premium.firebasestorage.app",
-            messagingSenderId: "662922654975",
-            appId: "1:662922654975:web:54b78968d4cccba65f88ca",
-            measurementId: "G-QDTFGFYXKK"
+            apiKey: "AIzaSyAmvp9zNgLRT1LYGQ6RWI6vgRPAYVcvdYw",
+            authDomain: "limon-premium.firebaseapp.com",
+            projectId: "limon-premium",
+            storageBucket: "limon-premium.firebasestorage.app",
+            messagingSenderId: "124263926092",
+            appId: "1:124263926092:web:f16175fd914b34099be7e9",
+            measurementId: "G-FS7KK4770S"
         };
 
         let postsApp, videosApp, postsCommentsApp, snapCommentsApp, tickApp, premiumApp;
