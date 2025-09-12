@@ -1,88 +1,90 @@
 (function () {
             // Firebase konfiqurasiyaları
             const reelFirebaseConfig = {
-                apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
-                authDomain: "pasyak-reels.firebaseapp.com",
-                projectId: "pasyak-reels",
-                storageBucket: "pasyak-reels.firebasestorage.app",
-                messagingSenderId: "635054499590",
-                appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
-                measurementId: "G-FW0KJDLF4B"
+                apiKey: "AIzaSyCI3oZyJXBbZfAFYhhx3mqbtj2lBsVtlVU",
+            authDomain: "limon-video.firebaseapp.com",
+            databaseURL: "https://limon-video-default-rtdb.firebaseio.com",
+            projectId: "limon-video",
+            storageBucket: "limon-video.firebasestorage.app",
+            messagingSenderId: "1027523081229",
+            appId: "1:1027523081229:web:957f99b23a2310a2849144",
+            measurementId: "G-GB4KYL0G9V"
             };
             const reelApp = firebase.initializeApp(reelFirebaseConfig, 'reelApp');
             const reelDb = reelApp.database();
 
             const userFirebaseConfig = {
-                apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
-                authDomain: "pasyak-user.firebaseapp.com",
-                databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
-                projectId: "pasyak-user",
-                storageBucket: "pasyak-user.firebasestorage.app",
-                messagingSenderId: "898141218588",
-                appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+                apiKey: "AIzaSyA6slU31pyfp7tljAB20Vui1gvptSPEv8M",
+            authDomain: "limons-user-e43c0.firebaseapp.com",
+            databaseURL: "https://limons-user-e43c0-default-rtdb.firebaseio.com",
+            projectId: "limons-user-e43c0",
+            storageBucket: "limons-user-e43c0.firebasestorage.app",
+            messagingSenderId: "484283046830",
+            appId: "1:484283046830:web:ad76e2d421b68f22fd063f"
             };
             const userApp = firebase.initializeApp(userFirebaseConfig, 'userApp');
             const userDb = userApp.database();
 
             const followsFirebaseConfig = {
-                apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
-                authDomain: "pasyak-follows.firebaseapp.com",
-                databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
-                projectId: "pasyak-follows",
-                storageBucket: "pasyak-follows.firebasestorage.app",
-                messagingSenderId: "571115478758",
-                appId: "1:571115478758:web:9b45de3c9169083d9a2527",
-                measurementId: "G-KHDDTM6FC9"
+                apiKey: "AIzaSyDohN9yaNE5lxQet1I9m8s4zD778OyYVzg",
+            authDomain: "limon-follow.firebaseapp.com",
+            databaseURL: "https://limon-follow-default-rtdb.firebaseio.com",
+            projectId: "limon-follow",
+            storageBucket: "limon-follow.firebasestorage.app",
+            messagingSenderId: "851250357014",
+            appId: "1:851250357014:web:d7b99931c1a86dbbc2e637",
+            measurementId: "G-N63PV11W8Q"
             };
             const followsApp = firebase.initializeApp(followsFirebaseConfig, 'followsApp');
             const followsDb = followsApp.database();
 
             const followingFirebaseConfig = {
-                apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
-                authDomain: "pasyak-following.firebaseapp.com",
-                databaseURL: "https://pasyak-following-default-rtdb.firebaseio.com",
-                projectId: "pasyak-following",
-                storageBucket: "pasyak-following.firebasestorage.app",
-                messagingSenderId: "538884111637",
-                appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
+                apiKey: "AIzaSyAHuOrVvJwNk3LG9tqvSA5sdOn7zCs9QAc",
+            authDomain: "limon-following.firebaseapp.com",
+            databaseURL: "https://limon-following-default-rtdb.firebaseio.com",
+            projectId: "limon-following",
+            storageBucket: "limon-following.firebasestorage.app",
+            messagingSenderId: "128241854550",
+            appId: "1:128241854550:web:868457b4e76ff7cefb73f7",
+            measurementId: "G-70DTD9NGBF"
             };
             const followingApp = firebase.initializeApp(followingFirebaseConfig, 'followingApp');
             const followingDb = followingApp.database();
 
             const commentsFirebaseConfig = {
-                apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
-                authDomain: "reply-eb654.firebaseapp.com",
-                databaseURL: "https://reply-eb654-default-rtdb.firebaseio.com",
-                projectId: "reply-eb654",
-                storageBucket: "reply-eb654.firebasestorage.app",
-                messagingSenderId: "292801573334",
-                appId: "1:292801573334:web:2486813d8fe45865d0f477"
+                apiKey: "AIzaSyC6YBAAly4wH6o1981ntYANsJIzK_eph1I",
+            authDomain: "limons-video-comment.firebaseapp.com",
+            databaseURL: "https://limons-video-comment-default-rtdb.firebaseio.com",
+            projectId: "limons-video-comment",
+            storageBucket: "limons-video-comment.firebasestorage.app",
+            messagingSenderId: "1097578178676",
+            appId: "1:1097578178676:web:a4f8be6d55b883f6ea8921"
             };
             const commentsApp = firebase.initializeApp(commentsFirebaseConfig, 'commentsApp');
             const commentsDb = commentsApp.database();
 
             const commentLikesFirebaseConfig = {
-                apiKey: "AIzaSyB3Ckrcg-Bw4SAY-OyZiAV-qwiJgT8pmfg",
-                authDomain: "comment-55fc9.firebaseapp.com",
-                databaseURL: "https://comment-55fc9-default-rtdb.firebaseio.com",
-                projectId: "comment-55fc9",
-                storageBucket: "comment-55fc9.firebasestorage.app",
-                messagingSenderId: "968182843800",
-                appId: "1:968182843800:web:d37989387f333c9705c3ed",
-                measurementId: "G-NL2QXBSQFK"
+                apiKey: "AIzaSyBtxVQfyMYaAn9BcIKiEVc6xZ4p_1jnjg8",
+                authDomain: "limon-video-comment-likes.firebaseapp.com",
+                databaseURL: "https://limon-video-comment-likes-default-rtdb.firebaseio.com",
+                projectId: "limon-video-comment-likes",
+                storageBucket: "limon-video-comment-likes.firebasestorage.app",
+                messagingSenderId: "1027682975773",
+                appId: "1:1027682975773:web:08a2f967074bc51e3586f4",
+                measurementId: "G-LQRCZ6H94K"
             };
             const commentLikesApp = firebase.initializeApp(commentLikesFirebaseConfig, 'commentLikesApp');
             const commentLikesDb = commentLikesApp.database();
 
             // GIF-lər üçün Firebase konfiqurasiyası
             const gifFirebaseConfig = {
-                apiKey: "AIzaSyDmV0lnMcux9Q5t-Gy-Fh5Lp23kP2Yy5fE", // Replace with your GIF Firebase API Key
-                authDomain: "gif-s-53e6d.firebaseapp.com",
-                databaseURL: "https://gif-s-53e6d-default-rtdb.firebaseio.com",
-                projectId: "gif-s-53e6d",
-                storageBucket: "gif-s-53e6d.firebasestorage.app",
-                messagingSenderId: "285576525417",
-                appId: "1:285576525417:web:515028b392b379122cd4f8"
+                apiKey: "AIzaSyDx-vFR7gyefy9m9lJtpuZgDuTnwANKdUg",
+            authDomain: "gif-s-1.firebaseapp.com",
+            databaseURL: "https://gif-s-1-default-rtdb.firebaseio.com",
+            projectId: "gif-s-1",
+            storageBucket: "gif-s-1.firebasestorage.app",
+            messagingSenderId: "343905670512",
+            appId: "1:343905670512:web:f2aac5349095d54101abb5"
             };
             const gifApp = firebase.initializeApp(gifFirebaseConfig, 'gifApp');
             const gifDb = gifApp.database();
