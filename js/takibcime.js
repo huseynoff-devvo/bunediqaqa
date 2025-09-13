@@ -2,33 +2,46 @@ const urlParams = new URLSearchParams(window.location.search);
         const currentUser = urlParams.get('user');
 
         const followConfig = {
-            apiKey: "AIzaSyBA0gfZVLCnGV2Hli6BjEbq08SmLzFkshg",
-            authDomain: "pasyak-following.firebaseapp.com",
-            databaseURL: "https://pasyak-following-default-rtdb.firebaseio.com",
-            projectId: "pasyak-following",
-            storageBucket: "pasyak-following.firebasestorage.app",
-            messagingSenderId: "538884111637",
-            appId: "1:538884111637:web:c2c3532a1bda359aacbd1c"
+            apiKey: "AIzaSyAHuOrVvJwNk3LG9tqvSA5sdOn7zCs9QAc",
+            authDomain: "limon-following.firebaseapp.com",
+            databaseURL: "https://limon-following-default-rtdb.firebaseio.com",
+            projectId: "limon-following",
+            storageBucket: "limon-following.firebasestorage.app",
+            messagingSenderId: "128241854550",
+            appId: "1:128241854550:web:868457b4e76ff7cefb73f7",
+            measurementId: "G-70DTD9NGBF"
         };
 
         const userConfig = {
-            apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
-            authDomain: "pasyak-user.firebaseapp.com",
-            databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
-            projectId: "pasyak-user",
-            storageBucket: "pasyak-user.firebasestorage.app",
-            messagingSenderId: "898141218588",
-            appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+            apiKey: "AIzaSyA6slU31pyfp7tljAB20Vui1gvptSPEv8M",
+            authDomain: "limons-user-e43c0.firebaseapp.com",
+            databaseURL: "https://limons-user-e43c0-default-rtdb.firebaseio.com",
+            projectId: "limons-user-e43c0",
+            storageBucket: "limons-user-e43c0.firebasestorage.app",
+            messagingSenderId: "484283046830",
+            appId: "1:484283046830:web:ad76e2d421b68f22fd063f"
         };
         
         const tickConfig = {
-            apiKey: "AIzaSyA2RNLGS-qUkhq6zNGtoUMTXJ3jNTfuHoE",
-            databaseURL: "https://pasyak-tick-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyAoYfYv4C22xKKlLQZHSty9YTV6el8QzZw",
+  authDomain: "limons-tick.firebaseapp.com",
+  databaseURL: "https://limons-tick-default-rtdb.firebaseio.com",
+  projectId: "limons-tick",
+  storageBucket: "limons-tick.firebasestorage.app",
+  messagingSenderId: "803200776941",
+  appId: "1:803200776941:web:92acaa749ee25eeeab2ae4",
+  measurementId: "G-7HCR9FS6Q4"
         };
 
         const premiumConfig = {
-          apiKey: "AIzaSyByZEbmw0w1Q5U1LfOrFsjCpd9CXzwyHyc",
-          databaseURL: "https://pasyak-premium-default-rtdb.firebaseio.com"
+          apiKey: "AIzaSyCiOg6YwhtoBNGO3TboCyq0dusXjPLkW5A",
+  authDomain: "limons-premium.firebaseapp.com",
+  databaseURL: "https://limons-premium-default-rtdb.firebaseio.com",
+  projectId: "limons-premium",
+  storageBucket: "limons-premium.firebasestorage.app",
+  messagingSenderId: "9549849500",
+  appId: "1:9549849500:web:936589028b99dfcdbede59",
+  measurementId: "G-XTDYV0RHBJ"
         };
 
         const followApp = firebase.initializeApp(followConfig, "followApp");
@@ -49,11 +62,11 @@ const urlParams = new URLSearchParams(window.location.search);
             const isPremium = premiumUsers[nickname] === "+";
 
             if (isTick && isPremium) {
-                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+                return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium-tick_lls2xj.png";
             } else if (isTick) {
-                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+                return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314188/tick_bpkpy1.png";
             } else if (isPremium) {
-                return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+                return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium_rtcvax.png";
             }
             return null;
         }
