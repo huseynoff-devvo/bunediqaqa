@@ -100,11 +100,11 @@
         const isPremium = premiumUsers[cleanNickname] === "+";
 
         if (isTick && isPremium) {
-            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
+            return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium-tick_lls2xj.png";
         } else if (isTick) {
-            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
+            return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314188/tick_bpkpy1.png";
         } else if (isPremium) {
-            return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
+            return "https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium-tick_lls2xj.png";
         }
         return null;
     }
