@@ -85,14 +85,14 @@
 
 
         const tickFirebaseConfig = {
-            apiKey: "AIzaSyCiOg6YwhtoBNGO3TboCyq0dusXjPLkW5A",
-  authDomain: "limons-premium.firebaseapp.com",
-  databaseURL: "https://limons-premium-default-rtdb.firebaseio.com",
-  projectId: "limons-premium",
-  storageBucket: "limons-premium.firebasestorage.app",
-  messagingSenderId: "9549849500",
-  appId: "1:9549849500:web:936589028b99dfcdbede59",
-  measurementId: "G-XTDYV0RHBJ"
+            apiKey: "AIzaSyAoYfYv4C22xKKlLQZHSty9YTV6el8QzZw",
+  authDomain: "limons-tick.firebaseapp.com",
+  databaseURL: "https://limons-tick-default-rtdb.firebaseio.com",
+  projectId: "limons-tick",
+  storageBucket: "limons-tick.firebasestorage.app",
+  messagingSenderId: "803200776941",
+  appId: "1:803200776941:web:92acaa749ee25eeeab2ae4",
+  measurementId: "G-7HCR9FS6Q4"
         };
         const premiumFirebaseConfig = {
             apiKey: "AIzaSyCiOg6YwhtoBNGO3TboCyq0dusXjPLkW5A",
