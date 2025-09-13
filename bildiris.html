@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: "Inter", sans-serif;
-            background-color: #121212; /* Darker background */
+            background-color: #101010; /* Darker background */
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -18,7 +18,7 @@
             color: #e0e0e0; /* Light text for dark mode */
         }
         .container {
-            background-color: #121212; /* Slightly lighter dark for container */
+            background-color: #101010; /* Slightly lighter dark for container */
             border-radius: 12px;
             /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); Softer, but noticeable shadow */
             padding: 1.5rem; /* Slightly less padding for mobile */
@@ -115,7 +115,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #121212; /* Dark semi-transparent background */
+            background-color: #101010; /* Dark semi-transparent background */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -212,13 +212,13 @@
         }
     </style>
 </head>
-<body class="bg-[#121212] flex items-center justify-center p-0">
+<body class="bg-[#101010] flex items-center justify-center p-0">
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
     </div>
 
-    <div class="container bg-[#121212] p-1 rounded-xl shadow-lg hidden -mt-[15px]"> <!-- Konteyner ilk olaraq gizlədilir -->
+    <div class="container bg-[#101010] p-1 rounded-xl shadow-lg hidden -mt-[15px]"> <!-- Konteyner ilk olaraq gizlədilir -->
         <div id="errorMessage" class="error-message"></div>
         <div id="notificationsList" class="space-y-4 hidden">
             <!-- Bildirişlər bura yüklənəcək -->
@@ -232,76 +232,77 @@
 
         // Firebase tətbiplərinin konfiqurasiyaları
         const firebaseConfigFollows = {
-            apiKey: "AIzaSyAZbtUw8id4yyXqrXtsf2FwuZmJ02qxit8",
-            authDomain: "pasyak-follows.firebaseapp.com",
-            databaseURL: "https://pasyak-follows-default-rtdb.firebaseio.com",
-            projectId: "pasyak-follows",
-            storageBucket: "pasyak-follows.firebasestorage.app",
-            messagingSenderId: "571115478758",
-            appId: "1:571115478758:web:9b45de3c9169083d9a2527",
-            measurementId: "G-KHDDTM6FC9"
+            apiKey: "AIzaSyDohN9yaNE5lxQet1I9m8s4zD778OyYVzg",
+            authDomain: "limon-follow.firebaseapp.com",
+            databaseURL: "https://limon-follow-default-rtdb.firebaseio.com",
+            projectId: "limon-follow",
+            storageBucket: "limon-follow.firebasestorage.app",
+            messagingSenderId: "851250357014",
+            appId: "1:851250357014:web:d7b99931c1a86dbbc2e637",
+            measurementId: "G-N63PV11W8Q"
         };
 
         const firebaseConfigUser = {
-            apiKey: "AIzaSyBHRY6yGGT9qHV8df1OJXtmbQ7QxWu69ps",
-            authDomain: "pasyak-user.firebaseapp.com",
-            databaseURL: "https://pasyak-user-default-rtdb.firebaseio.com",
-            projectId: "pasyak-user",
-            storageBucket: "pasyak-user.firebasestorage.app",
-            messagingSenderId: "898141218588",
-            appId: "1:898141218588:web:f3477f39d96bceb2727cd9"
+            apiKey: "AIzaSyA6slU31pyfp7tljAB20Vui1gvptSPEv8M",
+            authDomain: "limons-user-e43c0.firebaseapp.com",
+            databaseURL: "https://limons-user-e43c0-default-rtdb.firebaseio.com",
+            projectId: "limons-user-e43c0",
+            storageBucket: "limons-user-e43c0.firebasestorage.app",
+            messagingSenderId: "484283046830",
+            appId: "1:484283046830:web:ad76e2d421b68f22fd063f"
         };
 
         const firebaseConfigPosts = {
-            apiKey: "AIzaSyC_wr_ji3crAVEmRwbHmJ0YJfx46B_as2w",
-            authDomain: "pasyakaaz.firebaseapp.com",
-            databaseURL: "https://pasyakaaz-default-rtdb.firebaseio.com",
-            projectId: "pasyakaaz",
-            storageBucket: "pasyakaaz.firebasestorage.app",
-            messagingSenderId: "289629756800",
-            appId: "1:289629756800:web:f7a6f00fcce2b1eb28b565"
+            apiKey: "AIzaSyAjW7zigfYvSyF0DXt3ywu-1PqZDHFbKcc",
+            authDomain: "limon-post.firebaseapp.com",
+            databaseURL: "https://limon-post-default-rtdb.firebaseio.com",
+            projectId: "limon-post",
+            storageBucket: "limon-post.firebasestorage.app",
+            messagingSenderId: "213746799645",
+            appId: "1:213746799645:web:3a4eb82131dc2e1b1622f4"
         };
 
         const firebaseConfigReels = {
-            apiKey: "AIzaSyC6yWCYGtOkJoTOfZRoO8HGo-L_NKR9p5k",
-            authDomain: "pasyak-reels.firebaseapp.com",
-            databaseURL: "https://pasyak-reels-default-rtdb.firebaseio.com",
-            projectId: "pasyak-reels",
-            storageBucket: "pasyak-reels.firebasestorage.app",
-            messagingSenderId: "635054499590",
-            appId: "1:635054499590:web:7b1e9bc84f4b752317e087",
-            measurementId: "G-FW0KJDLF4B"
+            apiKey: "AIzaSyCI3oZyJXBbZfAFYhhx3mqbtj2lBsVtlVU",
+            authDomain: "limon-video.firebaseapp.com",
+            databaseURL: "https://limon-video-default-rtdb.firebaseio.com",
+            projectId: "limon-video",
+            storageBucket: "limon-video.firebasestorage.app",
+            messagingSenderId: "1027523081229",
+            appId: "1:1027523081229:web:957f99b23a2310a2849144",
+            measurementId: "G-GB4KYL0G9V"
         };
 
         const firebaseConfigPostComments = {
-            apiKey: "AIzaSyBK05tqx2yk3wlNEmkb2V8iUIYP3MAsVVg",
-            authDomain: "gonline-1880b.firebaseapp.com",
-            databaseURL: "https://gonline-1880b-default-rtdb.firebaseio.com",
-            projectId: "gonline-1880b",
-            storageBucket: "gonline-1880b.firebasestorage.app",
-            messagingSenderId: "988052893147",
-            appId: "1:988052893147:web:01586a71f48bd3eae18bfe"
+            apiKey: "AIzaSyBin2WZ96znrq97fWwxQK5LrLRpVtmnMPU",
+            authDomain: "limon-post-comment.firebaseapp.com",
+            databaseURL: "https://limon-post-comment-default-rtdb.firebaseio.com",
+            projectId: "limon-post-comment",
+            storageBucket: "limon-post-comment.firebasestorage.app",
+            messagingSenderId: "276602642114",
+            appId: "1:276602642114:web:7c0608c003c5e0a254e55b"
         };
 
         const firebaseConfigReelComments = {
-            apiKey: "AIzaSyCqiOFuq6usZTZ4zsfd8LcCUdj1hP2j5cQ",
-            authDomain: "reply-eb654.firebaseapp.com",
-            databaseURL: "https://reply-eb654-default-rtdb.firebaseio.com",
-            projectId: "reply-eb654",
-            storageBucket: "reply-eb654.firebasestorage.app",
-            messagingSenderId: "292801573334",
-            appId: "1:292801573334:web:2486813d8fe45865d0f477"
+            apiKey: "AIzaSyC6YBAAly4wH6o1981ntYANsJIzK_eph1I",
+            authDomain: "limons-video-comment.firebaseapp.com",
+            databaseURL: "https://limons-video-comment-default-rtdb.firebaseio.com",
+            projectId: "limons-video-comment",
+            storageBucket: "limons-video-comment.firebasestorage.app",
+            messagingSenderId: "1097578178676",
+            appId: "1:1097578178676:web:a4f8be6d55b883f6ea8921"
         };
 
         // Yeni bildirişlər verilənlər bazası
         const firebaseConfigNotificationsDB = {
-            apiKey: "AIzaSyDhQONuhQFdbrfMAEFhmIpap51Bgc3rQXs",
-            authDomain: "noti-s.firebaseapp.com",
-            databaseURL: "https://noti-s-default-rtdb.firebaseio.com", 
-            projectId: "noti-s",
-            storageBucket: "noti-s.firebasestorage.app",
-            messagingSenderId: "943123365767",
-            appId: "1:943123365767:web:0830f2f45d39ca2f3ddd22"
+            apiKey: "AIzaSyAHGwh2GGD9mr4K3oyuTsj-kqj8BijbTTU",
+  authDomain: "noti-limons.firebaseapp.com",
+  databaseURL: "https://noti-limons-default-rtdb.firebaseio.com",
+  projectId: "noti-limons",
+  storageBucket: "noti-limons.firebasestorage.app",
+  messagingSenderId: "863854532081",
+  appId: "1:863854532081:web:31310cdf80692a151be050",
+  measurementId: "G-72VYSHJ1RC"
         };
 
 
