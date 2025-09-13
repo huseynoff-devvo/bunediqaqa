@@ -4,13 +4,14 @@
 
   // Firebase konfiqurasiyası
   const firebaseConfig = {
-    apiKey: "AIzaSyBERAe8FhHLfhVukrC35eb-Vp7cuXqww0E",
-    authDomain: "pasyak-pixels.firebaseapp.com",
-    databaseURL: "https://pasyak-pixels-default-rtdb.firebaseio.com",
-    projectId: "pasyak-pixels",
-    storageBucket: "pasyak-pixels.firebaseapp.com",
-    messagingSenderId: "974471457881",
-    appId: "1:974471457881:web:ef3380c071516000fad548"
+    apiKey: "AIzaSyDrmPU4Mel42OaknelUweQPfdmaaAMwknA",
+  authDomain: "limons-pixels.firebaseapp.com",
+  databaseURL: "https://limons-pixels-default-rtdb.firebaseio.com",
+  projectId: "limons-pixels",
+  storageBucket: "limons-pixels.firebasestorage.app",
+  messagingSenderId: "948356667785",
+  appId: "1:948356667785:web:b71790e8f13c6666c32958",
+  measurementId: "G-5FE5R1P8ZZ"
   };
 
   // Firebase tətbiqini başla
