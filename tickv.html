@@ -5,8 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rəsmi Tik Üzvü</title>
   <style>
+    * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
     body {
-      background-color: #121212;
+      background-color: #101010;
       margin: 0;
       font-family: "Segoe UI", sans-serif;
       color: white;
@@ -65,7 +75,7 @@
 <body>
 
   <div class="glow-box">
-    <img src="https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png" alt="Tik Nişanı" class="logo" />
+    <img src="https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314188/tick_bpkpy1.png" alt="Tik Nişanı" class="logo" />
 
     <div class="box">
       <p class="congrats">✅ Siz rəsmi üzvüsünüz!</p>
