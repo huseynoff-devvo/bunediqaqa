@@ -6,6 +6,16 @@
     <title>Bildirişlər</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
         body {
             font-family: "Inter", sans-serif;
             background-color: #101010; /* Darker background */
