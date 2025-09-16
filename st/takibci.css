@@ -21,8 +21,7 @@ img {
             background-color: #101010;
             color: white;
             font-family: 'Segoe UI', Arial, sans-serif;
-            padding: 20px;
-            display: flex;
+            padding: 5px;
             flex-direction: column;
             align-items: center;
             margin: 0;
@@ -37,7 +36,6 @@ img {
             display: flex;
             align-items: center;
             margin-bottom: 15px;
-            background: #242424;
             padding: 10px;
             border-radius: 10px;
             cursor: pointer;
@@ -45,9 +43,6 @@ img {
             width: 100%;
         }
 
-        .user:hover {
-            background: #303030;
-        }
 
         .user img.profile-pic {
             width: 50px;
