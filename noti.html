@@ -49,12 +49,12 @@ img {
             display: flex;
             align-items: flex-start; /* Align items to the top for better content flow */
             padding: 0.5rem; /* Less internal padding for items on mobile */
-            background-color: #181818; /* Darker notification item background */
-            border-radius: 10px; /* Rounded corners for items */
+            /* background-color: #181818; Darker notification item background  */
+            /* border-radius: 10px; Rounded corners for items  */
             margin-bottom: 0.75rem; /* Less spacing between items on mobile */
             transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); /* Subtle item shadow */
-            border: 1px solid #333; /* Soft border for items */
+            /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); Subtle item shadow */
+            /* border: 1px solid #333; Soft border for items  */
             flex-direction: column; /* Stack items vertically on mobile */
         }
 
@@ -128,7 +128,7 @@ img {
             background-color: #101010; /* Dark semi-transparent background */
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: center; 
             z-index: 1000;
         }
         .gif-display {
@@ -189,7 +189,7 @@ img {
             text-overflow: ellipsis;
             white-space: nowrap;
             /* margin-left: auto; */ /* Remove auto-margin for mobile stacking */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            /* box-shadow: 0 1px 3px rgba(0,0,0,0.2); */
             font-style: italic;
         }
 
@@ -222,13 +222,13 @@ img {
         }
     </style>
 </head>
-<body class="bg-[#101010] flex items-center justify-center p-0">
+<body class="bg-[#101010] flex justify-center p-0">
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
     </div>
 
-    <div class="container bg-[#101010] p-1 rounded-xl shadow-lg hidden -mt-[15px]"> <!-- Konteyner ilk olaraq gizlədilir -->
+    <div class="container bg-[#101010] p-1 rounded-xl"> <!-- Konteyner ilk olaraq gizlədilir -->
         <div id="errorMessage" class="error-message"></div>
         <div id="notificationsList" class="space-y-4 hidden">
             <!-- Bildirişlər bura yüklənəcək -->
@@ -436,7 +436,7 @@ img {
 
             limitedNotifications.forEach(notification => {
                 const notificationDiv = document.createElement("div");
-                notificationDiv.className = "notification-item bg-[#181818] hover:bg-[#181818] rounded-lg transition duration-200 ease-in-out";
+                notificationDiv.className = "notification-item bg-[#101010] hover:bg-[#101010]";
                 let messageText = notification.message;
                 let contentHtml = ''; // Şərh mətni, GIF üçün
                 let sourceTextElement = ''; // Post və ya video mətni üçün element
