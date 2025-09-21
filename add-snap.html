@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+      * {
+  user-select: none;   /* Seçməni bloklayır */
+  -webkit-user-select: none; /* Safari üçün */
+  -ms-user-select: none;     /* Köhnə IE üçün */
+}
+img {
+  pointer-events: none;  /* şəkil kliklənməsin */
+  user-drag: none;       /* brauzerdə sürüklənməsin */
+  -webkit-user-drag: none; /* Safari/Chrome üçün */
+}
+
+        * {
+            outline: none !important;
+            box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #101010;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: #ccc;
+        }
+
+        #video-wrapper {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+
+        #video-player {
+            width: 100%;
+            /* height: 100%;  */
+            object-fit: cover;
+            display: block;
+        }
+        
+        #play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background-image: url('https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            opacity: 0.8;
+            z-index: 5;
+        }
+        
+        #play-overlay:hover {
+            opacity: 1;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+            padding: 20px 20px 10px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        #video-wrapper:hover #controls,
+        #video-wrapper.touch-active #controls {
+            opacity: 1;
+        }
+
+        #progress-bar {
+            width: 100%;
+            height: 5px;
+            background: #444;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #progress {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            border-radius: 5px;
+            position: relative;
+        }
+        
+        #progress-thumb {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translate(50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        #control-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-button {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            padding: 0;
+        }
+        .control-button:hover {
+            color: #fff;
+        }
+
+        #time-info {
+            font-size: 0.9em;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #play-pause-btn-img {
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+        }
+
+        /* Mobile üçün bəzi düzəlişlər */
+        @media (max-width: 768px) {
+            #play-overlay {
+                width: 60px;
+                height: 60px;
+            }
+            #controls {
+                padding: 15px 10px 5px;
+            }
+            .left-controls, .right-controls {
+                gap: 10px;
+            }
+            .control-button {
+                font-size: 1em;
+            }
+            #time-info {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="video-wrapper">
+        <div id="video-container">
+            <video id="video-player" poster="https://via.placeholder.com/1920x1080?text=Video+yüklənir..." playsinline></video>
+            <div id="play-overlay"></div>
+        </div>
+
+        <div id="controls">
+            <div id="progress-bar">
+                <div id="progress">
+                    <div id="progress-thumb"></div>
+                </div>
+            </div>
+            <div id="control-buttons">
+                <div class="left-controls">
+                    <button id="play-pause" class="control-button">
+                        <img id="play-pause-btn-img" src="https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png" alt="Play/Pause">
+                    </button>
+                    <div id="time-info">
+                        <span id="current-time">00:00</span> / <span id="total-time">00:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoPlayer = document.getElementById('video-player');
+            const playPauseBtn = document.getElementById('play-pause');
+            const playPauseBtnImg = document.getElementById('play-pause-btn-img');
+            const playOverlay = document.getElementById('play-overlay');
+            const progressBar = document.getElementById('progress-bar');
+            const progress = document.getElementById('progress');
+            const currentTimeEl = document.getElementById('current-time');
+            const totalTimeEl = document.getElementById('total-time');
+            const videoWrapper = document.getElementById('video-wrapper');
+
+            let isDragging = false;
+            let wasPaused = false;
+
+            const getParameterByName = (name, url = window.location.href) => {
+                name = name.replace(/[\[\]]/g, '\\$&');
+                const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+                const results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, ' '));
+            };
+
+            const formatTime = (seconds) => {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.floor(seconds % 60);
+                const format = num => (num < 10 ? '0' + num : num);
+                return `${format(minutes)}:${format(remainingSeconds)}`;
+            };
+
+            const videoUrl = getParameterByName('video');
+            if (videoUrl) {
+                videoPlayer.src = videoUrl;
+            } else {
+                console.error("URL'də video linki tapılmadı. Zəhmət olmasa URL-ə '?video=SİZİN_VİDEO_LİNKİNİZ' əlavə edin.");
+            }
+
+            const updateProgress = (e) => {
+                const rect = progressBar.getBoundingClientRect();
+                let clientX;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                } else {
+                    clientX = e.clientX;
+                }
+
+                const clickPosition = clientX - rect.left;
+                const progressPercentage = Math.max(0, Math.min(1, clickPosition / rect.width));
+                const newTime = progressPercentage * videoPlayer.duration;
+                videoPlayer.currentTime = newTime;
+
+                // Sürüşdürmə zamanı progress çubuğunu da yenilə
+                progress.style.width = `${progressPercentage * 100}%`;
+            };
+
+            const togglePlayPause = () => {
+                if (videoPlayer.paused) {
+                    videoPlayer.play();
+                } else {
+                    videoPlayer.pause();
+                }
+            };
+
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            videoPlayer.addEventListener('click', togglePlayPause);
+            playOverlay.addEventListener('click', togglePlayPause);
+            
+            videoPlayer.addEventListener('play', () => {
+                playPauseBtnImg.src = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+                playOverlay.style.display = 'none';
+                videoWrapper.classList.remove('touch-active');
+            });
+            
+            videoPlayer.addEventListener('pause', () => {
+                playPauseBtnImg.src = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+                playOverlay.style.display = 'block';
+            });
+            
+            videoPlayer.addEventListener('timeupdate', () => {
+                if (!isDragging) {
+                    const progressPercentage = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+                    progress.style.width = `${progressPercentage}%`;
+                }
+                currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
+            });
+            
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                totalTimeEl.textContent = formatTime(videoPlayer.duration);
+            });
+            
+            // Mouse (masaüstü) hadisələri
+            progressBar.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                wasPaused = videoPlayer.paused;
+                videoPlayer.pause();
+                updateProgress(e);
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    updateProgress(e);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    if (!wasPaused) {
+                        videoPlayer.play();
+                    }
+                }
+            });
+            
+            // Mobil (toxunma) hadisələri
+            progressBar.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                wasPaused = videoPlayer.paused;
+                videoPlayer.pause();
+                updateProgress(e);
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    updateProgress(e);
+                }
+            });
+
+            document.addEventListener('touchend', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    if (!wasPaused) {
+                        videoPlayer.play();
+                    }
+                }
+            });
+
+            let controlsTimeout;
+            videoWrapper.addEventListener('touchstart', () => {
+                videoWrapper.classList.add('touch-active');
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(() => {
+                    if (videoPlayer.paused) {
+                        videoWrapper.classList.add('touch-active');
+                    } else {
+                         videoWrapper.classList.remove('touch-active');
+                    }
+                }, 3000);
+            });
+            videoWrapper.addEventListener('touchend', () => {
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(() => {
+                    if (videoPlayer.paused) {
+                        videoWrapper.classList.add('touch-active');
+                    } else {
+                         videoWrapper.classList.remove('touch-active');
+                    }
+                }, 3000);
+            });
+
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                const promise = videoPlayer.play();
+                if (promise !== undefined) {
+                    promise.then(_ => {
+                    }).catch(error => {
+                        console.log("Avtomatik oynatmaya icazə verilmədi. Zəhmət olmasa oynatmaq üçün düyməyə basın.");
+                        playPauseBtnImg.src = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+                        playOverlay.style.display = 'block';
+                    });
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
