@@ -68,7 +68,7 @@ img {
             transform: translate(-50%, -50%);
             width: 80px;
             height: 80px;
-            background-image: url('https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png');
+            background-image: url('https://res.cloudinary.com/dxymbsg0p/image/upload/v1717336715/play_1_h58c73.png');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
@@ -193,7 +193,7 @@ img {
 
     <div id="video-wrapper">
         <div id="video-container">
-            <video id="video-player" poster="https://via.placeholder.com/1920x1080?text=Video+yüklənir..." playsinline></video>
+            <video id="video-player" poster="https://via.placeholder.com/1920x1080?text=Video+y%C3%BCkl%C9%99nir..." playsinline></video>
             <div id="play-overlay"></div>
         </div>
 
@@ -227,6 +227,10 @@ img {
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
             const videoWrapper = document.getElementById('video-wrapper');
+
+            // Ikon URLs
+            const playIconUrl = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+            const pauseIconUrl = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758466229/pause_2_llephz.png';
 
             let isDragging = false;
             let wasPaused = false;
@@ -285,14 +289,18 @@ img {
             playOverlay.addEventListener('click', togglePlayPause);
             
             videoPlayer.addEventListener('play', () => {
-                playPauseBtnImg.src = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+                playPauseBtnImg.src = pauseIconUrl;
                 playOverlay.style.display = 'none';
                 videoWrapper.classList.remove('touch-active');
+                // Oynatıldığında overlay ikonunu da dəyişdir
+                playOverlay.style.backgroundImage = `url(${pauseIconUrl})`;
             });
             
             videoPlayer.addEventListener('pause', () => {
-                playPauseBtnImg.src = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+                playPauseBtnImg.src = playIconUrl;
                 playOverlay.style.display = 'block';
+                // Dayandırıldığında overlay ikonunu da dəyişdir
+                playOverlay.style.backgroundImage = `url(${playIconUrl})`;
             });
             
             videoPlayer.addEventListener('timeupdate', () => {
@@ -382,8 +390,9 @@ img {
                     promise.then(_ => {
                     }).catch(error => {
                         console.log("Avtomatik oynatmaya icazə verilmədi. Zəhmət olmasa oynatmaq üçün düyməyə basın.");
-                        playPauseBtnImg.src = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1758397658/pauses_1_wt7mzf.png';
+                        playPauseBtnImg.src = playIconUrl;
                         playOverlay.style.display = 'block';
+                        playOverlay.style.backgroundImage = `url(${playIconUrl})`;
                     });
                 }
             });
