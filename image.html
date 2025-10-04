@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Siçan Təkəri ilə Zoom və Sürüşdürmə</title>
+    <title>Siçan Təkəri və Mobil Zoom</title>
 
     <style>
        * {
@@ -50,7 +50,6 @@
             max-height: 100%; 
             object-fit: contain; 
             display: none; 
-            /* JavaScript ilə idarə olunan ilkin transform */
             transform: scale(1);
             transition: transform 0.1s ease-out; /* Daha axıcı zoom effekti */
             position: absolute; /* Hərəkətə imkan vermək üçün */
@@ -70,9 +69,13 @@
     </div>
 
     <script>
+        // Cihazın mobil olub-olmadığını yoxlayan funksiya
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
-            // URL-dən 'image' parametrini götürür
             const imageUrl = urlParams.get('image');
             
             const imgElement = document.getElementById('dynamic-image');
@@ -82,7 +85,11 @@
                 imgElement.src = imageUrl;
                 imgElement.onload = function() {
                     imgElement.style.display = 'block';
-                    setupZoom(imgElement, container);
+                    // Mobil deyilsə, fərdi zoom funksiyasını qururuq
+                    if (!isMobile()) {
+                        setupDesktopZoom(imgElement, container);
+                    } 
+                    // Mobil üçün sadəcə brauzerin pinch-to-zoom funksiyası işləyəcək
                 };
                 imgElement.onerror = function() {
                     imgElement.style.display = 'none';
@@ -93,8 +100,8 @@
             }
         });
 
-        // --- ƏSAS ZOOM VƏ SÜRÜŞDÜRMƏ (PAN) MANTIQI ---
-        function setupZoom(img, container) {
+        // --- MASAÜSTÜ SİÇAN TƏKƏRİ ZOOM VƏ PAN MANTIQI (MOBİL ÜÇÜN İŞLƏMİR) ---
+        function setupDesktopZoom(img, container) {
             let scale = 1;
             let posX = 0;
             let posY = 0;
@@ -102,26 +109,21 @@
             const minScale = 1;
             const maxScale = 5;
 
-            // Şəkilin zoom və hərəkətini tətbiq edir
             function applyTransform() {
                 img.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-                
-                // Kursorun görünüşünü yeniləyir
                 container.style.cursor = scale > minScale ? 'grab' : 'default';
             }
 
-            // Siçan Təkəri (Zoom) Hadisəsi
+            // Siçan Təkəri (Zoom) Hadisəsi - Yalnız Masaüstü üçün
             container.addEventListener('wheel', function(e) {
                 e.preventDefault(); 
 
                 const delta = e.deltaY * -0.01;
                 let newScale = scale + delta * zoomSpeed;
                 
-                // Məhdudiyyətlər (1x və 5x arasında)
                 newScale = Math.max(minScale, Math.min(maxScale, newScale));
                 
                 if (newScale !== scale) {
-                    // Zoomun siçanın yerləşdiyi nöqtəyə fokuslanması (optik zoom)
                     const zoomFactor = newScale / scale;
                     
                     const rect = container.getBoundingClientRect();
@@ -133,7 +135,6 @@
 
                     scale = newScale; 
                     
-                    // Tam kiçildikdə, pozisiyanı sıfırlayır (BUG HƏLLİ)
                     if (scale === minScale) {
                         posX = 0;
                         posY = 0;
@@ -149,7 +150,6 @@
             let currentPosX, currentPosY;
 
             container.addEventListener('mousedown', function(e) {
-                // Yalnız böyüdülmüş halda hərəkətə icazə verilir (BUG HƏLLİ)
                 if (scale > minScale) { 
                     isDragging = true;
                     currentPosX = posX; 
@@ -164,7 +164,6 @@
                 if (!isDragging) return;
                 e.preventDefault();
                 
-                // Yeni pozisiyanı hesablayır
                 posX = currentPosX + (e.clientX - startX);
                 posY = currentPosY + (e.clientY - startY);
                 
@@ -173,11 +172,9 @@
 
             const stopDragging = function() {
                 isDragging = false;
-                // Kursoru geri qaytarır
                 container.style.cursor = scale > minScale ? 'grab' : 'default';
             };
 
-            // Siçanın düyməsi buraxıldıqda və ya kontenerdən çıxdıqda
             container.addEventListener('mouseup', stopDragging);
             container.addEventListener('mouseleave', stopDragging);
         }
