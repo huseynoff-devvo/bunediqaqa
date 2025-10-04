@@ -3,45 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Tam Ekran Şəkil və Mobil Zoom</title>
+    <title>Siçan Təkəri ilə Zoom və Sürüşdürmə</title>
 
     <style>
+       * {
+          user-select: none;
+          -webkit-user-select: none;
+          -ms-user-select: none;
+          -webkit-tap-highlight-color: transparent;
+          box-sizing: border-box;
+        }
+        img {
+          pointer-events: none;
+          user-drag: none;
+          -webkit-user-drag: none;
+        }
+        *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
         /* Tam Ekran və Tünd Tema */
         html, body {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: auto; /* İndi zoom olacağı üçün overflow: auto olmalıdır */
+            /* Scrollu kəsirik, çünki zoom və hərəkət üçün JS istifadə edirik */
+            overflow: hidden; 
             background-color: #101010;
         }
 
         /* Şəklin Konteneri - Tam ekranı əhatə edir */
         .image-container {
-            /* Full ekran üçün deyil, sadəcə kontentə sığacaq */
             width: 100vw; 
-            height: auto; 
-            min-height: 100vh; /* Minimum hündürlük (fonu tam örtmək üçün) */
+            height: 100vh; /* Tam ekran hündürlüyü */
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: visible; /* Zoom üçün görünən olmalıdır */
+            overflow: hidden; /* Kontenerin özü scroll etməsin */
+            cursor: default; /* Başlanğıc kursor */
+            user-select: none; /* Sürüşdürmə zamanı mətn seçməsinin qarşısını alır */
         }
-
+        
         /* Şəkil Stili */
         #dynamic-image {
-            /* Şəkli kəsmədən, proporsiyasını qoruyaraq ekrana sığdırır */
             border: 0px;
             border-radius: 20px;
             max-width: 100%; 
-            height: auto;
+            max-height: 100%; 
             object-fit: contain; 
             display: none; 
+            /* JavaScript ilə idarə olunan ilkin transform */
+            transform: scale(1);
+            transition: transform 0.1s ease-out; /* Daha axıcı zoom effekti */
+            position: absolute; /* Hərəkətə imkan vermək üçün */
         }
-
-        /* Mobil Cihazlarda Əllə Zoomu Aktiv Etmək */
+        
+        /* Mobil cihazlarda pinch-to-zoom üçün jestlərə icazə verir */
         body {
-            /* Əllə zoom etməyə icazə verir. Əvvəlki "none" silindi. */
             touch-action: pan-x pan-y; 
             -ms-touch-action: pan-x pan-y;
         }
@@ -49,33 +65,122 @@
 </head>
 <body>
 
-    <div class="image-container">
+    <div class="image-container" id="image-container">
         <img id="dynamic-image" src="" alt="Yüklənən şəkil">
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
-            // URL-dəki 'image' parametrini əldə et
+            // URL-dən 'image' parametrini götürür
             const imageUrl = urlParams.get('image');
             
             const imgElement = document.getElementById('dynamic-image');
+            const container = document.getElementById('image-container');
 
             if (imageUrl) {
-                // Link varsa, şəkli göstər
                 imgElement.src = imageUrl;
-                imgElement.style.display = 'block';
-                
-                // Şəkil yüklənməsə, fonu tünd saxlayaq
+                imgElement.onload = function() {
+                    imgElement.style.display = 'block';
+                    setupZoom(imgElement, container);
+                };
                 imgElement.onerror = function() {
                     imgElement.style.display = 'none';
+                    console.error("Şəkil yüklənmədi: " + imageUrl);
                 };
             } else {
-                // Link tapılmasa, sadəcə tünd fon görünəcək
                 imgElement.style.display = 'none';
             }
         });
-    </script>
 
+        // --- ƏSAS ZOOM VƏ SÜRÜŞDÜRMƏ (PAN) MANTIQI ---
+        function setupZoom(img, container) {
+            let scale = 1;
+            let posX = 0;
+            let posY = 0;
+            const zoomSpeed = 0.1;
+            const minScale = 1;
+            const maxScale = 5;
+
+            // Şəkilin zoom və hərəkətini tətbiq edir
+            function applyTransform() {
+                img.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+                
+                // Kursorun görünüşünü yeniləyir
+                container.style.cursor = scale > minScale ? 'grab' : 'default';
+            }
+
+            // Siçan Təkəri (Zoom) Hadisəsi
+            container.addEventListener('wheel', function(e) {
+                e.preventDefault(); 
+
+                const delta = e.deltaY * -0.01;
+                let newScale = scale + delta * zoomSpeed;
+                
+                // Məhdudiyyətlər (1x və 5x arasında)
+                newScale = Math.max(minScale, Math.min(maxScale, newScale));
+                
+                if (newScale !== scale) {
+                    // Zoomun siçanın yerləşdiyi nöqtəyə fokuslanması (optik zoom)
+                    const zoomFactor = newScale / scale;
+                    
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    posX = mouseX - (mouseX - posX) * zoomFactor;
+                    posY = mouseY - (mouseY - posY) * zoomFactor;
+
+                    scale = newScale; 
+                    
+                    // Tam kiçildikdə, pozisiyanı sıfırlayır (BUG HƏLLİ)
+                    if (scale === minScale) {
+                        posX = 0;
+                        posY = 0;
+                    }
+                    
+                    applyTransform();
+                }
+            }, { passive: false });
+
+            // Şəklin Sürüşdürülməsi (Pan) Funksiyası
+            let isDragging = false;
+            let startX, startY;
+            let currentPosX, currentPosY;
+
+            container.addEventListener('mousedown', function(e) {
+                // Yalnız böyüdülmüş halda hərəkətə icazə verilir (BUG HƏLLİ)
+                if (scale > minScale) { 
+                    isDragging = true;
+                    currentPosX = posX; 
+                    currentPosY = posY;
+                    startX = e.clientX; 
+                    startY = e.clientY;
+                    container.style.cursor = 'grabbing';
+                }
+            });
+
+            container.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                // Yeni pozisiyanı hesablayır
+                posX = currentPosX + (e.clientX - startX);
+                posY = currentPosY + (e.clientY - startY);
+                
+                applyTransform();
+            });
+
+            const stopDragging = function() {
+                isDragging = false;
+                // Kursoru geri qaytarır
+                container.style.cursor = scale > minScale ? 'grab' : 'default';
+            };
+
+            // Siçanın düyməsi buraxıldıqda və ya kontenerdən çıxdıqda
+            container.addEventListener('mouseup', stopDragging);
+            container.addEventListener('mouseleave', stopDragging);
+        }
+    </script>
 </body>
 </html>
