@@ -2,182 +2,140 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Siçan Təkəri və Mobil Zoom</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Şəkil Grid Overlay</title>
     <style>
-       * {
-          user-select: none;
-          -webkit-user-select: none;
-          -ms-user-select: none;
-          -webkit-tap-highlight-color: transparent;
-          box-sizing: border-box;
-        }
-        img {
-          pointer-events: none;
-          user-drag: none;
-          -webkit-user-drag: none;
-        }
-        *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; }
-        /* Tam Ekran və Tünd Tema */
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            /* Scrollu kəsirik, çünki zoom və hərəkət üçün JS istifadə edirik */
-            overflow: hidden; 
-            background-color: #101010;
-        }
-
-        /* Şəklin Konteneri - Tam ekranı əhatə edir */
-        .image-container {
-            width: 100vw; 
-            height: 100vh; /* Tam ekran hündürlüyü */
+        /* Dark Mode üçün Əsas Stilizasiya */
+        body {
+            /* Tünd boz arxa plan (saf qara gözü yormasın) */
+            background-color: #1e1e1e;
+            color: #c5c5c5; /* Açıq rəngli mətn */
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* Kontenerin özü scroll etməsin */
-            cursor: default; /* Başlanğıc kursor */
-            user-select: none; /* Sürüşdürmə zamanı mətn seçməsinin qarşısını alır */
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            transition: background-color 0.3s; /* Rəng keçidini yumşaltmaq üçün */
+        }
+
+        /* Şəkli və Grid'i birləşdirən əsas konteyner */
+        .image-container {
+            position: relative;
+            /* width: 400px; Nümunə üçün sabit en */
+            /* height: 400px;  */
+            overflow: hidden; /* Künc radiusu daxilindəki məzmunu gizlədir */
+            border-radius: 20px; /* Tələb olunan künc radiusu */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); /* Dark Mode üçün kölgə */
+            border: 2px solid #000000; /* Yüngül haşiyə */
+        }
+
+        /* Şəkil elementi */
+        #main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Şəklin konteyneri tam doldurmasını təmin edir */
+            display: block;
+        }
+
+        /* Grid Overlay (şəklin üstündəki 9 kvadrat) */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            /* 3 bərabər sütun və 3 bərabər sətir */
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            pointer-events: none; /* Üzərindəki klikləri şəklin özünə ötürmək üçün */
+            z-index: 10;
+        }
+
+        /* Grid xətləri */
+        .grid-overlay div {
+            border: 1px solid rgba(0, 0, 0, 0.2); /* Açıq rəngli, yarı-şəffaf xətlər */
+            box-sizing: border-box; /* Haşiyənin ölçüyə daxil edilməsi */
+            /* color: #333; */
+        }
+
+        /* Xətlərin künc radiusuna uyğunlaşması üçün bəzi haşiyələri aradan qaldırırıq */
+        .grid-overlay div:nth-child(1), .grid-overlay div:nth-child(2), .grid-overlay div:nth-child(3) {
+            border-top: none; /* Yuxarı künc radiusu daxilindəki ilk sətri gizlət */
+        }
+        .grid-overlay div:nth-child(1), .grid-overlay div:nth-child(4), .grid-overlay div:nth-child(7) {
+            border-left: none; /* Sol künc radiusu daxilindəki ilk sütunu gizlət */
+        }
+        .grid-overlay div:nth-child(7), .grid-overlay div:nth-child(8), .grid-overlay div:nth-child(9) {
+            border-bottom: none; /* Alt künc radiusu daxilindəki son sətri gizlət */
+        }
+        .grid-overlay div:nth-child(3), .grid-overlay div:nth-child(6), .grid-overlay div:nth-child(9) {
+            border-right: none; /* Sağ künc radiusu daxilindəki son sütunu gizlət */
         }
         
-        /* Şəkil Stili */
-        #dynamic-image {
-            border: 0px;
-            border-radius: 20px;
-            max-width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; 
-            display: none; 
-            transform: scale(1);
-            transition: transform 0.1s ease-out; /* Daha axıcı zoom effekti */
-            position: absolute; /* Hərəkətə imkan vermək üçün */
+        /* Şəkil tapılmadıqda və ya link yoxdursa bildiriş */
+        .message {
+            text-align: center;
+            padding: 20px;
+            background-color: #333;
+            border-radius: 10px;
         }
-        
-        /* Mobil cihazlarda pinch-to-zoom üçün jestlərə icazə verir */
-        body {
-            touch-action: pan-x pan-y; 
-            -ms-touch-action: pan-x pan-y;
-        }
+
     </style>
 </head>
 <body>
 
-    <div class="image-container" id="image-container">
-        <img id="dynamic-image" src="" alt="Yüklənən şəkil">
+    <div class="main-content">
+        <div class="image-container" id="image-container">
+            <img id="main-image" src="" alt="Dinamik Yüklənmiş Şəkil">
+            
+            <div class="grid-overlay">
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+            </div>
+        </div>
+
+        <div class="message" id="info-message" style="display: none;">
+            Zəhmət olmasa, URL-ə şəkil linkini əlavə edin. Nümunə: <br>
+            `?image=https://picsum.photos/400/400`
+        </div>
     </div>
 
-    <script>
-        // Cihazın mobil olub-olmadığını yoxlayan funksiya
-        function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
 
-        document.addEventListener('DOMContentLoaded', function() {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageElement = document.getElementById('main-image');
+            const imageContainer = document.getElementById('image-container');
+            const infoMessage = document.getElementById('info-message');
+
+            // 1. URL parametrini oxumaq üçün funksiya
             const urlParams = new URLSearchParams(window.location.search);
-            const imageUrl = urlParams.get('image');
-            
-            const imgElement = document.getElementById('dynamic-image');
-            const container = document.getElementById('image-container');
+            const imageUrl = urlParams.get('image'); // '?image=' parametrini axtarır
 
             if (imageUrl) {
-                imgElement.src = imageUrl;
-                imgElement.onload = function() {
-                    imgElement.style.display = 'block';
-                    // Mobil deyilsə, fərdi zoom funksiyasını qururuq
-                    if (!isMobile()) {
-                        setupDesktopZoom(imgElement, container);
-                    } 
-                    // Mobil üçün sadəcə brauzerin pinch-to-zoom funksiyası işləyəcək
+                // Şəkil linki varsa
+                imageContainer.style.display = 'block';
+                infoMessage.style.display = 'none';
+                
+                // Şəkil elementinin 'src' atributunu təyin et
+                imageElement.src = imageUrl;
+
+                // Şəkilin yüklənməsi ilə əlaqədar bir neçə yoxlama edək
+                imageElement.onerror = () => {
+                    imageContainer.style.display = 'none';
+                    infoMessage.style.display = 'block';
+                    infoMessage.innerHTML = "Şəkil yüklənə bilmədi. Zəhmət olmasa, etibarlı bir şəkil linki olduğundan əmin olun.";
                 };
-                imgElement.onerror = function() {
-                    imgElement.style.display = 'none';
-                    console.error("Şəkil yüklənmədi: " + imageUrl);
-                };
+
             } else {
-                imgElement.style.display = 'none';
+                // Şəkil linki yoxdursa
+                imageContainer.style.display = 'none';
+                infoMessage.style.display = 'block';
             }
         });
-
-        // --- MASAÜSTÜ SİÇAN TƏKƏRİ ZOOM VƏ PAN MANTIQI (MOBİL ÜÇÜN İŞLƏMİR) ---
-        function setupDesktopZoom(img, container) {
-            let scale = 1;
-            let posX = 0;
-            let posY = 0;
-            const zoomSpeed = 0.1;
-            const minScale = 1;
-            const maxScale = 5;
-
-            function applyTransform() {
-                img.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-                container.style.cursor = scale > minScale ? 'grab' : 'default';
-            }
-
-            // Siçan Təkəri (Zoom) Hadisəsi - Yalnız Masaüstü üçün
-            container.addEventListener('wheel', function(e) {
-                e.preventDefault(); 
-
-                const delta = e.deltaY * -0.01;
-                let newScale = scale + delta * zoomSpeed;
-                
-                newScale = Math.max(minScale, Math.min(maxScale, newScale));
-                
-                if (newScale !== scale) {
-                    const zoomFactor = newScale / scale;
-                    
-                    const rect = container.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
-
-                    posX = mouseX - (mouseX - posX) * zoomFactor;
-                    posY = mouseY - (mouseY - posY) * zoomFactor;
-
-                    scale = newScale; 
-                    
-                    if (scale === minScale) {
-                        posX = 0;
-                        posY = 0;
-                    }
-                    
-                    applyTransform();
-                }
-            }, { passive: false });
-
-            // Şəklin Sürüşdürülməsi (Pan) Funksiyası
-            let isDragging = false;
-            let startX, startY;
-            let currentPosX, currentPosY;
-
-            container.addEventListener('mousedown', function(e) {
-                if (scale > minScale) { 
-                    isDragging = true;
-                    currentPosX = posX; 
-                    currentPosY = posY;
-                    startX = e.clientX; 
-                    startY = e.clientY;
-                    container.style.cursor = 'grabbing';
-                }
-            });
-
-            container.addEventListener('mousemove', function(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                posX = currentPosX + (e.clientX - startX);
-                posY = currentPosY + (e.clientY - startY);
-                
-                applyTransform();
-            });
-
-            const stopDragging = function() {
-                isDragging = false;
-                container.style.cursor = scale > minScale ? 'grab' : 'default';
-            };
-
-            container.addEventListener('mouseup', stopDragging);
-            container.addEventListener('mouseleave', stopDragging);
-        }
     </script>
+
 </body>
 </html>
