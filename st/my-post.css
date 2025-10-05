@@ -38,7 +38,7 @@
             top: 0;
             z-index: 10;
             backdrop-filter: blur(5px); /* Yarı-şəffaf fon üçün */
-            background-color: rgba(16, 16, 16, 0.5); /* Yarı-şəffaf fon */
+            background-color: rgba(16, 16, 16, 0.7); /* Yarı-şəffaf fon */
         }
         
         /* Top Bar Nickname Stili */
@@ -313,7 +313,7 @@
 
         /* Hover effekti */
         .rotated-icon:hover {
-            transform: rotate(45deg) scale(1);
+            transform: rotate(405deg) scale(1.1);
         }
 
         /* QR Kod Modalı (Pop-up) */
