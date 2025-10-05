@@ -411,32 +411,32 @@
 
 
         const postFooter = document.createElement("div");
-        postFooter.className = "post-footer";
+        // postFooter.className = "post-footer";
         
         // --- 1. LIKE AND COMMENT COUNTS (Bəyənmə və Şərh Sayları) ---
         const postStats = document.createElement("div");
         postStats.className = "post-stats";
         postStats.id = `stats_${postId}`;
         
-        // Like Count
-        const likeCount = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
-        const likeEl = document.createElement("div");
-        likeEl.className = "stat-item like";
-        likeEl.innerHTML = `<span class="material-icons">favorite</span><span id="like_count_${postId}">${likeCount}</span>`; 
-        likeEl.title = "Bəyənmə sayı";
-        postStats.appendChild(likeEl);
+        // // Like Count
+        // const likeCount = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
+        // const likeEl = document.createElement("div");
+        // likeEl.className = "stat-item like";
+        // likeEl.innerHTML = `<span class="material-icons">favorite</span><span id="like_count_${postId}">${likeCount}</span>`; 
+        // likeEl.title = "Bəyənmə sayı";
+        // postStats.appendChild(likeEl);
 
-        // Comment Count
-        const commentCount = commentCountCache[postId] || 0;
-        const commentEl = document.createElement("div");
-        commentEl.className = "stat-item comment";
-        commentEl.innerHTML = `<span class="material-icons">comment</span><span id="comment_count_${postId}">${commentCount}</span>`; 
-        commentEl.title = "Şərh sayı";
-        postStats.appendChild(commentEl);
+        // // Comment Count
+        // const commentCount = commentCountCache[postId] || 0;
+        // const commentEl = document.createElement("div");
+        // commentEl.className = "stat-item comment";
+        // commentEl.innerHTML = `<span class="material-icons">comment</span><span id="comment_count_${postId}">${commentCount}</span>`; 
+        // commentEl.title = "Şərh sayı";
+        // postStats.appendChild(commentEl);
         
-        postFooter.appendChild(postStats); // Stats solda
+        // postFooter.appendChild(postStats); // Stats solda
         
-        postEl.appendChild(postFooter);
+        // postEl.appendChild(postFooter);
         return postEl;
     }
 
