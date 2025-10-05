@@ -1,879 +1,711 @@
-// Firebase tətbiqlərinin ilkin təyin edilməsi
-        const postsFirebaseConfig = {
-            apiKey: "AIzaSyAjW7zigfYvSyF0DXt3ywu-1PqZDHFbKcc",
-            authDomain: "limon-post.firebaseapp.com",
-            databaseURL: "https://limon-post-default-rtdb.firebaseio.com",
-            projectId: "limon-post",
-            storageBucket: "limon-post.firebasestorage.app",
-            messagingSenderId: "213746799645",
-            appId: "1:213746799645:web:3a4eb82131dc2e1b1622f4"
-        };
-        const videosFirebaseConfig = {
-            apiKey: "AIzaSyCI3oZyJXBbZfAFYhhx3mqbtj2lBsVtlVU",
-            authDomain: "limon-video.firebaseapp.com",
-            databaseURL: "https://limon-video-default-rtdb.firebaseio.com",
-            projectId: "limon-video",
-            storageBucket: "limon-video.firebasestorage.app",
-            messagingSenderId: "1027523081229",
-            appId: "1:1027523081229:web:957f99b23a2310a2849144",
-            measurementId: "G-GB4KYL0G9V"
-        };
-        // Normal postlar üçün şərhlər Firebase konfiqurasiyası
-        const postsCommentsFirebaseConfig = {
-            apiKey: "AIzaSyBin2WZ96znrq97fWwxQK5LrLRpVtmnMPU",
-            authDomain: "limon-post-comment.firebaseapp.com",
-            databaseURL: "https://limon-post-comment-default-rtdb.firebaseio.com",
-            projectId: "limon-post-comment",
-            storageBucket: "limon-post-comment.firebasestorage.app",
-            messagingSenderId: "276602642114",
-            appId: "1:276602642114:web:7c0608c003c5e0a254e55b"
-        };
-        // Snaps/reels üçün şərhlər Firebase konfiqurasiyası
-        const snapCommentsFirebaseConfig = {
-            apiKey: "AIzaSyC6YBAAly4wH6o1981ntYANsJIzK_eph1I",
-            authDomain: "limons-video-comment.firebaseapp.com",
-            databaseURL: "https://limons-video-comment-default-rtdb.firebaseio.com",
-            projectId: "limons-video-comment",
-            storageBucket: "limons-video-comment.firebasestorage.app",
-            messagingSenderId: "1097578178676",
-            appId: "1:1097578178676:web:a4f8be6d55b883f6ea8921"
-        };
+// Firebase V9 Modular SDK Imports
+    import { initializeApp as initializeAppV9 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { 
+        getDatabase as getDatabaseV9, 
+        ref as refV9, 
+        get as getV9,
+        onValue as onValueV9 // <<< V9 REAL-TIME DINLƏYİCİ ƏLAVƏ OLUNDU
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-        const tickFirebaseConfig = {
-            apiKey: "AIzaSyAoYfYv4C22xKKlLQZHSty9YTV6el8QzZw",
-  authDomain: "limons-tick.firebaseapp.com",
-  databaseURL: "https://limons-tick-default-rtdb.firebaseio.com",
-  projectId: "limons-tick",
-  storageBucket: "limons-tick.firebasestorage.app",
-  messagingSenderId: "803200776941",
-  appId: "1:803200776941:web:92acaa749ee25eeeab2ae4",
-  measurementId: "G-7HCR9FS6Q4"
-        };
-        const premiumFirebaseConfig = {
-            apiKey: "AIzaSyCiOg6YwhtoBNGO3TboCyq0dusXjPLkW5A",
-  authDomain: "limons-premium.firebaseapp.com",
-  databaseURL: "https://limons-premium-default-rtdb.firebaseio.com",
-  projectId: "limons-premium",
-  storageBucket: "limons-premium.firebasestorage.app",
-  messagingSenderId: "9549849500",
-  appId: "1:9549849500:web:936589028b99dfcdbede59",
-  measurementId: "G-XTDYV0RHBJ"
-        };
+    // --- Firebase konfiqurasiyaları (əvvəlki kimi qaldı) ---
+    const postsFirebaseConfig = { apiKey: "AIzaSyAjW7zigfYvSyF0DXt3ywu-1PqZDHFbKcc", authDomain: "limon-post.firebaseapp.com", databaseURL: "https://limon-post-default-rtdb.firebaseio.com", projectId: "limon-post", storageBucket: "limon-post.firebasestorage.app", messagingSenderId: "213746799645", appId: "1:213746799645:web:3a4eb82131dc2e1b1622f4" };
+    const videosFirebaseConfig = { apiKey: "AIzaSyCI3oZyJXBbZfAFYhhx3mqbtj2lBsVtlVU", authDomain: "limon-video.firebaseapp.com", databaseURL: "https://limon-video-default-rtdb.firebaseio.com", projectId: "limon-video", storageBucket: "limon-video.firebasestorage.app", messagingSenderId: "1027523081229", appId: "1:1027523081229:web:957f99b23a2310a2849144" };
+    const postsCommentsFirebaseConfig = { apiKey: "AIzaSyBin2WZ96znrq97fWwxQK5LrLRpVtmnMPU", authDomain: "limon-post-comment.firebaseapp.com", databaseURL: "https://limon-post-comment-default-rtdb.firebaseio.com", projectId: "limon-post-comment", storageBucket: "limon-post-comment.firebasestorage.app", messagingSenderId: "276602642114", appId: "1:276602642114:web:7c0608c003c5e0a254e55b" };
+    const snapCommentsFirebaseConfig = { apiKey: "AIzaSyC6YBAAly4wH6o1981ntYANsJIzK_eph1I", authDomain: "limons-video-comment.firebaseapp.com", databaseURL: "https://limons-video-comment-default-rtdb.firebaseio.com", projectId: "limons-video-comment", storageBucket: "limons-video-comment.firebasestorage.app", messagingSenderId: "1097578178676", appId: "1:1097578178676:web:a4f8be6d55b883f6ea8921" };
+    const userFirebaseConfig = { apiKey: "AIzaSyA6slU31pyfp7tljAB20Vui1gvptSPEv8M", authDomain: "limons-user-e43c0.firebaseapp.com", databaseURL: "https://limons-user-e43c0-default-rtdb.firebaseio.com", projectId: "limons-user-e43c0", storageBucket: "limons-user-e43c0.firebasestorage.app", messagingSenderId: "484283046830", appId: "1:484283046830:web:ad76e2d2168f22fd063f", measurementId: "G-SHMJSY1S5Z" };
+    const followFirebaseConfig = { apiKey: "AIzaSyDohN9yaNE5lxQet1I9m8s4zD778OyYVzg", authDomain: "limon-follow.firebaseapp.com", databaseURL: "https://limon-follow-default-rtdb.firebaseio.com", projectId: "limon-follow", storageBucket: "limon-follow.firebasestorage.app", messagingSenderId: "851250357014", appId: "1:851250357014:web:d7b99931c1a86dbbc2e637", measurementId: "G-N63PV11W8Q" };
+    const followingFirebaseConfig = { apiKey: "AIzaSyAHuOrVvJwNk3LG9tqvSA5sdOn7zCs9QAc", authDomain: "limon-following.firebaseapp.com", databaseURL: "https://limon-following-default-rtdb.firebaseio.com", projectId: "limon-following", storageBucket: "limon-following.firebasestorage.app", messagingSenderId: "128241854550", appId: "1:128241854550:web:868457b4e76ff7cefb73f7", measurementId: "G-70DTD9NGBF" };
 
-        let postsApp, videosApp, postsCommentsApp, snapCommentsApp, tickApp, premiumApp;
-        let postsDb, videosDb, postsCommentsDb, snapCommentsDb, tickDb, premiumDb;
+    const tickFirebaseConfig = { apiKey: "AIzaSyAoYfYv4C22xKKlLQZHSty9YTV6el8QzZw", authDomain: "limons-tick.firebaseapp.com", databaseURL: "https://limons-tick-default-rtdb.firebaseio.com", projectId: "limons-tick", storageBucket: "limons-tick.firebasestorage.app", messagingSenderId: "803200776941", appId: "1:803200776941:web:92acaa749ee25eeeab2ae4", measurementId: "G-7HCR9FS6Q4" }; 
+    const premiumFirebaseConfig = { apiKey: "AIzaSyCiOg6YwhtoBNGO3TboCyq0dusXjPLkW5A", authDomain: "limons-premium.firebaseapp.com", databaseURL: "https://limons-premium-default-rtdb.firebaseio.com", projectId: "limons-premium", storageBucket: "limons-premium.firebasestorage.app", messagingSenderId: "9549849500", appId: "1:9549849500:web:936589028b99dfcdbede59", measurementId: "G-XTDYV0RHBJ" }; 
+    // -----------------------------------------------------------------
 
-        const postsContainer = document.getElementById("posts-grid");
-        const noPostsMessage = document.getElementById("no-posts");
+    // Nişan (Icon) URL-ləri
+    const TICK_ICON = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314188/tick_bpkpy1.png';
+    const PREMIUM_ICON = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium_rtcvax.png';
+    const PREMIUM_TICK_ICON = 'https://res.cloudinary.com/dxymbsg0p/image/upload/v1757314187/premium-tick_lls2xj.png';
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentUser = (urlParams.get("user") || "anonim").trim();
-        const showOnlyMyPosts = urlParams.get("myPosts") === "true";
+    // Nişanlar üçün V9 tətbiqlərini başlanğıclamaq
+    const tickAppV9 = initializeAppV9(tickFirebaseConfig, "tickAppV9");
+    const premiumAppV9 = initializeAppV9(premiumFirebaseConfig, "premiumAppV9");
+    const tickDbV9 = getDatabaseV9(tickAppV9);
+    const premiumDbV9 = getDatabaseV9(premiumAppV9);
+    // V9 üçün əlavə DB-lər (Real-Time dinləmə üçün lazım olacaq)
+    const userAppV9 = initializeAppV9(userFirebaseConfig, "userAppV9");
+    const followAppV9 = initializeAppV9(followFirebaseConfig, "followAppV9");
+    const followingAppV9 = initializeAppV9(followingFirebaseConfig, "followingAppV9");
+    const userDbV9 = getDatabaseV9(userAppV9);
+    const followDbV9 = getDatabaseV9(followAppV9);
+    const followingDbV9 = getDatabaseV9(followingAppV9);
 
-        // Global cache obyektləri
-        let likeCache = {}; // postId -> { count: N, users: { userId: true } }
-        let commentCountCache = {}; // postId -> count
-        let postDataCache = {}; // postId -> postData
-        let deletePostId = null;
-        let tickUsers = {}; // nickname -> "+"
-        let premiumUsers = {}; // nickname -> "+"
 
-        // Şərh overlay ilə bağlı qlobal dəyişənlər
-        let activeCommentPostId = null;
-        let activeCommentsDbForOverlay = null; // Hazırda overlay üçün aktiv olan Firebase DB
-        let activeCommentListener = null; // Firebase dinləyicilərini idarə etmək üçün
-        let replyingToCommentId = null;
-        let replyingToCommentAuthor = null;
+    let postsApp, videosApp, postsCommentsApp, snapCommentsApp, userApp, followApp, followingApp;
+    let postsDb, videosDb, postsCommentsDb, snapCommentsDb, userDb, followDb, followingDb;
 
-        // Elementlərə istinadlar
-        const commentOverlay = document.getElementById('comment-overlay');
-        const commentsList = document.getElementById('comments-list');
-        const commentInput = document.getElementById('comment-input');
-        const sendCommentButton = document.getElementById('send-comment-button');
-        const closeCommentOverlayButton = document.querySelector('.close-comment-overlay');
+    const profileContainer = document.getElementById("profile-container");
+    const postsContainer = document.getElementById("posts-grid");
+    const noPostsMessage = document.getElementById("no-posts");
+    const editButton = document.getElementById("edit-button");
 
-        // Firebase tətbiqlərini ilkin təyin edir
-        function initializeFirebaseApps() {
-            postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
-            videosApp = firebase.initializeApp(videosFirebaseConfig, "videosApp");
-            postsCommentsApp = firebase.initializeApp(postsCommentsFirebaseConfig, "postsCommentsApp");
-            snapCommentsApp = firebase.initializeApp(snapCommentsFirebaseConfig, "snapCommentsApp");
-            tickApp = firebase.initializeApp(tickFirebaseConfig, "tickApp");
-            premiumApp = firebase.initializeApp(premiumFirebaseConfig, "premiumApp");
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUser = (urlParams.get("user") || "anonim").trim();
+    const showOnlyMyPosts = urlParams.get("myPosts") === "true";
+    const isEditMode = urlParams.get("redakte") === "true";
 
-            postsDb = postsApp.database();
-            videosDb = videosApp.database();
-            postsCommentsDb = postsCommentsApp.database();
-            snapCommentsDb = snapCommentsApp.database();
-            tickDb = tickApp.database();
-            premiumDb = premiumApp.database();
-        }
+    let likeCache = {};
+    let commentCountCache = {};
+    let postDataCache = {};
+    let deletePostId = null;
 
-        // Status nişanını (tick/premium) qaytarır
-        function getStatusBadge(nickname = "") {
-            const cleanNickname = (nickname || "").startsWith('@') ? nickname.substring(1) : nickname;
-            const isTick = tickUsers[cleanNickname] === "+";
-            const isPremium = premiumUsers[cleanNickname] === "+";
-            if (isTick && isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium-tick_ne5yjz.png";
-            if (isTick) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/tik_tiozjv.png";
-            if (isPremium) return "https://res.cloudinary.com/dhski1gkx/image/upload/v1754247890/premium_aomgkl.png";
-            return null;
-        }
+    // Profil məlumatlarını real-time saxlamaq üçün obyektlər
+    let userProfileData = null; 
+    let followerCountCache = 0;
+    let followingCountCache = 0;
+    let postsCountCache = 0;
+    let currentIconUrl = '';
+    
+    // Yalnız cari istifadəçinin postlarının id-lərini saxlayır
+    let myPostIds = []; 
 
-        // Timestamp'ı oxunaqlı formata çevirir
-        function formatTimestamp(timestamp) {
-            if (!timestamp) return '';
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diffSeconds = Math.floor((now - date) / 1000);
+    function initializeFirebaseApps() {
+        // NOTE: Bu funksiya V8 compat versiyalarını başlanğıcladır
+        // Sizin kodu dəyişmirəm, çünki postları V8 API ilə yükləyirsiniz
+        postsApp = firebase.initializeApp(postsFirebaseConfig, "postsApp");
+        videosApp = firebase.initializeApp(videosFirebaseConfig, "videosApp");
+        postsCommentsApp = firebase.initializeApp(postsCommentsFirebaseConfig, "postsCommentsApp");
+        snapCommentsApp = firebase.initializeApp(snapCommentsFirebaseConfig, "snapCommentsApp");
+        userApp = firebase.initializeApp(userFirebaseConfig, "userApp");
+        followApp = firebase.initializeApp(followFirebaseConfig, "followApp");
+        followingApp = firebase.initializeApp(followingFirebaseConfig, "followingApp");
 
-            if (diffSeconds < 60) return `${diffSeconds} saniyə əvvəl`;
-            const diffMinutes = Math.floor(diffSeconds / 60);
-            if (diffMinutes < 60) return `${diffMinutes} dəqiqə əvvəl`;
-            const diffHours = Math.floor(diffMinutes / 60);
-            if (diffHours < 24) return `${diffHours} saat əvvəl`;
-            const diffDays = Math.floor(diffHours / 24);
-            if (diffDays < 7) return `${diffDays} gün əvvəl`;
+        postsDb = postsApp.database();
+        videosDb = videosApp.database();
+        postsCommentsDb = postsCommentsApp.database();
+        snapCommentsDb = snapCommentsApp.database();
+        userDb = userApp.database();
+        followDb = followApp.database();
+        followingDb = followingApp.database();
+    }
+    // Mətn təmizləmə funksiyaları əvvəlki kimi qalır
+        function getContentFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let content = urlParams.get('user');
             
-            return date.toLocaleDateString('az-AZ', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-
-        // Post elementini yaradır və render edir
-        function renderPost(postId, data) {
-            if (!data) return null;
-            if (showOnlyMyPosts) {
-                const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-                const postNick = (data.nickname || "").startsWith('@') ? data.nickname.substring(1) : (data.nickname || "");
-                if (postNick !== cleanCurrent) return null;
-            }
-
-            const postEl = document.createElement("div");
-            postEl.className = "post";
-            postEl.id = "post_" + postId;
-            
-            if (data.image || data.video) {
-                const badge = document.createElement("div");
-                badge.className = "post-type-badge";
-                badge.textContent = data.image ? "Post" : "Snap";
-                postEl.appendChild(badge);
-            }
-
-            const header = document.createElement("div");
-            header.className = "post-header";
-            const urlPostId = urlParams.get('post_id');
-            const urlSnapId = urlParams.get('snap_id');
-            if (urlPostId === postId || urlSnapId === postId) {
-                header.style.display = 'flex';
-                header.style.alignItems = 'center';
-                header.style.marginBottom = '10px';
-                header.style.padding = '10px';
-            }
-
-            const img = document.createElement("img");
-            img.className = "profile-pic";
-            img.src = data.profile || "https://via.placeholder.com/36?text=?";
-            const userBox = document.createElement("div");
-            userBox.className = "username-box";
-            const userId = document.createElement("div");
-            userId.className = "userid";
-            userId.textContent = data.user || "Anonim";
-            const statusBadgeUrl = getStatusBadge(data.nickname || "");
-            if (statusBadgeUrl) {
-                const statusBadgeImg = document.createElement("img");
-                statusBadgeImg.className = "status-badge";
-                statusBadgeImg.src = statusBadgeUrl;
-                userId.appendChild(statusBadgeImg);
-            }
-            const nickname = document.createElement("div");
-            nickname.className = "nickname";
-            const displayNickname = (data.nickname || "").startsWith('@') ? data.nickname : `@${(data.nickname || "").replace(/^@/, '')}`;
-            nickname.textContent = displayNickname;
-            userBox.appendChild(userId);
-            userBox.appendChild(nickname);
-            header.appendChild(img);
-            header.appendChild(userBox);
-            // Delete button removed entirely from header
-            // if (cleanNickname && cleanNickname === cleanCurrentUser) {
-            //     const deleteBtn = document.createElement("button");
-            //     deleteBtn.className = "delete-button material-icons";
-            //     deleteBtn.textContent = "delete";
-            //     deleteBtn.title = "Postu sil";
-            //     deleteBtn.addEventListener("click", () => {
-            //         deletePostId = postId;
-            //         document.getElementById("confirmDialog").style.display = "block";
-            //     });
-            //     header.appendChild(deleteBtn);
-            // }
-            postEl.appendChild(header);
-
-            if (data.image) {
-                const image = document.createElement("img");
-                image.className = "post-image";
-                image.src = (data.image || "").replace(/\\/g, '').trim();
-                image.addEventListener('load', () => refreshMasonry());
-                postEl.appendChild(image);
-            } else if (data.video) {
-                const video = document.createElement("video");
-                video.className = "post-video";
-                video.controls = false;
-                video.autoplay = true;
-                video.loop = true;
-                video.muted = true;
-                video.playsinline = true;
-                video.preload = "none";
-                video.dataset.src = (data.video || "").replace(/\\/g, '').trim();
-                video.addEventListener('loadedmetadata', () => refreshMasonry());
-                postEl.appendChild(video);
-            }
-
-            if (data.text) {
-                const text = document.createElement("div");
-                text.className = "post-text";
-                text.textContent = data.text;
-                postEl.appendChild(text);
-            }
-
-            const postFooter = document.createElement("div");
-            postFooter.className = "post-footer";
-            
-            let currentLikeCount = 0;
-            let isLikedByUser = false;
-            const postLikes = likeCache[postId];
-            if (postLikes && postLikes.users) {
-                currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
-                isLikedByUser = postLikes.users[currentUser];
-            } else if (postLikes) {
-                currentLikeCount = Object.keys(postLikes).length;
-                isLikedByUser = postLikes[currentUser];
-            }
-
-            const likeBtn = document.createElement("button");
-            likeBtn.className = "like-button disabled"; // Added disabled class
-            likeBtn.setAttribute('aria-disabled', 'true'); // Added aria-disabled for accessibility
-            if (isLikedByUser) likeBtn.classList.add("liked");
-            likeBtn.innerHTML = `<span class="material-icons">favorite</span><span class="like-count">${currentLikeCount || 0}</span>`;
-            // Removed event listener to prevent interaction
-            // likeBtn.addEventListener("click", () => {
-            //     const likesRef = data.sourceDb.ref(`likes/${postId}`);
-            //     likesRef.once("value").then(snap => {
-            //         const currentLikesData = snap.val();
-            //         if (currentLikesData && currentLikesData.users && currentLikesData.users[currentUser]) {
-            //             likesRef.child(`users/${currentUser}`).remove();
-            //             likesRef.child("count").transaction(currentCount => (currentCount || 0) - 1);
-            //         } else if (currentLikesData && currentLikesData[currentUser]) {
-            //             likesRef.child(currentUser).remove();
-            //         } else {
-            //             if (currentLikesData && currentLikesData.users) {
-            //                  likesRef.child(`users/${currentUser}`).set(true);
-            //                  likesRef.child("count").transaction(currentCount => (currentCount || 0) + 1);
-            //             } else {
-            //                 likesRef.child(currentUser).set(true);
-            //             }
-            //         }
-            //     });
-            // });
-            postFooter.appendChild(likeBtn);
-
-            // Bütün postlar üçün şərh sayını göstərir
-            const commentBtn = document.createElement("button");
-            // Şərh düyməsini deaktiv edir və sadəcə say göstərir
-            commentBtn.className = "comment-button disabled"; 
-            commentBtn.setAttribute('aria-disabled', 'true'); // Əlçatanlıq üçün əlavə edilib
-            const commentCount = commentCountCache[postId] || 0;
-            commentBtn.innerHTML = `<span class="material-icons">comment</span><span class="comment-count">${commentCount}</span>`;
-            // commentBtn.addEventListener("click", (event) => { // Bu sətir deaktiv edilib
-            //     event.stopPropagation();
-            //     // Postun növünə uyğun şərh DB-ni təyin edir
-            //     const commentsSourceDb = data.sourceDb === postsDb ? postsCommentsDb : snapCommentsDb;
-            //     openCommentOverlay(postId, commentsSourceDb);
-            // });
-            postFooter.appendChild(commentBtn);
-
-            // Delete button removed entirely from footer
-            // if (cleanNickname && cleanNickname === cleanCurrentUser) {
-            //     const deleteBtn = document.createElement("button");
-            //     deleteBtn.className = "delete-button material-icons";
-            //     deleteBtn.textContent = "delete";
-            //     deleteBtn.title = "Postu sil";
-            //     deleteBtn.addEventListener("click", () => {
-            //         deletePostId = postId;
-            //         document.getElementById("confirmDialog").style.display = "block";
-            //     });
-            //     postFooter.appendChild(deleteBtn);
-            // }
-            postEl.appendChild(postFooter);
-            return postEl;
-        }
-
-        // Post silinməsini təsdiq edir
-        document.getElementById("confirmYes").addEventListener("click", () => {
-            // Bu funksiya artıq çağrılmamalıdır, çünki sil düyməsi yoxdur.
-            console.warn("Post silmə təsdiqi funksiyası çağrıldı, lakin silmə düyməsi deaktivdir.");
-            document.getElementById("confirmDialog").style.display = "none";
-            deletePostId = null;
-        });
-
-        // Post silinməsini ləğv edir
-        document.getElementById("confirmNo").addEventListener("click", () => {
-            document.getElementById("confirmDialog").style.display = "none";
-            deletePostId = null;
-        });
-
-        // Bütün postları render edir
-        function renderAllPosts() {
-            postsContainer.innerHTML = "";
-            let postIds = Object.keys(postDataCache || {});
-            const cleanCurrent = currentUser.startsWith('@') ? currentUser.substring(1) : currentUser;
-
-            if (showOnlyMyPosts) {
-                postIds = postIds.filter(id => {
-                    const p = postDataCache[id] || {};
-                    const nick = (p.nickname || "").startsWith('@') ? p.nickname.substring(1) : (p.nickname || "");
-                    return nick === cleanCurrent;
-                });
+            if (!content) {
+                return "";
             }
             
-            postIds.sort((a,b) => {
-                const aData = postDataCache[a];
-                const bData = postDataCache[b];
-                const aT = aData && aData.time ? new Date(aData.time) : null;
-                const bT = bData && bData.time ? new Date(bData.time) : null;
-                if (aT && bT) return bT.getTime() - aT.getTime();
-                return b.localeCompare(a);
-            });
-
-            if (postIds.length === 0) {
-                 noPostsMessage.style.display = "flex";
-                 postsContainer.style.display = "none";
-            } else {
-                noPostsMessage.style.display = "none";
-                postsContainer.style.display = "block";
-                postIds.forEach(postId => {
-                    const data = postDataCache[postId];
-                    const postEl = renderPost(postId, data);
-                    if (postEl) postsContainer.appendChild(postEl);
-                });
+            if (content.startsWith('@')) {
+                content = content.substring(1); 
             }
-            refreshMasonry();
-            setupVideoObserver();
+            
+            return content;
         }
 
-        // Bəyənmə saylarını yeniləyir
-        function updateLikeCounts() {
-            Object.keys(postDataCache).forEach(postId => {
-                const postElement = document.getElementById(`post_${postId}`);
-                if (postElement) {
-                    const postLikes = likeCache[postId];
-                    let currentLikeCount = 0;
-                    
-                    if (postLikes && postLikes.users) {
-                        currentLikeCount = postLikes.count || Object.keys(postLikes.users).length;
-                    } else if (postLikes) {
-                        currentLikeCount = Object.keys(postLikes).length;
-                    }
-
-                    const likeCountElement = postElement.querySelector('.like-count');
-                    const likeButtonElement = postElement.querySelector('.like-button');
-                    if (likeCountElement) {
-                        likeCountElement.textContent = currentLikeCount;
-                    }
-                    if (likeButtonElement) {
-                        // Like düyməsi deaktiv edildiyi üçün 'liked' class-ını yeniləməyə ehtiyac yoxdur.
-                        // lakin, əgər istənilərsə, "liked" classını yalnız vizual məqsədlər üçün saxlamaq olar.
-                        // if (isLikedByUser) {
-                        //     likeButtonElement.classList.add("liked");
-                        // } else {
-                        //     likeButtonElement.classList.remove("liked");
-                        // }
-                    }
-                }
-            });
-        }
-
-        // Şərh saylarını yeniləyir
-        function updateCommentCounts() {
-            Object.keys(postDataCache).forEach(postId => {
-                const postElement = document.getElementById(`post_${postId}`);
-                if (postElement) {
-                    const commentCountElement = postElement.querySelector('.comment-count');
-                    if (commentCountElement) {
-                        commentCountElement.textContent = commentCountCache[postId] || 0;
-                    }
-                }
-            });
-        }
-
-        // Masonry layoutunu yeniləyir
-        function refreshMasonry() {
-            postsContainer.style.visibility = 'hidden';
-            setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
-        }
-
-        let videoObserver;
-        // Video observerini qurur
-        function setupVideoObserver() {
-            if ('IntersectionObserver' in window) {
-                if (videoObserver) {
-                    videoObserver.disconnect();
-                }
-                videoObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const video = entry.target;
-                            const src = video.dataset.src;
-                            if (src && !video.src) {
-                                video.src = src;
-                                video.load();
-                                video.play();
-                            }
-                            observer.unobserve(video);
-                        }
-                    });
-                }, {
-                    rootMargin: '100px 0px',
-                    threshold: 0.1
-                });
-
-                document.querySelectorAll('.post-video').forEach(video => {
-                    videoObserver.observe(video);
-                });
-            }
-        }
+        // Qlobal dəyişənlər
+        const qrContent = getContentFromUrl(); 
+        const qrModal = document.getElementById('qr-modal');
+        const closeButton = document.querySelector('.close-button');
+        const qrIcon = document.getElementById('qr-icon');
+        const qrDataText = document.getElementById('qr-data-text');
         
-        // Canlı dinləyiciləri qurur
-        function setupLiveListeners() {
-            postsDb.ref("likes").on("value", (snapshot) => {
-                const likesData = snapshot.val() || {};
-                Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                });
-                updateLikeCounts();
-            });
+        // --- QR Kod Modalını İdarə Edən Əsas Funksiyalar ---
 
-            videosDb.ref("likes").on("value", (snapshot) => {
-                 const likesData = snapshot.val() || {};
-                 Object.keys(likesData).forEach(postId => {
-                    likeCache[postId] = likesData[postId];
-                 });
-                 updateLikeCounts();
-            });
+        // QR kod modalını açır, QR yaradır və URL-i dəyişir
+        function openQrModal(isBackAction = false) {
+            qrDataText.textContent = "QR Məzmunu (Təmiz): " + qrContent;
+            qrModal.style.display = "flex";
+            
+            // URL-i yalnız ikona klikləndikdə (və ya səhifə yeniləndikdə) dəyişdiririk. 
+            // `isBackAction` true olduqda dəyişiklik etmirik.
+            if (!isBackAction) {
+                const url = new URL(window.location.href);
+                if (url.searchParams.get('qr') !== 'true') {
+                    url.searchParams.set('qr', 'true');
+                    // URL-i history-ə əlavə et, istifadəçi geri gələ bilsin
+                    window.history.pushState({ qr: true }, '', url.href);
+                }
+            }
 
-            // Normal postlar üçün şərhlər dinləyicisi (gonline-1880b-dən)
-            postsCommentsDb.ref("comments").on("value", (snapshot) => {
-                const commentsData = snapshot.val() || {};
-                Object.keys(commentsData).forEach(postId => {
-                    const commentsForPost = commentsData[postId];
-                    if (commentsForPost) {
-                        commentCountCache[postId] = Object.keys(commentsForPost).length;
-                    }
-                });
-                updateCommentCounts();
-            });
-
-            // Snaps/reels üçün şərhlər dinləyicisi (reply-eb654-dən)
-            snapCommentsDb.ref("comments").on("value", (snapshot) => {
-                const commentsData = snapshot.val() || {};
-                Object.keys(commentsData).forEach(postId => {
-                    const commentsForSnap = commentsData[postId];
-                    if (commentsForSnap) {
-                        commentCountCache[postId] = Object.keys(commentsForSnap).length;
-                    }
-                });
-                updateCommentCounts();
+            // Əvvəlki QR kodu sil
+            document.getElementById("qrcode").innerHTML = "";
+            
+            // Yeni QR kodu yarat
+            new QRCode(document.getElementById("qrcode"), {
+                text: qrContent,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
             });
         }
 
-        // --- İlkin Yükləmə Məntiqi ---
-        initializeFirebaseApps();
+        // QR kod modalını bağlayır
+        function closeQrModal() {
+            qrModal.style.display = "none";
+        }
 
-        if (showOnlyMyPosts) {
-            document.getElementById("loader").querySelector("p").textContent = ""; // Loader mesajını yeniləyir
 
-            Promise.all([
-                postsDb.ref("posts").once("value"),
-                videosDb.ref("reels").once("value"),
-                postsCommentsDb.ref("comments").once("value"),
-                snapCommentsDb.ref("comments").once("value"),
-                postsDb.ref("likes").once("value"),
-                videosDb.ref("likes").once("value"),
-                tickDb.ref("tick").once("value"),
-                premiumDb.ref("premium").once("value")
-            ]).then(([postsSnap, reelsSnap, commentsSnapPosts, commentsSnapSnaps, postLikesSnap, reelLikesSnap, tickSnap, premiumSnap]) => {
-                postDataCache = {};
-                
-                postsSnap.forEach(snap => {
-                    try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: postsDb};
-                    } catch (e) { console.warn("postsDb: Post yüklənərkən xəta:", snap.key, e); }
-                });
-                reelsSnap.forEach(snap => {
-                     try {
-                        const data = (typeof snap.val() === "string") ? JSON.parse(snap.val()) : snap.val();
-                        postDataCache[snap.key] = {...data, sourceDb: videosDb};
-                     } catch (e) { console.warn("videosDb: Video yüklənərkən xəta:", snap.key, e); }
-                });
+        // --- Hadisə Dinləyiciləri (Event Listeners) ---
 
-                commentCountCache = {};
-                const allCommentsPosts = commentsSnapPosts.val() || {};
-                Object.keys(allCommentsPosts).forEach(postId => {
-                    commentCountCache[postId] = Object.keys(allCommentsPosts[postId] || {}).length;
-                });
-                const allCommentsSnaps = commentsSnapSnaps.val() || {};
-                Object.keys(allCommentsSnaps).forEach(postId => {
-                    commentCountCache[postId] = Object.keys(allCommentsSnaps[postId] || {}).length;
-                });
-                
-                const allPostLikes = postLikesSnap.val() || {};
-                Object.keys(allPostLikes).forEach(postId => { likeCache[postId] = allPostLikes[postId]; });
-                const allReelLikes = reelLikesSnap.val() || {};
-                Object.keys(allReelLikes).forEach(postId => { likeCache[postId] = allReelLikes[postId]; });
+        // 1. İkona Klikləmə Hadisəsi: QR kodu açır və URL-i dəyişdirir
+        qrIcon.onclick = function() {
+            // URL-də qr=true olmasa da, klikləyəndə onu əlavə edib modalı açır
+            openQrModal(); 
+        }
 
-                tickUsers = tickSnap.val() || {};
-                premiumUsers = premiumSnap.val() || {};
+        // 2. Kapatma düyməsi və Kənar Klik: Sadəcə modalı bağlayır
+        closeButton.onclick = function() {
+            // URL-i geri dəyişdirməyi brauzerin özünə (popstate) buraxırıq. 
+            // Sadəcə modalı bağlayanda bir addım geri getməliyik.
+            if (new URLSearchParams(window.location.search).has('qr')) {
+                 window.history.back();
+            } else {
+                 closeQrModal();
+            }
+        }
 
-                renderAllPosts();
-                
-                document.getElementById("loader").style.display = "none";
-                if (Object.keys(postDataCache).length > 0) {
-                    postsContainer.style.display = "block";
-                    noPostsMessage.style.display = "none";
+        window.onclick = function(event) {
+            if (event.target == qrModal) {
+                 if (new URLSearchParams(window.location.search).has('qr')) {
+                     window.history.back();
                 } else {
-                    postsContainer.style.display = "none";
-                    noPostsMessage.style.display = "flex";
-                }
-                
-                setupLiveListeners();
-
-            }).catch(error => {
-                console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
-                document.getElementById("loader").style.display = "none";
-                postsContainer.style.display = "none";
-                noPostsMessage.style.display = "flex";
-                noPostsMessage.querySelector('span:last-child').textContent = "Məlumat yüklənərkən xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.";
-            });
-
-        } else {
-            // Əgər myPosts=true parametri yoxdursa, boş səhifə göstərir
-            document.getElementById("loader").style.display = "none";
-            postsContainer.style.display = "none";
-            noPostsMessage.style.display = "flex";
-            noPostsMessage.querySelector('span:last-child').textContent = "Profil səhifəsini görmək üçün `?myPosts=true` parametri istifadə olunmalıdır.";
-        }
-
-        // Şərh overlayını açır (indi bu funksiya heç vaxt çağrılmamalıdır)
-        function openCommentOverlay(postId, sourceDbForComments) {
-            // Bu funksiya artıq çağrılmamalıdır, çünki şərh düyməsi deaktivdir.
-            // Əgər gələcəkdə lazım olarsa, kodu təkrar aktivləşdirə bilərsiniz.
-            console.warn("openCommentOverlay funksiyası çağrıldı, lakin şərh düyməsi deaktivdir.");
-            activeCommentPostId = postId;
-            activeCommentsDbForOverlay = sourceDbForComments;
-
-            commentOverlay.style.display = 'flex';
-            requestAnimationFrame(() => {
-                commentOverlay.classList.add('visible');
-                document.body.style.overflow = 'hidden';
-            });
-            
-            commentInput.value = '';
-            replyingToCommentId = null;
-            replyingToCommentAuthor = null;
-            commentInput.placeholder = 'Şərh yazın...';
-            sendCommentButton.disabled = true;
-
-            if (activeCommentListener) {
-                activeCommentListener();
-            }
-
-            activeCommentListener = activeCommentsDbForOverlay.ref(`comments/${postId}`).on("value", (snapshot) => {
-                renderComments(snapshot);
-            });
-        }
-
-        // Şərh overlayını bağlayır
-        function closeCommentOverlay() {
-            commentOverlay.classList.remove('visible');
-            
-            setTimeout(() => {
-                commentOverlay.style.display = 'none';
-                document.body.style.overflow = 'auto';
-
-                if (activeCommentListener) {
-                    activeCommentListener();
-                    activeCommentListener = null;
-                }
-                
-                activeCommentPostId = null;
-                activeCommentsDbForOverlay = null;
-                replyingToCommentId = null;
-                replyingToCommentAuthor = null;
-                commentInput.value = '';
-                commentInput.placeholder = 'Şərh yazın...';
-                sendCommentButton.disabled = true;
-            }, 300);
-        }
-
-        // Şərhləri render edir (yalnız overlay açıq olsaydı istifadə olunardı)
-        function renderComments(snapshot) {
-            commentsList.innerHTML = '';
-            const commentsForPost = snapshot.val() || {};
-            
-            const sortedCommentIds = Object.keys(commentsForPost).sort((a, b) => {
-                return commentsForPost[a].timestamp - commentsForPost[b].timestamp;
-            });
-
-            sortedCommentIds.forEach(commentId => {
-                const commentData = commentsForPost[commentId];
-                commentsList.appendChild(createCommentElement(commentId, commentData));
-            });
-            commentsList.scrollTop = commentsList.scrollHeight;
-        }
-
-        // Şərh elementini yaradır (yalnız overlay açıq olsaydı istifadə olunardı)
-        function createCommentElement(commentId, commentData, isReply = false) {
-            const wrapperElement = document.createElement('div');
-            wrapperElement.className = isReply ? 'reply-item' : 'comment-item';
-            wrapperElement.id = `${isReply ? 'reply_' : 'comment_'}${commentId}`;
-
-            const profilePic = document.createElement('img');
-            profilePic.className = 'profile-pic';
-            profilePic.src = commentData.profilePic || "https://placehold.co/35x35/333333/FFFFFF?text=📸";
-            profilePic.alt = commentData.nickname + ' profil şəkili';
-            profilePic.onclick = () => window.location.href = `?other_user=${commentData.nickname}`;
-
-            const contentContainer = document.createElement('div');
-            contentContainer.className = isReply ? 'reply-content' : 'comment-content';
-
-            const authorTime = document.createElement('div');
-            authorTime.className = isReply ? 'reply-author-time' : 'comment-author-time';
-
-            const author = document.createElement('span');
-            author.className = isReply ? 'reply-author' : 'comment-author';
-            author.textContent = commentData.nickname;
-            author.onclick = () => window.location.href = `?other_user=${commentData.nickname}`;
-
-            const time = document.createElement('span');
-            time.className = isReply ? 'reply-time' : 'comment-time';
-            time.textContent = formatTimestamp(commentData.timestamp);
-
-            authorTime.appendChild(author);
-            authorTime.appendChild(time);
-
-            const text = document.createElement('div');
-            text.className = isReply ? 'reply-text' : 'comment-text';
-            
-            if (commentData.replyToNickname) {
-                const replySpan = document.createElement('span');
-                replySpan.style.color = '#4a90e2';
-                replySpan.style.fontWeight = 'bold';
-                replySpan.style.marginRight = '5px';
-                replySpan.textContent = `@${commentData.replyToNickname}`;
-                replySpan.onclick = (e) => {
-                    e.stopPropagation();
-                    window.location.href = `?other_user=${commentData.replyToNickname}`;
-                };
-                text.appendChild(replySpan);
-            }
-            text.appendChild(document.createTextNode(commentData.text));
-
-
-            const actions = document.createElement('div');
-            actions.className = 'comment-actions';
-
-            // Şərhlər üçün bəyənmə düyməsi (yalnız əsas şərhlər üçün)
-            if (!isReply) {
-                const likeCommentButton = document.createElement('span');
-                likeCommentButton.className = 'like-comment-button';
-                // Şərh bəyənmələrini postsCommentsDb-dən idarə edir
-                const commentLikesRef = postsCommentsDb.ref(`commentLikes/${commentId}`);
-                
-                // Anlıq bəyənmə sayını dinləmək
-                commentLikesRef.on('value', snap => {
-                    const likesUsers = snap.val() || {};
-                    const currentLikesCount = Object.keys(likesUsers).length;
-                    const isLikedCommentByUser = likesUsers[currentUser] === true;
-
-                    likeCommentButton.innerHTML = `
-                        <span class="material-icons">${isLikedCommentByUser ? 'favorite' : 'favorite_border'}</span>
-                        <span>${currentLikesCount > 0 ? currentLikesCount : ''}</span>
-                    `;
-                    if (isLikedCommentByUser) likeCommentButton.classList.add('liked');
-                    else likeCommentButton.classList.remove('liked');
-                });
-                
-                // Bu düymə də artıq interaktiv deyil.
-                // likeCommentButton.onclick = (e) => {
-                //     e.stopPropagation();
-                //     toggleCommentLike(commentId);
-                // };
-                actions.appendChild(likeCommentButton);
-            }
-
-            // Cavab düyməsi (yalnız əsas şərhlər üçün)
-            if (!isReply) {
-                const replyButton = document.createElement('span');
-                replyButton.className = 'reply-button';
-                replyButton.textContent = 'Cavab ver';
-                // Cavab düyməsi də artıq interaktiv deyil.
-                // replyButton.onclick = (e) => {
-                //     e.stopPropagation();
-                //     initiateReply(commentId, commentData.nickname);
-                // };
-                actions.appendChild(replyButton);
-            }
-
-            contentContainer.appendChild(authorTime);
-            contentContainer.appendChild(text);
-            contentContainer.appendChild(actions);
-
-            wrapperElement.appendChild(profilePic);
-            wrapperElement.appendChild(contentContainer);
-
-            // Cavablar bölməsi (yalnız əsas şərhlər üçün)
-            if (!isReply) {
-                const replies = commentData.replies || {};
-                const sortedReplyIds = Object.keys(replies).sort((a, b) => {
-                    return replies[a].timestamp - replies[b].timestamp;
-                });
-
-                if (sortedReplyIds.length > 0) {
-                    const replyToggle = document.createElement('span');
-                    replyToggle.className = 'reply-toggle';
-                    replyToggle.textContent = `${sortedReplyIds.length} cavaba baxın`;
-                    replyToggle.onclick = () => {
-                        const replySection = contentContainer.querySelector('.reply-section');
-                        if (replySection.style.display === 'none' || replySection.style.display === '') {
-                            replySection.style.display = 'block';
-                            replyToggle.textContent = 'Cavabları gizlət';
-                        } else {
-                            replySection.style.display = 'none';
-                            replyToggle.textContent = `${sortedReplyIds.length} cavaba baxın`;
-                        }
-                    };
-                    contentContainer.appendChild(replyToggle);
-
-                    const replySection = document.createElement('div');
-                    replySection.className = 'reply-section';
-                    replySection.style.display = 'none';
-                    
-                    sortedReplyIds.forEach(replyId => {
-                        const replyData = replies[replyId];
-                        replySection.appendChild(createCommentElement(replyId, replyData, true));
-                    });
-                    contentContainer.appendChild(replySection);
+                     closeQrModal();
                 }
             }
-
-            return wrapperElement;
         }
 
-        // Cavab vermə prosesini başlatır (yalnız overlay açıq olsaydı istifadə olunardı)
-        function initiateReply(commentId, authorNickname) {
-            // Bu funksiya artıq çağrılmamalıdır.
-            console.warn("initiateReply funksiyası çağrıldı, lakin şərh düyməsi deaktivdir.");
-            replyingToCommentId = commentId;
-            replyingToCommentAuthor = authorNickname;
-            commentInput.placeholder = `@${authorNickname}'a cavab yazın...`;
-            commentInput.focus();
-            adjustCommentInputHeight();
-        }
-
-        // Şərh inputunun hündürlüyünü tənzimləyir
-        function adjustCommentInputHeight() {
-            commentInput.style.height = 'auto';
-            commentInput.style.height = commentInput.scrollHeight + 'px';
-        }
-
-        // Şərh inputu dəyişəndə göndər düyməsini aktivləşdirir/deaktivləşdirir
-        commentInput.addEventListener('input', () => {
-            sendCommentButton.disabled = commentInput.value.trim() === '';
-            adjustCommentInputHeight();
+        // 3. ƏN VACİB HİSSƏ: Brauzerin Geri/İrəli Düyməsi Hadisəsi
+        window.addEventListener('popstate', function(event) {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Əgər URL-də `qr=true` varsa (yəni irəli gedilibsə və ya geri gedilsə belə qalıbsa)
+            if (urlParams.get('qr') === 'true') {
+                openQrModal(true); // Modal qalsın/açılsın (URL dəyişikliyi etmədən)
+            } else {
+                closeQrModal(); // URL-də `qr=true` yoxdursa, modal bağlansın
+            }
         });
 
-        // Şərh göndər düyməsinin klik hadisəsi (yalnız overlay açıq olsaydı istifadə olunardı)
-        sendCommentButton.addEventListener('click', () => {
-            // Bu funksiya artıq çağrılmamalıdır.
-            console.warn("sendCommentButton klikləndi, lakin şərh düyməsi deaktivdir.");
-            const commentText = commentInput.value.trim();
-            if (commentText === '' || !activeCommentPostId || !activeCommentsDbForOverlay) return;
+        // 4. Səhifə yüklənərkən yoxlama
+        // Əgər səhifə yüklənəndə (məsələn, link paylaşılanda) URL-də `qr=true` varsa, avtomatik açılsın
+        if (new URLSearchParams(window.location.search).get('qr') === 'true') {
+            openQrModal(true);
+        }
 
-            const newComment = {
-                nickname: currentUser.replace('@', ''),
-                text: commentText,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                profilePic: "https://placehold.co/35x35/333333/FFFFFF?text=📸"
+
+    /**
+     * Profil başlığını (ad, ikon, saylar) yeniləmək üçün ƏSAS funksiya
+     * Artıq global kəşləri (cache) istifadə edir.
+     */
+    function renderProfileHeader(userData, followerCount, followingCount, postsCount, iconUrl) {
+        // userProfileData əsas mənbədir, lakin initial load üçün userData qəbul edir.
+        const finalUserData = userProfileData || userData; 
+        
+        if (!finalUserData) return;
+
+        try {
+            const userInfo = JSON.parse(finalUserData);
+            const [name, nickname, profilePic, , fullId] = userInfo;
+            
+            const shortId = fullId ? `#${String(fullId).slice(-6)}` : 'N/A';
+            
+            // Ləqəbi "@" ilə təmizləyib/əlavə edirik
+            let cleanNickname = (nickname || 'Anonim').replace('@', '');
+            cleanNickname = cleanNickname ? `@${cleanNickname}` : '@Anonim'; 
+            
+            // Top bar nickname'i yerləşdirmək
+            const topBarNicknameEl = document.getElementById('top-bar-nickname');
+            if (topBarNicknameEl) {
+                topBarNicknameEl.textContent = cleanNickname;
+            }
+
+            // Əsas profil məlumatları
+            document.getElementById('profile-pic').src = profilePic || "https://placehold.co/120x120/000000/fff?text=?";
+            document.getElementById('profile-main-name').textContent = name || nickname.replace('@', '') || 'Anonim';
+            document.getElementById('profile-id').textContent = `ID: ${shortId}`;
+            
+            // Real-time yenilənəcək saylar
+            document.getElementById('posts-count').textContent = postsCount;
+            document.getElementById('followers-count').textContent = followerCount;
+            document.getElementById('following-count').textContent = followingCount;
+            
+            // Nişanları göstərmək
+            const badgeDisplayLarge = document.getElementById('badge-icon-display-large');
+            if (iconUrl) {
+                badgeDisplayLarge.innerHTML = `<img src="${iconUrl}" alt="Status İkonu" class="status-icon-large">`;
+                badgeDisplayLarge.style.opacity = 1; 
+            } else {
+                badgeDisplayLarge.innerHTML = '';
+                badgeDisplayLarge.style.opacity = 0; 
+            }
+
+            // Statistika klik funksiyaları (əvvəlki kimi)
+            const updateUrl = (param, value) => {
+                const newParams = new URLSearchParams(window.location.search);
+                newParams.delete('settings');
+                newParams.delete('kayd');
+                newParams.delete('follow');
+                newParams.delete('following');
+                newParams.delete('redakte');
+                if (value) newParams.set(param, value);
+                return `?${newParams.toString()}`;
             };
 
-            if (replyingToCommentId && replyingToCommentAuthor) {
-                newComment.replyToNickname = replyingToCommentAuthor.replace('@', '');
-                activeCommentsDbForOverlay.ref(`comments/${activeCommentPostId}/${replyingToCommentId}/replies`).push(newComment);
-            } else {
-                activeCommentsDbForOverlay.ref(`comments/${activeCommentPostId}`).push(newComment);
-            }
-
-            commentInput.value = '';
-            sendCommentButton.disabled = true;
-            replyingToCommentId = null;
-            replyingToCommentAuthor = null;
-            commentInput.placeholder = 'Şərh yazın...';
-            adjustCommentInputHeight();
-        });
-
-        // Şərh bəyənməsini dəyişir (yalnız overlay açıq olsaydı istifadə olunardı)
-        function toggleCommentLike(commentId) {
-            // Bu funksiya artıq çağrılmamalıdır.
-            console.warn("toggleCommentLike funksiyası çağrıldı, lakin şərh bəyənmə düyməsi deaktivdir.");
-            const likeRef = postsCommentsDb.ref(`commentLikes/${commentId}/${currentUser}`);
-            likeRef.once('value').then(snap => {
-                const isCurrentlyLiked = snap.exists();
-                if (isCurrentlyLiked) {
-                    likeRef.remove();
+            document.getElementById('settings-btn').href = updateUrl('settings', 'true');
+            document.getElementById('save-btn').href = updateUrl('saved', 'true');
+            document.getElementById('followers-stat').onclick = () => window.location.href = updateUrl('follow', 'true');
+            document.getElementById('following-stat').onclick = () => window.location.href = updateUrl('following', 'true');
+            
+            editButton.onclick = () => {
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.get('redakte') === 'true') {
+                    currentUrl.searchParams.delete('redakte');
                 } else {
-                    likeRef.set(true);
+                    currentUrl.searchParams.set('redakte', 'true');
+                }
+                window.location.href = currentUrl.toString();
+            };
+            
+            if (isEditMode) {
+                editButton.textContent = "Redaktə et";
+                document.getElementById('settings-btn').style.display = 'none'; 
+            } else {
+                editButton.textContent = "Redaktə et";
+            }
+            
+            profileContainer.style.display = "flex";
+
+        } catch (e) {
+            console.error("Profil məlumatı parse edilərkən xəta:", e);
+        }
+    }
+    
+    // Digər köməkçi funksiyalar (renderPost, confirmYes/No, renderAllPosts) əvvəlki kimi qalır...
+
+    function renderPost(postId, data) {
+        if (!data) return null;
+
+        const postEl = document.createElement("div");
+        postEl.className = "post";
+        postEl.id = "post_" + postId;
+
+        // Media (şəkil/video)
+        let mediaElement = null;
+        if (data.image) {
+            const image = document.createElement("img");
+            image.className = "post-image";
+            image.src = (data.image || "").replace(/\\/g, '').trim();
+            image.addEventListener('load', () => refreshMasonry());
+            mediaElement = image;
+        } else if (data.video) {
+            const video = document.createElement("video");
+            video.className = "post-video";
+            video.controls = false;
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = true;
+            video.playsinline = true;
+            video.src = (data.video || "").replace(/\\/g, '').trim();
+            video.addEventListener('loadedmetadata', () => refreshMasonry());
+            mediaElement = video;
+        }
+        if (mediaElement) postEl.appendChild(mediaElement);
+
+        
+        // --- LONG-PRESS DELETE LOGIC ---
+        const cleanNickname = (data.nickname || "").replace('@', '');
+        const cleanCurrentUser = currentUser.replace('@', '');
+        const isMyPost = cleanNickname === cleanCurrentUser;
+        
+        if (isMyPost) {
+            let pressTimer = null;
+            const LONG_PRESS_TIME = 700; // 700ms uzun basma vaxtı
+
+            const startPress = (e) => {
+                if(pressTimer) return;
+                
+                pressTimer = setTimeout(() => {
+                    deletePostId = postId;
+                    document.getElementById("confirmDialog").style.display = "flex";
+                    
+                    postEl.classList.add('long-pressed'); 
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }, LONG_PRESS_TIME);
+            };
+
+            const endPress = () => {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+                postEl.style.opacity = 1; 
+            };
+            
+            // Mouse events (Desktop)
+            postEl.addEventListener('mousedown', startPress);
+            postEl.addEventListener('mouseup', endPress);
+            postEl.addEventListener('mouseleave', endPress);
+
+            // Touch events (Mobile)
+            postEl.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1) return endPress(); 
+                postEl.style.opacity = 0.85; 
+                startPress(e);
+            });
+            postEl.addEventListener('touchend', endPress);
+            postEl.addEventListener('touchcancel', endPress);
+
+            // Uzun basma olubsa, normal click-in işə düşməsinin qarşısını al
+            postEl.addEventListener('click', (e) => {
+                if (postEl.classList.contains('long-pressed')) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    postEl.classList.remove('long-pressed'); 
+                    return false;
                 }
             });
         }
+        // --- END LONG-PRESS DELETE LOGIC ---
 
-        // Şərh overlayını bağlama düyməsi (hələ də istifadə olunur, lakin URL idarəçiliyi yoxdur)
-        closeCommentOverlayButton.addEventListener('click', closeCommentOverlay);
 
-        // URL dəyişikliklərini idarə edir (şərh overlayını açmaq/bağlamaq üçün)
-        window.addEventListener('popstate', () => {
-            const currentUrlParams = new URLSearchParams(window.location.search);
-            const isCommentOpenInUrl = currentUrlParams.get('comment') === 'true';
+        const postFooter = document.createElement("div");
+        postFooter.className = "post-footer";
+        
+        // --- 1. LIKE AND COMMENT COUNTS (Bəyənmə və Şərh Sayları) ---
+        const postStats = document.createElement("div");
+        postStats.className = "post-stats";
+        postStats.id = `stats_${postId}`;
+        
+        // Like Count
+        const likeCount = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
+        const likeEl = document.createElement("div");
+        likeEl.className = "stat-item like";
+        likeEl.innerHTML = `<span class="material-icons">favorite</span><span id="like_count_${postId}">${likeCount}</span>`; 
+        likeEl.title = "Bəyənmə sayı";
+        postStats.appendChild(likeEl);
+
+        // Comment Count
+        const commentCount = commentCountCache[postId] || 0;
+        const commentEl = document.createElement("div");
+        commentEl.className = "stat-item comment";
+        commentEl.innerHTML = `<span class="material-icons">comment</span><span id="comment_count_${postId}">${commentCount}</span>`; 
+        commentEl.title = "Şərh sayı";
+        postStats.appendChild(commentEl);
+        
+        postFooter.appendChild(postStats); // Stats solda
+        
+        postEl.appendChild(postFooter);
+        return postEl;
+    }
+
+    document.getElementById("confirmYes").addEventListener("click", () => {
+        if (deletePostId) {
+            const post = postDataCache[deletePostId];
+            if (post && post.sourceDb) {
+                const dbRefPath = post.sourceDb === postsDb ? "posts" : "reels";
+                const commentsDb = post.sourceDb === postsDb ? postsCommentsDb : snapCommentsDb;
+                
+                // Postu, like-ları və şərhləri silirik
+                post.sourceDb.ref(`${dbRefPath}/${deletePostId}`).remove();
+                post.sourceDb.ref(`likes/${deletePostId}`).remove();
+                commentsDb.ref(`comments/${deletePostId}`).remove();
+            }
+            document.getElementById("confirmDialog").style.display = "none";
             
-            // openCommentOverlay çağrışları yığışdırılıb
-            if (isCommentOpenInUrl && !commentOverlay.classList.contains('visible')) {
-                const urlPostId = urlParams.get('post_id');
-                const urlSnapId = urlParams.get('snap_id');
-                const specificPostId = urlPostId || urlSnapId;
+            // Postu HTML-dən sil
+            document.getElementById("post_" + deletePostId)?.remove();
+            
+            // Post sayı kəşini və profili yenilə
+            postsCountCache = Math.max(0, postsCountCache - 1);
+            renderProfileHeader(null, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+            
+            deletePostId = null;
+            refreshMasonry();
+        }
+    });
 
-                if (specificPostId) {
-                    Promise.all([
-                        postsDb.ref(`posts/${specificPostId}`).once('value'),
-                        videosDb.ref(`reels/${specificPostId}`).once('value')
-                    ]).then(([postSnap, reelSnap]) => {
-                        let commentsSourceDb = null;
-                        if (postSnap.exists()) {
-                            commentsSourceDb = postsCommentsDb;
-                        } else if (reelSnap.exists()) {
-                            commentsSourceDb = snapCommentsDb;
-                        }
-                        // openCommentOverlay çağrısı silindi
-                        // if (commentsSourceDb) {
-                        //     openCommentOverlay(specificPostId, commentsSourceDb);
-                        // } else {
-                        //     closeCommentOverlay();
-                        // }
-                        closeCommentOverlay(); // Yalnız bağla, açma funksiyası yoxdur
-                    }).catch(error => {
-                        console.error("Şərh overlayı üçün post növü müəyyən edilərkən xəta baş verdi:", error);
-                        closeCommentOverlay();
-                    });
-                } else {
-                    closeCommentOverlay();
-                }
-            } else if (!isCommentOpenInUrl && commentOverlay.classList.contains('visible')) {
-                closeCommentOverlay();
+    document.getElementById("confirmNo").addEventListener("click", () => {
+        document.getElementById("confirmDialog").style.display = "none";
+        deletePostId = null;
+    });
+
+    function renderAllPosts(postIds) {
+        postsContainer.innerHTML = "";
+        if (postIds.length === 0) {
+                noPostsMessage.style.display = "flex";
+                postsContainer.style.display = "none";
+        } else {
+            noPostsMessage.style.display = "none";
+            postsContainer.style.display = "block";
+            postIds.forEach(postId => {
+                const data = postDataCache[postId];
+                const postEl = renderPost(postId, data);
+                if (postEl) postsContainer.appendChild(postEl);
+            });
+        }
+        refreshMasonry();
+    }
+
+    /**
+     * Bəyənmə (Like) saylarını real-vaxtda yeniləyir.
+     */
+    function updateLikeCounts() {
+        Object.keys(likeCache).forEach(postId => {
+            const count = likeCache[postId] ? Object.keys(likeCache[postId]).length : 0;
+            const countEl = document.getElementById(`like_count_${postId}`);
+            if (countEl) {
+                countEl.textContent = count;
             }
         });
+    }
+    
+    /**
+     * Şərh (Comment) saylarını real-vaxtda yeniləyir.
+     */
+    function updateCommentCounts() {
+        Object.keys(commentCountCache).forEach(postId => {
+            const count = commentCountCache[postId] || 0;
+            const countEl = document.getElementById(`comment_count_${postId}`);
+            if (countEl) {
+                countEl.textContent = count;
+            }
+        });
+    }
+
+    function refreshMasonry() {
+        // Masonry layout üçün kiçik trick
+        postsContainer.style.visibility = 'hidden';
+        setTimeout(() => { postsContainer.style.visibility = 'visible'; }, 20);
+    }
+    
+    // --- YENİ REAL-TIME DİNLƏYİCİLƏR (V9) ---
+    async function setupRealTimeProfileListeners(cleanCurrentUser) {
+        
+        // 1. İstifadəçi Məlumatlarını dinləmək
+        onValueV9(refV9(userDbV9, `Users/${cleanCurrentUser}`), (snapshot) => {
+            userProfileData = snapshot.val();
+            // Profil başlığını yenilə
+            renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+        });
+
+        // 2. İzləyicilərin sayını dinləmək (Follower Count)
+        onValueV9(refV9(followDbV9, cleanCurrentUser), (snapshot) => {
+            const followData = snapshot.val() || { follow: 0 };
+            followerCountCache = followData.follow || 0;
+            // Profil başlığını yenilə
+            renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+        });
+
+        // 3. İzlənənlərin sayını dinləmək (Following Count)
+        onValueV9(refV9(followingDbV9, cleanCurrentUser), (snapshot) => {
+            const followingData = snapshot.val() || { following: 0 };
+            followingCountCache = followingData.following || 0;
+            // Profil başlığını yenilə
+            renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+        });
+
+        // 4. Tick Nişanını dinləmək
+        const tickRef = refV9(tickDbV9, 'tick');
+        onValueV9(tickRef, (snapshot) => {
+            const statusMap = snapshot.val() || {};
+            const isTick = statusMap[cleanCurrentUser] === '+';
+            
+            // Premium statusunu yoxla
+            const isPremium = currentIconUrl === PREMIUM_ICON || currentIconUrl === PREMIUM_TICK_ICON;
+            
+            let newIconUrl = '';
+            if (isTick && isPremium) newIconUrl = PREMIUM_TICK_ICON;
+            else if (isTick) newIconUrl = TICK_ICON;
+            else if (isPremium) newIconUrl = PREMIUM_ICON;
+            
+            if (newIconUrl !== currentIconUrl) {
+                currentIconUrl = newIconUrl;
+                renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+            }
+        });
+
+        // 5. Premium Nişanını dinləmək
+        const premiumRef = refV9(premiumDbV9, 'premium');
+        onValueV9(premiumRef, (snapshot) => {
+            const statusMap = snapshot.val() || {};
+            const isPremium = statusMap[cleanCurrentUser] === '+';
+
+            // Tick statusunu yoxla (Nişanın hansı DB-də olduğunu bilmək üçün)
+            const isTick = currentIconUrl === TICK_ICON || currentIconUrl === PREMIUM_TICK_ICON;
+
+            let newIconUrl = '';
+            if (isTick && isPremium) newIconUrl = PREMIUM_TICK_ICON;
+            else if (isTick) newIconUrl = TICK_ICON;
+            else if (isPremium) newIconUrl = PREMIUM_ICON;
+
+            if (newIconUrl !== currentIconUrl) {
+                currentIconUrl = newIconUrl;
+                renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+            }
+        });
+
+        // 6. Post siyahılarını dinləmək (Post/Reel əlavə ediləndə/silinəndə)
+        
+        // Postlar
+        postsDb.ref("posts").on("value", (snapshot) => {
+            snapshot.forEach(s => { 
+                const data = JSON.parse(s.val());
+                if ((data.nickname || "").replace('@', '') === cleanCurrentUser) {
+                    postDataCache[s.key] = {...data, sourceDb: postsDb};
+                } else {
+                    delete postDataCache[s.key]; // Başqa istifadəçinin postu silinir
+                }
+            });
+            updateMyPostsAndRender();
+        });
+
+        // Reels
+        videosDb.ref("reels").on("value", (snapshot) => {
+            snapshot.forEach(s => { 
+                const data = JSON.parse(s.val());
+                if ((data.nickname || "").replace('@', '') === cleanCurrentUser) {
+                    postDataCache[s.key] = {...data, sourceDb: videosDb};
+                } else {
+                    delete postDataCache[s.key]; // Başqa istifadəçinin postu silinir
+                }
+            });
+            updateMyPostsAndRender();
+        });
+    }
+
+    function updateMyPostsAndRender() {
+        const cleanCurrentUser = currentUser.replace('@', '');
+        
+        // Yalnız cari istifadəçiyə aid postları yenidən filtrlə və zamanına görə sırala
+        myPostIds = Object.keys(postDataCache).filter(id => {
+            const p = postDataCache[id];
+            return (p.nickname || "").replace('@', '') === cleanCurrentUser;
+        }).sort((a,b) => (postDataCache[b].time || 0) - (postDataCache[a].time || 0));
+
+        postsCountCache = myPostIds.length;
+        
+        // Sayları və postları yenilə
+        renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+        renderAllPosts(myPostIds);
+    }
+
+    // --- MÖVCUD V8 REAL-TIME DİNLƏYİCİLƏR (Likes/Comments) ---
+    function setupLiveListeners() {
+        const allDbRefs = [
+            // Post/Reel Like Saylarını dinləmək (Likes)
+            { db: postsDb, path: "likes" }, { db: videosDb, path: "likes" },
+            // Post/Snap Comment Saylarını dinləmək (Comments)
+            { db: postsCommentsDb, path: "comments" }, { db: snapCommentsDb, path: "comments" }
+        ];
+        
+        allDbRefs.forEach(refInfo => {
+            // V8 API-dən istifadə edirsiniz (Firebase Realtime DB-nin V8-dəki `.on("value")` metodu)
+            refInfo.db.ref(refInfo.path).on("value", (snapshot) => {
+                const data = snapshot.val() || {};
+                if (refInfo.path === "likes") {
+                    // Likes kəşini birləşdir
+                    Object.assign(likeCache, data);
+                    updateLikeCounts(); // Sayları yenilə
+                } else if (refInfo.path === "comments") {
+                    // Comment saylarını hesablayıb kəşə yaz
+                    Object.keys(data).forEach(postId => {
+                        commentCountCache[postId] = Object.keys(data[postId] || {}).length;
+                    });
+                    updateCommentCounts(); // Sayları yenilə
+                }
+            });
+        });
+    }
+
+    initializeFirebaseApps();
+
+    if (showOnlyMyPosts && currentUser !== "anonim") {
+        const cleanCurrentUser = currentUser.replace('@', '');
+        
+        // Nişan statuslarını **ilkin** yoxlamaq üçün promise
+        const badgeCheckPromise = (async () => {
+            try {
+                const [isTick, isPremium] = await Promise.all([
+                    checkNicknameStatus(tickDbV9, 'tick', cleanCurrentUser),
+                    checkNicknameStatus(premiumDbV9, 'premium', cleanCurrentUser)
+                ]);
+
+                if (isTick && isPremium) return PREMIUM_TICK_ICON;
+                if (isTick) return TICK_ICON;
+                if (isPremium) return PREMIUM_ICON;
+                return '';
+            } catch (e) {
+                console.error("Nişan yoxlanışı xətası:", e);
+                return '';
+            }
+        })();
+
+
+        // --- İLKİN YÜKLƏNMƏ (V8 `.once()` ilə) ---
+        Promise.all([
+            postsDb.ref("posts").once("value"),
+            videosDb.ref("reels").once("value"),
+            postsCommentsDb.ref("comments").once("value"),
+            snapCommentsDb.ref("comments").once("value"),
+            postsDb.ref("likes").once("value"),
+            videosDb.ref("likes").once("value"),
+            userDb.ref(`Users/${cleanCurrentUser}`).once("value"),
+            followDb.ref(cleanCurrentUser).once("value"),
+            followingDb.ref(cleanCurrentUser).once("value"),
+            badgeCheckPromise
+        ]).then(([
+            postsSnap, reelsSnap, 
+            commentsPostsSnap, commentsSnapsSnap, 
+            postLikesSnap, reelLikesSnap,
+            userSnap, followSnap, followingSnap,
+            iconUrl
+        ]) => {
+            // Kəşləri ilkin dəyərlərlə doldur
+            postDataCache = {};
+            postsSnap.forEach(s => { 
+                try { postDataCache[s.key] = {...JSON.parse(s.val()), sourceDb: postsDb}; } catch(e){} 
+            });
+            reelsSnap.forEach(s => { 
+                try { postDataCache[s.key] = {...JSON.parse(s.val()), sourceDb: videosDb}; } catch(e){}
+            });
+            
+            commentCountCache = {};
+            const commentsPosts = commentsPostsSnap.val() || {};
+            const commentsSnaps = commentsSnapsSnap.val() || {};
+            Object.keys(commentsPosts).forEach(pid => { commentCountCache[pid] = Object.keys(commentsPosts[pid] || {}).length; });
+            Object.keys(commentsSnaps).forEach(pid => { commentCountCache[pid] = Object.keys(commentsSnaps[pid] || {}).length; });
+            
+            likeCache = { ...postLikesSnap.val(), ...reelLikesSnap.val() };
+            
+            // Global kəşləri təyin et
+            userProfileData = userSnap.val();
+            followerCountCache = (followSnap.val()?.follow || 0);
+            followingCountCache = (followingSnap.val()?.following || 0);
+            currentIconUrl = iconUrl;
+            
+            // Postları filtrlə, sırala və kəşə yaz
+            updateMyPostsAndRender();
+            
+            // Profil başlıqlarını ilkin render etmək
+            renderProfileHeader(userProfileData, followerCountCache, followingCountCache, postsCountCache, currentIconUrl);
+            
+            // Loaderi gizlət
+            document.getElementById("loader").style.display = "none";
+            
+            // REAL-TIME DİNLƏYİCİLƏRİ BAŞLAT
+            setupLiveListeners(); // V8 (Likes/Comments)
+            setupRealTimeProfileListeners(cleanCurrentUser); // V9 (Profile/Follows/Icons)
+
+        }).catch(error => {
+            console.error("Məlumatlar yüklənərkən xəta baş verdi:", error);
+            document.getElementById("loader").style.display = "none";
+            noPostsMessage.style.display = "flex";
+            noPostsMessage.querySelector('span:last-child').textContent = "Məlumat yüklənərkən xəta baş verdi.";
+        });
+
+    } else {
+        document.getElementById("loader").style.display = "none";
+        noPostsMessage.style.display = "flex";
+        noPostsMessage.querySelector('span:last-child').textContent = "";
+    }
