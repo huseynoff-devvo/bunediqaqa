@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dönmüş QR Kod İkonu (Back ilə Nəzarət) - Dark Mode</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+
+    <style>
+        /* Dark Mode üslubları */
+        body {
+            background-color: #101010;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            transition: background-color 0.3s;
+        }
+
+        /* Material Icon üslubu */
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 1,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 48;
+            font-size: 80px;
+            cursor: pointer;
+            color: #BB86FC;
+            transition: transform 0.5s;
+        }
+
+        /* 45 dərəcə çevrilmə */
+        .rotated-icon {
+            transform: rotate(45deg);
+        }
+
+        /* Hover effekti */
+        .rotated-icon:hover {
+            transform: rotate(45deg) scale(1.1);
+        }
+
+        /* QR Kod Modalı (Pop-up) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        }
+        
+        #qrcode {
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+        }
+
+        .close-button {
+            color: #aaaaaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #BB86FC;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .user-text {
+            margin-top: 15px;
+            font-size: 1.2em;
+            color: #BB86FC;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+   
+</body>
+</html>
