@@ -50,7 +50,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentUser = (urlParams.get("user") || "anonim").trim();
     const showOnlyMyPosts = urlParams.get("myPosts") === "true";
-    const isEditMode = urlParams.get("redakte") === "true";
+    const isEditMode = urlParams.get("qr") === "true";
 
     let likeCache = {};
     let commentCountCache = {};
@@ -150,10 +150,7 @@
         // --- Hadisə Dinləyiciləri (Event Listeners) ---
 
         // 1. İkona Klikləmə Hadisəsi: QR kodu açır və URL-i dəyişdirir
-        qrIcon.onclick = function() {
-            // URL-də qr=true olmasa da, klikləyəndə onu əlavə edib modalı açır
-            openQrModal(); 
-        }
+        
 
         // 2. Kapatma düyməsi və Kənar Klik: Sadəcə modalı bağlayır
         closeButton.onclick = function() {
@@ -253,26 +250,70 @@
                 return `?${newParams.toString()}`;
             };
 
-            document.getElementById('settings-btn').href = updateUrl('settings', 'true');
-            document.getElementById('save-btn').href = updateUrl('saved', 'true');
+            document.getElementById('settings-btn').href = updateUrl();
+            document.getElementById('save-btn').href = updateUrl();
             document.getElementById('followers-stat').onclick = () => window.location.href = updateUrl('follow', 'true');
             document.getElementById('following-stat').onclick = () => window.location.href = updateUrl('following', 'true');
             
-            editButton.onclick = () => {
-                const currentUrl = new URL(window.location.href);
-                if (currentUrl.searchParams.get('redakte') === 'true') {
-                    currentUrl.searchParams.delete('redakte');
+            // 1. İkona Klikləmə Hadisəsi: QR kodu açır və URL-i dəyişdirir
+        editButton.onclick = function() {
+            // URL-də qr=true olmasa da, klikləyəndə onu əlavə edib modalı açır
+            openQrModal(); 
+        }
+
+        // 2. Kapatma düyməsi və Kənar Klik: Sadəcə modalı bağlayır
+        closeButton.onclick = function() {
+            // URL-i geri dəyişdirməyi brauzerin özünə (popstate) buraxırıq. 
+            // Sadəcə modalı bağlayanda bir addım geri getməliyik.
+            if (new URLSearchParams(window.location.search).has('qr')) {
+                 window.history.back();
+            } else {
+                 closeQrModal();
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == qrModal) {
+                 if (new URLSearchParams(window.location.search).has('qr')) {
+                     window.history.back();
                 } else {
-                    currentUrl.searchParams.set('redakte', 'true');
+                     closeQrModal();
                 }
-                window.location.href = currentUrl.toString();
-            };
+            }
+        }
+
+        // 3. ƏN VACİB HİSSƏ: Brauzerin Geri/İrəli Düyməsi Hadisəsi
+        window.addEventListener('popstate', function(event) {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Əgər URL-də `qr=true` varsa (yəni irəli gedilibsə və ya geri gedilsə belə qalıbsa)
+            if (urlParams.get('qr') === 'true') {
+                openQrModal(true); // Modal qalsın/açılsın (URL dəyişikliyi etmədən)
+            } else {
+                closeQrModal(); // URL-də `qr=true` yoxdursa, modal bağlansın
+            }
+        });
+
+        // 4. Səhifə yüklənərkən yoxlama
+        // Əgər səhifə yüklənəndə (məsələn, link paylaşılanda) URL-də `qr=true` varsa, avtomatik açılsın
+        if (new URLSearchParams(window.location.search).get('qr') === 'true') {
+            openQrModal(true);
+        }
+            // editButton.onclick = () => {
+            //     const currentUrl = new URL(window.location.href);
+            //     if (currentUrl.searchParams.get('qr') === 'true') {
+            //         currentUrl.searchParams.delete('redakte');
+            //     } else {
+            //         currentUrl.searchParams.set('qr', 'true');
+            //     }
+            //     window.location.href = currentUrl.toString();
+            // };
             
             if (isEditMode) {
-                editButton.textContent = "Redaktə et";
+                editButton.textContent = "İstifadəçinin QR";
                 document.getElementById('settings-btn').style.display = 'none'; 
             } else {
-                editButton.textContent = "Redaktə et";
+                editButton.textContent = "İstifadəçinin QR";
             }
             
             profileContainer.style.display = "flex";
@@ -319,53 +360,53 @@
         const cleanCurrentUser = currentUser.replace('@', '');
         const isMyPost = cleanNickname === cleanCurrentUser;
         
-        if (isMyPost) {
-            let pressTimer = null;
-            const LONG_PRESS_TIME = 700; // 700ms uzun basma vaxtı
+        // if (isMyPost) {
+        //     let pressTimer = null;
+        //     const LONG_PRESS_TIME = 700; // 700ms uzun basma vaxtı
 
-            const startPress = (e) => {
-                if(pressTimer) return;
+        //     const startPress = (e) => {
+        //         if(pressTimer) return;
                 
-                pressTimer = setTimeout(() => {
-                    deletePostId = postId;
-                    document.getElementById("confirmDialog").style.display = "flex";
+        //         pressTimer = setTimeout(() => {
+        //             deletePostId = postId;
+        //             document.getElementById("confirmDialog").style.display = "flex";
                     
-                    postEl.classList.add('long-pressed'); 
-                    clearTimeout(pressTimer);
-                    pressTimer = null;
-                }, LONG_PRESS_TIME);
-            };
+        //             postEl.classList.add('long-pressed'); 
+        //             clearTimeout(pressTimer);
+        //             pressTimer = null;
+        //         }, LONG_PRESS_TIME);
+        //     };
 
-            const endPress = () => {
-                clearTimeout(pressTimer);
-                pressTimer = null;
-                postEl.style.opacity = 1; 
-            };
+        //     const endPress = () => {
+        //         clearTimeout(pressTimer);
+        //         pressTimer = null;
+        //         postEl.style.opacity = 1; 
+        //     };
             
-            // Mouse events (Desktop)
-            postEl.addEventListener('mousedown', startPress);
-            postEl.addEventListener('mouseup', endPress);
-            postEl.addEventListener('mouseleave', endPress);
+        //     // Mouse events (Desktop)
+        //     postEl.addEventListener('mousedown', startPress);
+        //     postEl.addEventListener('mouseup', endPress);
+        //     postEl.addEventListener('mouseleave', endPress);
 
-            // Touch events (Mobile)
-            postEl.addEventListener('touchstart', (e) => {
-                if (e.touches.length > 1) return endPress(); 
-                postEl.style.opacity = 0.85; 
-                startPress(e);
-            });
-            postEl.addEventListener('touchend', endPress);
-            postEl.addEventListener('touchcancel', endPress);
+        //     // Touch events (Mobile)
+        //     postEl.addEventListener('touchstart', (e) => {
+        //         if (e.touches.length > 1) return endPress(); 
+        //         postEl.style.opacity = 0.85; 
+        //         startPress(e);
+        //     });
+        //     postEl.addEventListener('touchend', endPress);
+        //     postEl.addEventListener('touchcancel', endPress);
 
-            // Uzun basma olubsa, normal click-in işə düşməsinin qarşısını al
-            postEl.addEventListener('click', (e) => {
-                if (postEl.classList.contains('long-pressed')) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    postEl.classList.remove('long-pressed'); 
-                    return false;
-                }
-            });
-        }
+        //     // Uzun basma olubsa, normal click-in işə düşməsinin qarşısını al
+        //     postEl.addEventListener('click', (e) => {
+        //         if (postEl.classList.contains('long-pressed')) {
+        //             e.preventDefault();
+        //             e.stopImmediatePropagation();
+        //             postEl.classList.remove('long-pressed'); 
+        //             return false;
+        //         }
+        //     });
+        // }
         // --- END LONG-PRESS DELETE LOGIC ---
 
 
