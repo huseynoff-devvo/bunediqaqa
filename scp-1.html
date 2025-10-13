@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SCP Foundation - Təhlükəli Məlumat Axını</title>
     <style>
-         * {
-  user-select: none;   /* Seçməni bloklayır */
-  -webkit-user-select: none; /* Safari üçün */
-  -ms-user-select: none;     /* Köhnə IE üçün */
-}
-img {
-  pointer-events: none;  /* şəkil kliklənməsin */
-  user-drag: none;       /* brauzerdə sürüklənməsin */
-  -webkit-user-drag: none; /* Safari/Chrome üçün */
-}
+        /* Məlumatın kopyalanmasının və şəkillərin sürüklənməsinin qarşısını alan ümumi stillər */
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+        img {
+            pointer-events: none;
+            user-drag: none;
+            -webkit-user-drag: none;
+        }
+
         body {
             margin: 0;
             overflow: hidden;
@@ -30,39 +32,53 @@ img {
             z-index: 1;
         }
 
-        /* Logo Konteyneri (Hər iki logo eyni yerdə olacaq) */
+        /* Logo Konteyneri */
         #logo-container {
             position: fixed;
-            top: 50%;
+            top: 45%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2;
-            width: 150px; 
+            width: 150px;
             height: auto;
         }
 
-        /* Başlanğıc Logo (Fırlanan) */
+        /* Yeganə Logo üçün stil */
         #initial-logo {
             width: 100%;
             height: auto;
-            opacity: 0.8; 
-            /* Sonsuz Fırlanma Animayasi */
-            animation: spin-inf 1s linear infinite; 
-            transition: opacity 1s ease-out; /* Keçid üçün */
+            opacity: 0.8;
+            animation: spin-inf 1s linear infinite;
         }
         
-        /* Son Logo (Dayanan) - XÜSUSİ ÖLÇÜLƏR TƏTBİQ OLUNUB */
-        #final-logo {
-            width: 365px; /* Daxil etdiyiniz ölçü */
-            height: auto;
-            position: absolute;
-            top: -7px; /* Daxil etdiyiniz mövqe */
-            left: -107px; /* Daxil etdiyiniz mövqe */
+        /* Loading Spinner Stili */
+        #loading-spinner {
+            position: fixed;
+            bottom: 15%; /* DƏYİŞİKLİK: Ekranın altından 15% yuxarıda */
+            top: auto; /* 'top' dəyərini ləğv edirik */
+            left: 44%;
+            transform: translateX(-50%); /* DƏYİŞİKLİK: Yalnız X oxu üzrə mərkəzlənmə */
+            z-index: 3;
+            width: 35px;
+            height: 35px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
             opacity: 0; /* Başlanğıcda gizli */
-            transition: opacity 1s ease-in; /* Keçid üçün */
+            transition: opacity 0.5s ease-in;
         }
 
-        /* Sonsuz Fırlanma Animayasi */
+        /* Spinner Fırlanma Animayasi */
+        @keyframes spin-load {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Sonsuz Fırlanma Animayasi (Loqo üçün) */
         @keyframes spin-inf {
             from {
                 transform: rotate(0deg);
@@ -71,14 +87,14 @@ img {
                 transform: rotate(360deg);
             }
         }
-        
-        /* Dayandırma Animayasi */
+
+        /* Dayandırma Animayasi (2 tam dövrə = 720 dərəcə) */
         @keyframes spin-stop {
             from {
                 transform: rotate(0deg);
             }
             to {
-                transform: rotate(720deg); /* 2 tam dövrə */
+                transform: rotate(720deg);
             }
         }
 
@@ -95,36 +111,36 @@ img {
     <canvas id="matrixCanvas"></canvas>
 
     <div id="logo-container">
-        <img id="initial-logo" 
-             src="https://scpstore.org/cdn/shop/products/kiss-cut-stickers-5.5x5.5-default-61d4bba5170d8.png?v=1649862918" 
-             alt="Fırlanan SCP Logo">
-             
-        <img id="final-logo" 
-             src="https://res.cloudinary.com/dkayxxw9a/image/upload/v1760378832/SCP-Symbol_1_1_ajrgtm.png" 
-             alt="Son SCP Logo">
+        <img id="initial-logo"
+             src="https://scpstore.org/cdn/shop/products/kiss-cut-stickers-5.5x5.5-default-61d4bba5170d8.png?v=1649862918"
+             alt="SCP Logo">
     </div>
+    
+    <div id="loading-spinner"></div>
 
     <script>
-        // --- LOGO ANİMASİYASI MƏNTİQƏSİ ---
+        // --- LOGO VƏ SPINNER ANİMASİYASI MƏNTİQƏSİ ---
         const initialLogo = document.getElementById('initial-logo');
-        const finalLogo = document.getElementById('final-logo');
+        const loadingSpinner = document.getElementById('loading-spinner');
 
-        const stopTimeMs = 3000; 
-        const spinDuration = 2; 
-        
+        const initialWaitTime = 3000; // 3 saniyə gözləmə
+        const spinDuration = 2; // Yavaşlama animaiyasının müddəti (saniyə)
+
         setTimeout(() => {
+            // Sonsuz animasiyanı ləğv et
             initialLogo.style.animation = 'none';
-            initialLogo.style.transform = `rotate(0deg)`; 
 
+            // Yeni "spin-stop" animasiyasını tətbiq et (2 saniyədə 720 dərəcə)
             initialLogo.style.animation = `spin-stop ${spinDuration}s ease-out forwards`;
-            
-            setTimeout(() => {
-                initialLogo.style.opacity = '0'; 
-                finalLogo.style.opacity = '1';
-                
-            }, spinDuration * 1000 - 500); 
 
-        }, stopTimeMs);
+            // Spinneri göstərmək üçün yeni setTimeout
+            setTimeout(() => {
+                loadingSpinner.style.opacity = '1'; // Spinneri görünən et
+                // Fırlanma animasiyasını işə sal
+                loadingSpinner.style.animation = 'spin-load 1s linear infinite'; 
+            }, spinDuration * 1000); // Loqonun fırlanması bitən kimi başlasın
+
+        }, initialWaitTime);
 
 
         // --- YENİLƏNMİŞ QORXULU MATRIX MƏNTİQƏSİ ---
@@ -134,7 +150,7 @@ img {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Daha uzun və qorxulu SCP-yə aid cümlələr və rəqəmlər
+        // SCP-yə aid cümlələr
         const scpDataLines = [
             'SCP-839: KETER/EVACUATE ZONE IMMEDIATELY',
             'OBJECT_CLASS: THAUMIEL/SEAL DATA',
@@ -150,49 +166,43 @@ img {
         ];
         
         const getScpChar = () => {
-            // 20% ehtimalla tam bir cümlə hissəsini qaytar (daha uzun yazı effekti)
             if (Math.random() < 0.2) {
                 const line = scpDataLines[Math.floor(Math.random() * scpDataLines.length)];
                 const start = Math.floor(Math.random() * (line.length - 3));
                 return line.substring(start, start + Math.floor(Math.random() * 10) + 3);
-            } 
-            // Qalan hallarda SCP nömrələri və ya rəqəmlər
+            }
             else if (Math.random() < 0.6) {
                 const scpNum = String(Math.floor(Math.random() * 9999)).padStart(4, '0');
                 return `SCP-${scpNum}`;
             } else {
-                return String(Math.floor(Math.random() * 10)); // Təsadüfi rəqəm
+                return String(Math.floor(Math.random() * 10));
             }
         };
 
-        const fontSize = 12; // Mobil üçün
-        const columns = canvas.width / fontSize;
+        const fontSize = 12;
+        let columns = canvas.width / fontSize;
         const drops = [];
         for (let i = 0; i < columns; i++) {
             drops[i] = 1;
         }
 
         function draw() {
-            // Şəffaflıqla qara fon (iz effekti)
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; 
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Matrix yazılarının rəngi qırmızı
-            ctx.fillStyle = 'red'; 
+            ctx.fillStyle = 'red';
             ctx.font = `${fontSize}px monospace`;
 
             for (let i = 0; i < drops.length; i++) {
-                const text = getScpChar(); 
+                const text = getScpChar();
 
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
-                // Damcı aşağı çatdıqda yenidən yuxarıdan başla
                 if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) {
                     drops[i] = 0;
                 }
 
-                // Bəzən daha sürətli düşmə (daha dinamik effekt)
-                drops[i] += Math.random() > 0.9 ? 3 : 1; 
+                drops[i] += Math.random() > 0.9 ? 3 : 1;
             }
         }
 
@@ -201,9 +211,9 @@ img {
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            const newColumns = canvas.width / fontSize;
-            drops.length = newColumns; 
-            for (let i = 0; i < newColumns; i++) {
+            columns = canvas.width / fontSize;
+            drops.length = columns;
+            for (let i = 0; i < columns; i++) {
                 if (drops[i] === undefined) {
                     drops[i] = 1;
                 }
